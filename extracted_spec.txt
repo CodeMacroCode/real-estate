@@ -1,0 +1,2705 @@
+--- PAGE 1 (Obj 1) ---
+
+REAL ESTATE CR  WEBSTE ADN PANEL
+Functiona&IpeentationSpecification|
+1
+REAL ESTATE CRM + WEBSITE ADMIN
+ 
+PANEL
+Functional Requirements & mlementation Secification
+ReaEstate Consulting/Brokerage Business
+Project Tpe 
+Real Estate CRM + Property Management + Website CMS
+Primary Objectie: 
+Centralized CRM and website administration platfor
+Core Principle: 
+CRM as the single source of trutor property inventor
+
+
+
+--- PAGE 2 (Obj 10) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+2
+1. PROJECT OBJECTIVE
+
+Lead and enquiry management
+
+Client management
+
+Owner management
+
+Property inventory management
+
+Residential property management
+
+Commercial property management
+
+Rental and leasing management
+
+Pre-leased properties
+
+Investment properties
+
+Plot and land management
+
+Project management
+
+Follow-up management
+
+Site visit management
+
+Sales pipeline management
+
+Rental/leasing pipeline management
+
+Staff and user management
+
+Dashboard and reporting
+
+Website content management
+
+Website property publishing
+
+Website enquiry capture
+
+Communication history
+
+WhatsApp integration where supported
+
+API and webhook integration
+
+Data import/export
+
+Role-based access control
+
+Activity/audit tracking
+
+Mobile-responsive CRM access
+The core principle of the system is: CRM = Master Database / Single Source of Truth.
+2. SYSTEM ARCHITECTURE
+Recommended architecture: Admin/CRM Panel -> CRM Backend/API -> Central Database -> Website API -> 
+Public Website.
+Additional integration flows: Website Enquiry -> CRM Lead API; CRM Property -> Website Publishing API; CRM 
+Status Change -> Website Update/Unpublish; CRM -> WhatsApp/Email/SMS/Notifications; CRM -> Third-party 
+Property Portals.
+3. SINGLE SOURCE OF TRUTH
+The CRM database is the authoritative database for properties, projects, owners, clients, leads, staff, site visits, 
+follow-ups, sales transactions, rental transactions and website-managed property information.
+Example: a new property is created in CRM with Publish on Website = YES. It becomes available on the public 
+website. Price, rent, description and availability changes are propagated to the website. Sold, Leased, Rented or
+ 
+Not Available status removes the property from active website listings while retaining its historical CRM 
+record.
+
+--- PAGE 3 (Obj 129) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+3
+4. ADMIN PANEL
+
+Dashboard
+
+Leads
+
+Enquiries
+
+Clients
+
+Owners
+
+Properties
+
+Projects
+
+Residential Properties
+
+Commercial Properties
+
+Plots / Land
+
+Rental / Leasing
+
+Pre-Leased / Investment
+
+Site Visits
+
+Follow-ups
+
+Tasks
+
+Sales Pipeline
+
+Rental / Leasing Pipeline
+
+Investment Pipeline
+
+Bookings / Transactions
+
+Documents
+
+Communications
+
+Campaigns / Lead Sources
+
+Staff / Users
+
+Reports
+
+Website CMS
+
+Media Library
+
+Notifications
+
+Integrations
+
+Import / Export
+
+Audit Logs
+
+Master Settings
+
+System Settings
+5. DASHBOARD
+5.1 KPI Cards
+
+Total Leads
+
+New Leads
+
+Active Leads
+
+Converted Leads
+
+Lost Leads
+
+Today's Leads
+
+Today's Follow-ups
+
+Pending Follow-ups
+
+Overdue Follow-ups
+
+Today's Site Visits
+
+Upcoming Site Visits
+
+--- PAGE 4 (Obj 308) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+4
+
+Total Properties
+
+Available Properties
+
+Sold Properties
+
+Rented Properties
+
+Leased Properties
+
+Pre-Leased Properties
+
+Investment Properties
+
+Website Published Properties
+
+Unpublished Properties
+
+Properties Added This Month
+
+Properties Sold This Month
+5.2 Sales KPIs
+
+Total opportunities
+
+Active opportunities
+
+Negotiations
+
+Bookings
+
+Closed deals
+
+Conversion percentage
+
+Expected revenue
+
+Actual revenue
+
+Brokerage generated
+
+Brokerage pending
+
+Brokerage received
+5.3 Team Performance
+
+Leads assigned per employee
+
+Leads contacted
+
+Follow-ups completed
+
+Follow-ups overdue
+
+Site visits completed
+
+Site visits upcoming
+
+Deals closed
+
+Revenue generated
+
+Conversion rate by employee
+5.4 Lead Source Analytics
+
+Lead count
+
+Qualified lead count
+
+Site visits
+
+Conversions
+
+Revenue
+
+Cost/ROI where campaign data is available
+6. LEAD & ENQUIRY MANAGEMENT
+6.1 Lead Information
+
+Lead ID
+
+--- PAGE 5 (Obj 471) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+5
+
+Lead Name
+
+First Name
+
+Last Name
+
+Mobile
+
+WhatsApp Number
+
+Alternate Mobile
+
+Email
+
+Lead Source
+
+Campaign
+
+Requirement Type
+
+Property Type
+
+Transaction Type
+
+Budget
+
+Preferred Location
+
+Preferred Area
+
+Minimum Area
+
+Maximum Area
+
+Bedrooms
+
+Furnishing Preference
+
+Parking Requirement
+
+Possession Requirement
+
+Purchase/Rental Purpose
+
+Investment Preference
+
+Assigned Employee
+
+Priority
+
+Lead Status
+
+Lead Stage
+
+Expected Closing Date
+
+Follow-up Date
+
+Notes
+
+Communication History
+
+Related Property
+
+Related Project
+
+Created Date
+
+Updated Date
+6.2 Lead Types
+
+Buyer
+
+Tenant
+
+Investor
+
+Commercial Buyer
+
+Commercial Tenant
+
+Corporate Requirement
+
+Plot Buyer
+
+Property Seller
+
+Property Owner
+
+Landlord
+
+Developer
+
+--- PAGE 6 (Obj 659) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+6
+6.3 Lead Sources
+
+Website
+
+Google Ads
+
+Facebook Ads
+
+Instagram
+
+WhatsApp
+
+Referral
+
+Direct
+
+Phone
+
+Walk-in
+
+Property Portal
+
+Existing Client
+
+Broker
+
+Campaign
+6.4 Lead Status
+
+New
+
+Contacted
+
+Qualified
+
+Requirement Captured
+
+Property Suggested
+
+Site Visit Planned
+
+Site Visit Completed
+
+Negotiation
+
+Booking
+
+Converted
+
+Not Interested
+
+Lost
+
+Future Follow-up
+6.5 Lead Assignment
+
+Manual assignment
+
+Round-robin
+
+By location
+
+By property type
+
+By employee
+
+By team
+
+By availability
+
+Custom assignment rules
+7. WEBSITE ENQUIRY -> CRM
+Every website enquiry must be automatically captured in the CRM.
+Flow: Website property page -> Enquire Now -> form submission -> Website -> CRM Lead API -> create/update 
+lead -> assign sales employee -> notify employee/manager.
+Duplicate prevention: search by mobile, email and WhatsApp number. If a match exists, update the existing 
+lead and append the new enquiry activity; otherwise create a new lead.
+
+--- PAGE 7 (Obj 807) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+7
+8. CLIENT / CONTACT MANAGEMENT
+
+Client ID
+
+Name
+
+Mobile
+
+WhatsApp
+
+Email
+
+Address
+
+City
+
+Occupation
+
+Company
+
+Requirement
+
+Preferred Property Type
+
+Budget
+
+Preferred Location
+
+Transaction Type
+
+Documents
+
+Notes
+
+Related Leads
+
+Related Properties
+
+Site Visits
+
+Deals
+
+Communication History
+Client 360° view should show basic information, requirements, suggested properties, interested properties, site 
+visits, follow-ups, calls, WhatsApp messages, emails, deals, documents and activity timeline.
+9. OWNER MANAGEMENT
+
+Owner ID
+
+Owner Name
+
+Mobile
+
+WhatsApp
+
+Email
+
+Address
+
+Company
+
+PAN/GST where applicable
+
+Preferred communication method
+
+Ownership type
+
+Notes
+
+Documents
+Owner 360° view should show total properties, available/sold/rented/leased properties, enquiries, interested 
+leads, site visits, transactions, brokerage, documents and communication history. One owner can own multiple 
+properties.
+10. PROPERTY INVENTORY MANAGEMENT
+Core property categories:
+
+Residential: Apartment, Flat, Independent House, Villa, Row House, Bungalow, Builder Floor, Studio, 
+Penthouse
+
+--- PAGE 8 (Obj 954) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+8
+
+Commercial: Office, Retail Shop, Showroom, Commercial Building, Warehouse, Godown, Industrial 
+Property, Factory, Co-working Space, Commercial Land
+
+Land: Residential Plot, Commercial Plot, Agricultural Land, Industrial Land, NA Plot, Farm Land
+
+Special Investment: Pre-Leased Property, Investment Property, Income Generating Property
+11. PROPERTY BASIC DETAILS
+
+Property ID
+
+Property Title
+
+Property Type
+
+Property Category
+
+Transaction Type
+
+Residential/Commercial
+
+Listing Type
+
+Property Status
+
+Availability
+
+Featured Property
+
+Publish on Website
+
+Owner
+
+Assigned Employee
+
+Project
+
+Location
+
+Address
+
+Landmark
+
+City
+
+State
+
+Pincode
+
+Latitude
+
+Longitude
+12. PROPERTY AREA DETAILS
+
+Configurable units: Sq. Ft., Sq. M., Sq. Yd., Acre, Hectare, Guntha, Bigha and other admin-defined units
+
+Carpet Area
+
+Built-up Area
+
+Super Built-up Area
+
+Plot Area
+
+Usable Area
+
+Frontage
+
+Depth
+
+Dimensions
+13. APARTMENT / FLAT SPECIFIC DETAILS
+
+Project
+
+Tower/Block
+
+Floor
+
+Total Floors
+
+Flat Number
+
+--- PAGE 9 (Obj 1118) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+9
+
+Bedrooms
+
+Bathrooms
+
+Balcony
+
+Facing
+
+Furnishing
+
+Parking
+
+Lift
+
+Power Backup
+
+Security
+
+Age of Property
+
+Possession Status
+
+Construction Status
+
+Maintenance Charges
+
+Society Name
+
+Amenities
+14. VILLA / HOUSE SPECIFIC DETAILS
+
+Plot Area
+
+Built-up Area
+
+Floors
+
+Bedrooms
+
+Bathrooms
+
+Kitchen
+
+Balcony
+
+Garden
+
+Terrace
+
+Parking
+
+Servant Room
+
+Furnishing
+
+Facing
+
+Age
+
+Construction Status
+
+Possession
+
+Amenities
+15. PLOT / LAND MANAGEMENT
+
+Plot ID
+
+Plot Title
+
+Plot Type
+
+Residential/Commercial
+
+Plot Area
+
+Area Unit
+
+Frontage
+
+Depth
+
+Dimensions
+
+Road Width
+
+Facing
+
+--- PAGE 10 (Obj 1296) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+10
+
+Corner Plot
+
+Gated Layout
+
+NA Status
+
+Authority
+
+Layout Name
+
+Survey Number
+
+Plot Number
+
+Zone
+
+Location
+
+Landmark
+
+Google Maps Location
+
+Ownership
+
+Price
+
+Price Per Sq. Ft.
+
+Price Per Sq. Yd.
+
+Negotiable
+
+Documentation Status
+
+Water Availability
+
+Electricity Availability
+
+Road Connectivity
+
+Nearby Facilities
+
+Description
+
+Photos
+
+Videos
+
+Documents
+
+Website Publish Status
+
+Availability
+16. COMMERCIAL PROPERTY MANAGEMENT
+
+Office, Shop, Showroom, Warehouse, Factory, Godown, Retail, Industrial, Corporate Space, Commercial 
+Land
+
+Carpet Area
+
+Built-up Area
+
+Floor
+
+Ceiling Height
+
+Parking
+
+Furnishing
+
+Power Load
+
+Washrooms
+
+Lift
+
+Fire Safety
+
+Security
+
+Maintenance
+
+Rent
+
+Sale Price
+
+Deposit
+
+Lock-in
+
+Lease Period
+
+--- PAGE 11 (Obj 1480) ---
+
+
+--- PAGE 12 (Obj 1645) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+12
+
+Capital Value
+
+ROI
+
+Remaining Lease
+
+Tenant Type
+
+Tenant Company
+
+Investment Status
+
+Expected Return
+
+Investment Notes
+Calculated metrics should include annual rental income, rental yield, expected ROI and remaining lease period.
+19. PROJECT MANAGEMENT
+
+Project ID
+
+Project Name
+
+Developer
+
+Project Type
+
+Location
+
+Address
+
+City
+
+Landmark
+
+RERA Number where applicable
+
+Construction Status
+
+Launch Date
+
+Possession Date
+
+Total Units
+
+Available Units
+
+Sold Units
+
+Amenities
+
+Project Description
+
+Project Images
+
+Project Videos
+
+Brochure
+
+Master Plan
+
+Floor Plans
+
+Website Publish Status
+Projects may contain towers, blocks, buildings, floors and units. Project-level and unit-level inventory should 
+both be supported.
+20. UNIT INVENTORY
+
+Unit Number
+
+Unit Type
+
+Floor
+
+Facing
+
+Carpet Area
+
+Built-up Area
+
+Balcony Area
+
+Price
+
+Parking
+
+--- PAGE 13 (Obj 1813) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+13
+
+Availability
+
+Booking Status
+
+Customer
+
+Booking Date
+Unit statuses: Available, Hold, Booked, Sold, Cancelled, Blocked.
+21. PROPERTY SEARCH & FILTERING
+Internal CRM search: Property Type, Transaction Type, Location, Area, Budget, Bedrooms, Furnishing, Floor, 
+Parking, Status, Owner, Project, Property ID, Assigned Staff, Investment Type, Rental Yield.
+Website search: Buy, Rent, Lease, Commercial, Residential, Plots, Location, Price, Area, Property Type, 
+Bedrooms, Amenities, Availability.
+22. LEAD-TO-PROPERTY MATCHING
+Match customer requirements against available inventory using location, property type, budget, area, 
+bedrooms, transaction type, availability, furnishing and parking. Allow sales users to select and share 
+matching properties by WhatsApp, email or shareable public link.
+23. SALES PIPELINE
+1.
+New Lead
+2.
+Contacted
+3.
+Qualified
+4.
+Requirement Captured
+5.
+Property Suggested
+6.
+Property Shortlisted
+7.
+Site Visit Scheduled
+8.
+Site Visit Completed
+9.
+Negotiation
+10.
+Offer Submitted
+11.
+Booking
+12.
+Agreement
+13.
+Sale Closed
+14.
+Lost
+Each stage should retain stage entry date, responsible employee, mandatory information, next follow-up and 
+notes/activity history.
+24. RENTAL / LEASING PIPELINE
+15.
+New Enquiry
+16.
+Qualified
+17.
+Requirement Captured
+18.
+Property Suggested
+19.
+Shortlisted
+20.
+Visit Scheduled
+21.
+Visit Completed
+22.
+Negotiation
+
+--- PAGE 14 (Obj 1930) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+14
+23.
+Documentation
+24.
+Agreement
+25.
+Lease Started
+26.
+Closed
+27.
+Lost
+25. INVESTMENT PIPELINE
+28.
+New Investor
+29.
+Requirement Captured
+30.
+Investment Properties Shared
+31.
+Property Shortlisted
+32.
+Financial Evaluation
+33.
+Site Visit
+34.
+Negotiation
+35.
+Due Diligence
+36.
+Booking
+37.
+Agreement
+38.
+Investment Closed
+39.
+Lost
+26. FOLLOW-UP MANAGEMENT
+
+Lead/Client
+
+Assigned Employee
+
+Date
+
+Time
+
+Follow-up Type
+
+Subject
+
+Notes
+
+Priority
+
+Status
+
+Outcome
+
+Next Follow-up
+Types: Call, WhatsApp, Email, Meeting, Site Visit, Document Collection, Negotiation, Reminder, Other. Statuses: 
+Pending, Completed, Rescheduled, Cancelled, Missed.
+27. TASK MANAGEMENT
+
+Personal tasks
+
+Lead tasks
+
+Property tasks
+
+Site visit tasks
+
+Documentation tasks
+
+Management tasks
+
+Task Title
+
+Description
+
+User
+
+Related Lead
+
+--- PAGE 15 (Obj 2091) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+15
+
+Related Property
+
+Due Date
+
+Priority
+
+Status
+
+Reminder
+28. SITE VISIT MANAGEMENT
+
+Visit ID
+
+Lead
+
+Client
+
+Property
+
+Assigned Employee
+
+Date
+
+Time
+
+Meeting Point
+
+Site Address
+
+Status
+
+Attendance
+
+Customer Feedback
+
+Employee Notes
+
+Outcome
+
+Next Follow-up
+Statuses: Scheduled, Confirmed, Rescheduled, Completed, Cancelled, No Show. Optional future features: GPS 
+check-in/out, distance tracking, site visit proof and customer digital confirmation.
+29. BOOKING / TRANSACTION MANAGEMENT
+
+Transaction ID
+
+Client
+
+Property
+
+Owner
+
+Employee
+
+Transaction Type
+
+Sale/Rent/Lease
+
+Agreed Price
+
+Rent
+
+Deposit
+
+Brokerage
+
+Brokerage Percentage
+
+Brokerage Amount
+
+Payment Status
+
+Agreement Status
+
+Booking Date
+
+Closing Date
+
+Documents
+
+--- PAGE 16 (Obj 2250) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+16
+30. BROKERAGE / COMMISSION MANAGEMENT
+
+Sale brokerage
+
+Rental brokerage
+
+Leasing brokerage
+
+Employee commission
+
+Broker commission
+
+Partner commission
+System should calculate brokerage based on fixed amount, percentage, or configured commercial rules.
+31. DOCUMENT MANAGEMENT
+
+Property documents
+
+Sale deed
+
+Agreement
+
+PAN
+
+Aadhaar where legally appropriate
+
+RERA documents
+
+Lease agreement
+
+Rent agreement
+
+NOC
+
+Brochure
+
+Floor plan
+
+Site plan
+
+Property photos
+
+Videos
+
+Documents linked to Client, Owner, Property, Project, Lead, Deal, Tenant and Transaction
+32. COMMUNICATION MANAGEMENT
+
+Phone
+
+WhatsApp
+
+Email
+
+SMS
+
+Website enquiry
+
+Internal notes
+
+Meetings
+Customer communication should be visible in the customer activity timeline wherever the integration permits.
+33. WHATSAPP INTEGRATION
+
+Send WhatsApp messages
+
+Receive messages where supported
+
+Send property details
+
+Send property images
+
+Send brochure
+
+Send meeting/site-visit confirmation
+
+Send follow-up reminders
+
+Send enquiry acknowledgement
+
+--- PAGE 17 (Obj 2406) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+17
+
+Send property recommendations
+
+Track communication history
+Integration depends on a supported WhatsApp Business API/provider setup.
+34. WEBSITE <-> CRM INTEGRATION
+34.1 Website -> CRM
+
+New enquiry
+
+Contact form
+
+Property enquiry
+
+Callback request
+
+Site visit request
+
+Property requirement form
+
+General enquiry
+
+Investment enquiry
+
+Rental enquiry
+34.2 CRM -> Website
+
+New property
+
+Updated property
+
+Property price
+
+Rent
+
+Description
+
+Photos
+
+Videos
+
+Amenities
+
+Location
+
+Availability
+
+Featured status
+
+SEO data
+
+Project information
+35. PROPERTY PUBLISHING SYSTEM
+Each property must include Publish on Website = YES/NO.
+Publication conditions can require Publish = YES, Status = Active/Available and required public fields 
+completed.
+A property must be removed from active website listings when Publish = NO, or when Sold, Leased, Rented, 
+Blocked, Not Available or Archived, subject to configured business rules.
+36. PROPERTY STATUS AUTOMATION
+Example: Available -> Sold. The system changes the CRM status, removes the property from active website 
+listings, retains the CRM history, updates related deal/pipeline records, writes an activity log and records the 
+status change date. Apply equivalent logic to Available -> Leased/Rented and other configured statuses.
+
+--- PAGE 18 (Obj 2516) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+18
+37. WEBSITE CMS
+
+Home Page: hero banner, heading, subheading, CTA, featured properties, featured projects, services, about 
+section, testimonials, statistics, featured locations and promotional banners
+
+About Us: company description, mission, vision, team, images, certifications and achievements
+
+Services: sales, purchase, rental, leasing, commercial, investment consultancy, property management, 
+land/plot consultancy
+
+Projects: title, description, location, developer, amenities, images, videos, brochure, floor plans, project 
+status, units, price range, website visibility
+
+Locations: city, area, locality, landmark, description, SEO content and related properties
+
+Testimonials: customer name, designation, photo, review, rating and publish status
+
+Blog/Articles: title, slug, category, author, content, featured image, SEO metadata, publish date and status
+
+FAQ: question, answer, category, display order and status
+
+Contact Page: phone, email, WhatsApp, address, map, working hours and social links
+Admin should be able to add, edit, delete, reorder and enable/disable applicable CMS content.
+38. WEBSITE MEDIA LIBRARY
+
+Property photos
+
+Project photos
+
+Videos
+
+Brochures
+
+Floor plans
+
+Documents
+
+Website banners
+
+Logos
+
+Team photos
+
+Blog images
+
+Upload, replace, delete, preview, search, categorize and associate media with property/project/page
+39. WEBSITE SEO MANAGEMENT
+
+Page title
+
+Meta title
+
+Meta description
+
+SEO keywords
+
+Slug
+
+Canonical URL
+
+OG title
+
+OG description
+
+OG image
+
+Sitemap inclusion
+
+Index/No-index
+
+Schema fields where applicable
+40. WEBSITE PROPERTY DETAIL PAGE
+
+Property title
+
+Property ID
+
+--- PAGE 19 (Obj 2663) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+19
+
+Photos
+
+Video
+
+Price
+
+Rent
+
+Area
+
+Bedrooms
+
+Bathrooms
+
+Floor
+
+Furnishing
+
+Parking
+
+Location
+
+Map
+
+Amenities
+
+Description
+
+Owner/listing information where appropriate
+
+Availability
+
+Enquiry CTA
+
+Schedule Visit CTA
+
+WhatsApp CTA
+
+Call CTA
+
+Similar properties
+41. WEBSITE SEARCH
+
+Buy
+
+Rent
+
+Lease
+
+Commercial
+
+Residential
+
+Plot
+
+Location
+
+Price
+
+Area
+
+Bedrooms
+
+Property Type
+
+Furnishing
+
+Amenities
+
+Availability
+42. FEATURED PROPERTY
+Support Featured = YES/NO. Featured properties can appear on the home page, featured sections, 
+recommendations and configured landing pages. Selection is controlled from CRM/admin.
+43. PROPERTY RECOMMENDATION
+Provide rule-based recommendations using location, property type, budget, area, bedrooms, transaction type 
+and availability. Future enhancement: AI property recommendations and lead scoring.
+
+--- PAGE 20 (Obj 2811) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+20
+44. PROPERTY PORTAL INTEGRATION
+
+99acres
+
+MagicBricks
+
+Housing.com
+
+Other supported portals
+Provide a common export/feed/API layer so external property portals can receive approved inventory without 
+duplicate manual data entry.
+45. LEAD IMPORT
+
+Excel import
+
+CSV import
+
+Field mapping
+
+Duplicate detection
+
+Validation
+
+Error report
+
+Import history
+46. PROPERTY IMPORT
+
+Bulk property import
+
+Field mapping
+
+Validation
+
+Duplicate detection
+
+Import history
+
+Import fields for property ID, type, location, area, price, rent, owner, status, website publish and 
+description
+47. DATA EXPORT
+
+Leads
+
+Clients
+
+Owners
+
+Properties
+
+Projects
+
+Site visits
+
+Follow-ups
+
+Deals
+
+Transactions
+
+Users
+
+Reports
+
+Excel/CSV and PDF where applicable
+
+Filtered exports
+48. STAFF / USER MANAGEMENT
+
+Employee ID
+
+Name
+
+--- PAGE 21 (Obj 2952) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+21
+
+Email
+
+Mobile
+
+Department
+
+Role
+
+Designation
+
+Branch
+
+Profile photo
+
+Joining date
+
+Status
+
+Login status
+49. ROLE-BASED ACCESS CONTROL
+Role
+Typical Access
+Super Admin
+Full system access
+Admin
+Operational access
+Sales Manager
+Team leads, properties, follow-ups, site visits, pipelines, reports
+Sales Executive
+Assigned leads, properties, follow-ups, site visits, 
+communication
+Property Manager
+Property inventory, owners, tenants, lease information
+Website Manager
+Website CMS, properties, projects, media, blog, SEO
+Management / Viewer
+Dashboard and reports
+Permissions should support View, Create, Edit, Delete, Export, Assign, Publish and Approve.
+50. LEAD VISIBILITY
+
+Only assigned leads
+
+Team leads
+
+All company leads
+Visibility must be configurable and enforced by role/permission.
+51. APPROVAL WORKFLOW
+Optional controlled publication workflow: Property Draft -> Verification -> Approved -> Published; Project 
+Draft -> Review -> Approved -> Published; Website Content Draft -> Review -> Published.
+52. NOTIFICATION SYSTEM
+
+New Lead
+
+Lead Assignment
+
+New Website Enquiry
+
+Follow-up Reminder
+
+Overdue Follow-up
+
+Site Visit Reminder
+
+Site Visit Cancellation
+
+Property Approval
+
+Property Published
+
+Property Sold
+
+--- PAGE 22 (Obj 3096) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+22
+
+Property Leased
+
+New Task
+
+Task Due
+
+Deal Closing
+
+Lease Expiry
+Channels: in-app, email, WhatsApp where configured, and push notifications for a mobile application where 
+implemented.
+53. AUTOMATION ENGINE
+Support configurable rule-based automation.
+Example - New Lead: Website source -> create lead -> assign user -> create follow-up -> notify sales manager.
+Example - Site Visit Tomorrow: notify employee and notify customer where communication is configured.
+Example - Property Sold: set Publish on Website = NO -> remove from active website results -> update related 
+pipeline -> record audit entry.
+Example - Overdue Follow-up: mark overdue -> notify assigned employee -> escalate to manager when 
+enabled.
+54. WORKFLOW / BLUEPRINT ENGINE
+Stage-based processes should support controlled transitions, mandatory fields, required notes, next follow-up 
+and activity history. Example: New -> Qualified -> Site Visit -> Negotiation -> Booking -> Closed.
+55. CAMPAIGN MANAGEMENT
+
+Campaign Name
+
+Campaign Type
+
+Start Date
+
+End Date
+
+Budget
+
+Source
+
+Target Property
+
+Location
+
+Leads Generated
+
+Qualified Leads
+
+Site Visits
+
+Conversions
+
+Revenue
+Example campaigns: Google Ads, Facebook Ads, Instagram, Property Portal, WhatsApp, Email and Referral.
+56. CALL MANAGEMENT
+
+Click to call
+
+Incoming call logging where supported
+
+Outgoing call logging
+
+Call duration
+
+Call outcome
+
+--- PAGE 23 (Obj 3204) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+23
+
+Call notes
+
+Next follow-up
+57. REPORTING MODULE
+57.1 Lead Reports
+
+Leads by date
+
+Leads by source
+
+Leads by employee
+
+Leads by location
+
+Leads by property type
+
+Converted leads
+
+Lost leads
+57.2 Property Reports
+
+Available properties
+
+Sold properties
+
+Rented properties
+
+Leased properties
+
+Properties by location
+
+Properties by type
+
+Properties by owner
+57.3 Site Visit Reports
+
+Visits by employee
+
+Visits by property
+
+Completed visits
+
+Cancelled visits
+
+No-shows
+57.4 Sales Reports
+
+Closed deals
+
+Deal value
+
+Brokerage
+
+Employee performance
+
+Monthly sales
+57.5 Rental Reports
+
+Active rentals
+
+Lease expiries
+
+Rent amount
+
+Deposit
+
+Tenant information
+57.6 Website Reports
+
+Published properties
+
+Unpublished properties
+
+Website enquiries
+
+Enquiries by property
+
+--- PAGE 24 (Obj 3359) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+24
+
+Most-viewed properties where analytics are integrated
+58. AUDIT LOG
+Every important action should record user, action, entity, entity ID, old/new values when relevant, timestamp 
+and source.
+Actions: Create, Update, Delete, Publish, Unpublish, Assign, Status change, Login, Logout, Export and Import.
+59. LOGIN & SECURITY
+
+Secure authentication
+
+Password hashing
+
+Session management
+
+Role permissions
+
+Account activation/deactivation
+
+Password reset
+
+Login history
+
+API authentication
+
+Rate limiting
+
+Input validation
+
+File validation
+
+Access control
+
+Optional 2FA
+
+Optional device/session management
+
+Optional IP restrictions
+60. API ARCHITECTURE
+Secure REST API groups should cover authentication, leads, properties, website/public properties, enquiries, 
+projects, site visits, follow-ups, clients, owners, users, reports and website CMS.
+Example endpoints: POST /api/auth/login; GET/POST/PUT/DELETE /api/leads; GET/POST/PUT/DELETE 
+/api/properties; GET /api/public/properties; GET /api/public/properties/:slug; GET /api/public/projects; GET 
+/api/public/locations; GET /api/public/properties/featured; POST /api/public/enquiries; GET/POST /api/projects; 
+GET/POST /api/site-visits; GET/POST /api/followups.
+61. WEBHOOK ARCHITECTURE
+
+property.created
+
+property.updated
+
+property.published
+
+property.unpublished
+
+property.sold
+
+property.leased
+
+lead.created
+
+lead.updated
+
+site_visit.created
+
+site_visit.updated
+Webhooks must support secure authentication/signatures, delivery status, retry and logging.
+
+--- PAGE 25 (Obj 3476) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+25
+62. WEBSITE API
+
+GET /api/public/properties
+
+GET /api/public/properties/:slug
+
+GET /api/public/projects
+
+GET /api/public/locations
+
+GET /api/public/properties/featured
+
+POST /api/public/enquiries
+Only approved public information may be exposed. Owner private data, internal notes, brokerage, employee 
+information and internal documents must never be returned through public APIs.
+63. WEBSITE ADMIN CONTENT FLOW
+Admin Panel -> Create/Edit Content -> Validate -> Save in CRM/central database -> API -> Website. No separate 
+manual website database entry should be required for property listings.
+64. PROPERTY CONTENT VALIDATION
+Before publication, validate mandatory fields such as property title, property type, transaction type, location, 
+price/rent, description, main image and availability. Display a clear error describing missing fields when 
+publication is blocked.
+65. PROPERTY DUPLICATE CONTROL
+
+Same owner + address
+
+Same property number
+
+Same unit number
+
+Same survey/plot number
+
+Same project + tower + unit
+Admin may override duplicate warnings when multiple legitimate listings represent the same physical asset.
+66. WEBSITE PROPERTY URL / SLUG
+Create an SEO-friendly URL for each property, for example /property/3-bhk-apartment-dharampeth-nagpur. 
+Slugs should be editable by authorized users while the immutable property ID remains the stable internal 
+reference.
+67. PROPERTY PHOTOS
+
+Multiple images
+
+Cover image
+
+Image ordering
+
+Image captions
+
+Replace image
+
+Delete image
+
+Preview
+
+Compression/optimization
+
+Optional watermark
+
+Optional automatic resizing
+
+--- PAGE 26 (Obj 3576) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+26
+
+Optional WebP conversion
+68. PROPERTY VIDEO
+
+Video URL
+
+Uploaded video where supported
+
+YouTube/Vimeo links
+
+Property walkthrough
+
+Virtual tour link
+69. GOOGLE MAPS / LOCATION
+
+Address
+
+Latitude
+
+Longitude
+
+Google Maps URL
+
+Landmark
+Public map display must follow privacy rules and configured public-location policy.
+70. MOBILE CRM
+
+Desktop
+
+Laptop
+
+Tablet
+
+Mobile
+
+View leads
+
+Call clients
+
+WhatsApp clients
+
+Update lead stage
+
+Add notes
+
+Schedule follow-ups
+
+View properties
+
+Share properties
+
+View site visits
+
+Update site visit status
+
+View tasks
+
+Manage assigned enquiries
+71. GLOBAL SEARCH
+Single search should search Leads, Clients, Owners, Properties, Projects, Site Visits and Transactions. Examples:
+ 
+a person name returns matching contacts/leads/owners; a Property ID returns the property directly.
+72. FILTERS
+
+Search
+
+Date filters
+
+Status filters
+
+--- PAGE 27 (Obj 3709) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+27
+
+Employee filters
+
+Location filters
+
+Type filters
+
+Price filters
+
+Custom filters
+
+Saved filters
+73. DATA OWNERSHIP
+The client should retain ownership of business data subject to the final contract. The platform should provide 
+database backup, data export, CSV/Excel export, API access and document download/migration support.
+74. BACKUP & RECOVERY
+
+Automated database backup
+
+Backup retention
+
+Media backup
+
+Disaster recovery procedure
+
+Restore testing
+
+Backup monitoring
+
+Daily incremental backup where supported
+
+Periodic full backup
+75. MASTER DATA MANAGEMENT
+
+Property types
+
+Transaction types
+
+Property statuses
+
+Lead sources
+
+Lead statuses
+
+Locations
+
+Amenities
+
+Furnishing options
+
+Roles
+
+Other configurable master values
+Master values should be configurable rather than hard-coded wherever practical.
+76. WEBSITE FORMS
+
+Contact Us
+
+Request Callback
+
+Property Enquiry
+
+Schedule Visit
+
+Buy Property
+
+Rent Property
+
+Sell Property
+
+List Property
+
+Investment Enquiry
+
+--- PAGE 28 (Obj 3852) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+28
+Each form submission should create or update the appropriate CRM enquiry/lead record.
+77. OWNER PROPERTY SUBMISSION
+Future-ready workflow: owner submits listing -> Property Submission -> Pending -> Verified -> Approved -> 
+Published. Unverified owner listings must not be publicly published.
+78. CUSTOMER PROPERTY REQUEST
+
+Name
+
+Mobile
+
+Email
+
+Buy/Rent
+
+Property Type
+
+Budget
+
+Location
+
+Area
+
+Bedrooms
+
+Additional Requirement
+The request automatically becomes a structured CRM lead/requirement profile.
+79. PROPERTY SHARING
+
+WhatsApp message
+
+Email message
+
+Public property link
+
+PDF property sheet
+
+Brochure
+
+Select multiple properties and share
+80. PROPERTY COMPARISON
+Parameter
+Property A
+Property B
+Property C
+Type
+Apartment
+Villa
+Apartment
+Area
+1200 sq.ft
+1800 sq.ft
+1450 sq.ft
+Price
+₹55L
+₹80L
+₹68L
+Bedrooms
+3
+3
+3
+Parking
+1
+2
+1
+81. CLIENT REQUIREMENT PROFILE
+
+Requirement
+
+Property type
+
+Location
+
+Budget
+
+Bedrooms
+
+Area
+
+--- PAGE 29 (Obj 4008) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+29
+
+Parking
+
+Furnishing
+
+Other custom requirements
+This structured requirement profile drives property matching and follow-up workflows.
+82. OWNER REQUIREMENT / SELLER MANAGEMENT
+
+Expected Price
+
+Minimum Acceptable Price
+
+Property Details
+
+Availability
+
+Preferred Buyer Type
+
+Brokerage
+
+Urgency
+
+Documentation Status
+83. NOT AVAILABLE / ARCHIVE SYSTEM
+Avoid unnecessary physical deletion of historical properties. Use statuses such as Active, Sold, Rented, Leased, 
+Archived and Temporarily Unavailable so history and reporting are preserved.
+84. ACTIVITY TIMELINE
+Example lifecycle: Property Created -> Assigned to Employee -> Website Published -> Customer Enquiry -> Lead
+ 
+Created -> Site Visit Scheduled -> Negotiation -> Sold. Store a complete chronological event history against 
+relevant entities.
+85. MANAGEMENT REPORTS
+
+Monthly lead growth
+
+Lead conversion
+
+Sales value
+
+Rental value
+
+Brokerage
+
+Employee performance
+
+Property inventory
+
+Lead-source performance
+
+Site visit conversion
+
+Pending follow-ups
+
+Lost leads
+
+Top-performing properties
+
+Most active locations
+
+Website enquiry performance
+86. ADMIN SETTINGS
+
+Company information
+
+Logo
+
+--- PAGE 30 (Obj 4129) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+30
+
+Address
+
+Phone
+
+Email
+
+WhatsApp
+
+GST details
+
+Social media
+
+Notification settings
+
+Email settings
+
+WhatsApp settings
+
+SMS settings
+
+Website settings
+
+SEO settings
+
+API keys
+
+Webhooks
+
+Backup settings
+
+User roles
+
+Permissions
+
+Master data
+87. API DOCUMENTATION & HANDOVER
+
+Authentication
+
+Endpoint
+
+Method
+
+Request body
+
+Response
+
+Validation
+
+Error codes
+
+Pagination
+
+Filtering
+
+Sorting
+
+Webhooks
+
+Authentication keys
+
+Integration instructions
+The client must not be dependent on the original implementation team for every future integration.
+88. ERROR HANDLING
+All APIs should return standardized success/error structures with meaningful machine-readable codes and 
+field-level validation errors.
+89. AUDITABLE INTEGRATION
+
+Event ID
+
+Event type
+
+Property ID/entity ID
+
+Timestamp
+
+Sync status
+
+Request metadata
+
+--- PAGE 31 (Obj 4286) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+31
+
+Response metadata
+
+Error
+
+Retry count
+90. WEBSITE SYNC FAILURE & RETRY
+A CRM update must never silently fail to reach the website. On failure, log the error, retry automatically, retain
+ 
+synchronization status and notify administrators after repeated failures.
+91. RECOMMENDED SYNCHRONIZATION DESIGN
+Although the requirement is called two-way synchronization, the recommended business rule is: CRM -> 
+Website for master property/content synchronization, and Website -> CRM for lead/enquiry/customer input. 
+This prevents both systems from independently overwriting the same property record.
+92. CMS + CRM COMBINATION
+Recommended final system: CRM + Property Management + Website CMS + Automation Engine + API Layer + 
+Notification/Communication Layer + Reporting Layer.
+93. FUTURE EXTENSIONS
+
+Mobile App
+
+AI Lead Scoring
+
+AI Property Recommendations
+
+AI Chatbot
+
+WhatsApp AI Agent
+
+Property Portal Sync
+
+IVR
+
+Call Recording
+
+Payment Gateway
+
+Online Booking
+
+Commission Settlement
+
+Rental Management
+
+Tenant Management
+
+Digital Agreements
+
+E-signature
+
+Accounting Integration
+
+Google Calendar
+
+Email Marketing
+
+Advanced Marketing Automation
+
+Advanced BI Dashboard
+94. RECOMMENDED ROLE OF CRM + AUTOMATION
+Use a combined architecture where the CRM/property-management system owns business data and the 
+automation layer handles workflow, webhooks, communication, scheduled jobs and external integrations. 
+
+--- PAGE 32 (Obj 4390) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+32
+Standard CRM capabilities should be used where they fit; custom modules/functions and APIs should handle 
+real-estate-specific requirements.
+95. FUNCTIONAL MODULE SUMMARY
+Module
+Required
+Admin Dashboard
+Yes
+Lead Management
+Yes
+Enquiry Management
+Yes
+Client Management
+Yes
+Owner Management
+Yes
+Staff Management
+Yes
+Roles & Permissions
+Yes
+Property Management
+Yes
+Apartment/Flat
+Yes
+Villa/House
+Yes
+Commercial
+Yes
+Plot/Land
+Yes
+Rental
+Yes
+Leasing
+Yes
+Pre-Leased
+Yes
+Investment Properties
+Yes
+Project Management
+Yes
+Unit Inventory
+Yes
+Sales Pipeline
+Yes
+Rental/Leasing Pipeline
+Yes
+Investment Pipeline
+Yes
+Site Visits
+Yes
+Follow-ups
+Yes
+Tasks
+Yes
+Lead-Property Matching
+Yes
+Transactions/Bookings
+Yes
+Brokerage/Commission
+Yes
+Documents
+Yes
+Communications
+Yes
+WhatsApp Integration
+Yes / API dependent
+Website CMS
+Yes
+Website Integration
+Yes
+Property Publishing
+Yes
+Automatic Unpublishing
+Yes
+SEO Management
+Yes
+Media Library
+Yes
+Reports
+Yes
+Notifications
+Yes
+Import/Export
+Yes
+Audit Logs
+Yes
+API
+Yes
+Webhooks
+Yes
+Property Portal Integration
+Integration-ready
+Mobile Responsive CRM
+Yes
+Advanced Automation
+Yes
+AI
+Future-ready
+Backup/Recovery
+Yes
+
+--- PAGE 33 (Obj 4634) ---
+
+Functiona&IpeentationSpecification|
+
+
+
+--- PAGE 34 (Obj 4804) ---
+
+Functiona&IpeentationSpecification|
+97. RIICAL END-TO-END AEPANCE EST
+EST 1 - PROPERY
+inlogsincreatesapartment adsprice/location/imagessetsPulisonWesiteYESproperty
+appearsonpuicwesite
+EST 2 - PROPERY UPDAE
+incangespriceegwesiteisplays
+EST 3 - SOLD
+incangesstatustoSpropertyisappearsroactivewesiteistingpropertyreainsinCRM
+istor
+EST 4 - EBSITE ENQUIRY
+CustoeropenspropertysuitsenuirCRMcreates/upatesleadleadisassigneeploee
+receivesnotification
+EST 5 - SALES PROCESS
+eacreatereuireent captureatcingpropertiespropertsaresitevisit coplete
+negotiationookingsaleclosepropertyecoesSowesiteautoaticallyunpulisesproperty
+
+
+
+--- PAGE 35 (Obj 4918) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+35
+98. FINAL PRODUCT DEFINITION
+A complete Real Estate CRM and Website Management Platform that enables a real-estate consulting company 
+to manage leads, clients, owners, property inventory, projects, plots, apartments, commercial properties, 
+rental/leasing properties, investment properties, sales pipelines, follow-ups, site visits, staff, communication, 
+reporting and the public website from one centralized admin system.
+Architecture rule: CRM/property management is the single source of truth for property inventory, while the 
+public website consumes approved property/content data through APIs. Website enquiries flow back into CRM 
+as leads/enquiries.
+99. IMPLEMENTATION DELIVERABLES
+99.1 Application
+
+Admin CRM
+
+Property Management
+
+Website CMS
+
+Website Integration
+
+Dashboard
+
+Reports
+99.2 Technical
+
+Production backend
+
+Production frontend
+
+Database
+
+APIs
+
+API documentation
+
+Webhook documentation
+
+Integration documentation
+99.3 Data
+
+Import templates
+
+Export capability
+
+Backup procedure
+99.4 Security
+
+Roles
+
+Permissions
+
+Authentication
+
+Audit logs
+99.5 Handover
+
+Admin credentials
+
+Technical documentation
+
+API documentation
+
+Deployment documentation
+
+Database backup procedure
+
+Integration configuration documentation
+
+Basic administrator training
+
+--- PAGE 36 (Obj 5042) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+36
+100. SCOPE COMPLETION CHECKLIST
+[ ] 
+Login & authentication
+[ ] 
+Dashboard
+[ ] 
+Lead management
+[ ] 
+Enquiry management
+[ ] 
+Client management
+[ ] 
+Owner management
+[ ] 
+Staff management
+[ ] 
+Roles & permissions
+[ ] 
+Property management
+[ ] 
+Apartment management
+[ ] 
+Villa/house management
+[ ] 
+Commercial management
+[ ] 
+Plot/land management
+[ ] 
+Rental management
+[ ] 
+Leasing management
+[ ] 
+Pre-leased management
+[ ] 
+Investment management
+[ ] 
+Project management
+[ ] 
+Unit inventory
+[ ] 
+Property search
+[ ] 
+Lead-property matching
+[ ] 
+Sales pipeline
+[ ] 
+Rental pipeline
+[ ] 
+Investment pipeline
+[ ] 
+Follow-ups
+[ ] 
+Tasks
+[ ] 
+Site visits
+[ ] 
+Transactions
+[ ] 
+Brokerage
+[ ] 
+Documents
+[ ] 
+Communications
+[ ] 
+Notifications
+[ ] 
+Campaigns
+[ ] 
+Reports
+[ ] 
+Import
+[ ] 
+Export
+[ ] 
+Audit logs
+[ ] 
+Website CMS
+[ ] 
+Home page management
+[ ] 
+About management
+[ ] 
+Services management
+[ ] 
+Project management
+
+--- PAGE 37 (Obj 5087) ---
+REAL ESTATE CRM + WEBSITE ADMIN PANEL
+Functional & Implementation Specification  |  
+37
+[ ] 
+Website property management
+[ ] 
+Location management
+[ ] 
+Blog management
+[ ] 
+FAQ management
+[ ] 
+Testimonial management
+[ ] 
+Media library
+[ ] 
+SEO management
+[ ] 
+Website property API
+[ ] 
+Website enquiry API
+[ ] 
+CRM -> Website property publishing
+[ ] 
+CRM -> Website property updating
+[ ] 
+CRM -> Website property unpublishing
+[ ] 
+Website -> CRM enquiry capture
+[ ] 
+Duplicate lead prevention
+[ ] 
+API authentication
+[ ] 
+Webhooks
+[ ] 
+Sync logging
+[ ] 
+Retry mechanism
+[ ] 
+Mobile responsive interface
+[ ] 
+Security testing
+[ ] 
+Permission testing
+[ ] 
+Production deployment
+[ ] 
+Backup
+[ ] 
+API documentation
+[ ] 
+Technical handover
+[ ] 
+Admin handover

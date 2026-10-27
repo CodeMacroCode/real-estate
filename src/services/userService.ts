@@ -1,0 +1,295 @@
+import { connectToDatabase } from '../lib/mongodb/db';
+import { User, IUserDocument } from '../models/User';
+import { Role } from '../models/Role';
+import { hashPassword } from '../lib/auth/password';
+import { recordAuditEvent } from './auditService';
+import { SafeUser, UserStatus } from '../types';
+
+export interface UserListFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  department?: string;
+  branch?: string;
+  roleId?: string;
+  status?: string;
+}
+
+export async function listUsers(filters: UserListFilters = {}) {
+  await connectToDatabase();
+
+  const page = Math.max(1, filters.page || 1);
+  const limit = Math.min(100, Math.max(1, filters.limit || 10));
+  const skip = (page - 1) * limit;
+
+  const query: Record<string, any> = {};
+
+  if (filters.search && filters.search.trim()) {
+    const searchRegex = new RegExp(filters.search.trim(), 'i');
+    query.$or = [
+      { name: searchRegex },
+      { email: searchRegex },
+      { employeeId: searchRegex },
+      { mobile: searchRegex },
+    ];
+  }
+
+  if (filters.department) {
+    query.department = filters.department;
+  }
+  if (filters.branch) {
+    query.branch = filters.branch;
+  }
+  if (filters.roleId) {
+    query.roleId = filters.roleId;
+  }
+  if (filters.status) {
+    query.status = filters.status;
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .populate('roleId', 'name slug description isSystem leadVisibilityScope')
+      .populate('reportingManagerId', 'name employeeId email designation')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    User.countDocuments(query),
+  ]);
+
+  const safeUsers: SafeUser[] = users.map((u: any) => {
+    delete u.passwordHash;
+    return {
+      ...u,
+      _id: u._id.toString(),
+      role: u.roleId,
+      reportingManager: u.reportingManagerId,
+    };
+  });
+
+  return {
+    users: safeUsers,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+export async function getUserById(id: string): Promise<SafeUser | null> {
+  await connectToDatabase();
+
+  const user = await User.findById(id)
+    .populate('roleId', 'name slug description isSystem leadVisibilityScope permissions')
+    .populate('reportingManagerId', 'name employeeId email designation');
+
+  if (!user) {
+    return null;
+  }
+
+  const safe = user.toSafeUser();
+  safe.role = user.roleId as any;
+  safe.reportingManager = user.reportingManagerId as any;
+  return safe;
+}
+
+export async function createUser(data: any, actor: { userId?: string; employeeId?: string; name: string; email: string; roleSlug: string }): Promise<SafeUser> {
+  await connectToDatabase();
+
+  // Validate uniqueness
+  const existingUser = await User.findOne({
+    $or: [{ email: data.email.toLowerCase() }, { employeeId: data.employeeId.toUpperCase() }],
+  });
+
+  if (existingUser) {
+    if (existingUser.email.toLowerCase() === data.email.toLowerCase()) {
+      throw new Error(`User with email '${data.email}' already exists`);
+    }
+    if (existingUser.employeeId.toUpperCase() === data.employeeId.toUpperCase()) {
+      throw new Error(`User with Employee ID '${data.employeeId}' already exists`);
+    }
+  }
+
+  // Validate role
+  const role = await Role.findById(data.roleId);
+  if (!role) {
+    throw new Error('Assigned role does not exist');
+  }
+
+  const passwordHash = await hashPassword(data.password);
+
+  const newUser = await User.create({
+    employeeId: data.employeeId.toUpperCase(),
+    name: data.name,
+    email: data.email.toLowerCase(),
+    passwordHash,
+    mobile: data.mobile,
+    department: data.department,
+    roleId: role._id,
+    designation: data.designation,
+    branch: data.branch,
+    profilePhoto: data.profilePhoto || '',
+    joiningDate: data.joiningDate,
+    status: data.status || 'active',
+    loginStatus: 'never_logged_in',
+    reportingManagerId: data.reportingManagerId || null,
+    team: data.team || '',
+  });
+
+  // Record audit log
+  await recordAuditEvent({
+    actor,
+    action: 'create',
+    entity: 'user',
+    entityId: newUser._id.toString(),
+    newValues: {
+      employeeId: newUser.employeeId,
+      name: newUser.name,
+      email: newUser.email,
+      role: role.slug,
+      department: newUser.department,
+      designation: newUser.designation,
+      branch: newUser.branch,
+      status: newUser.status,
+    },
+    source: 'web_app',
+  });
+
+  const safe = newUser.toSafeUser();
+  safe.role = role.toObject() as any;
+  return safe;
+}
+
+export async function updateUser(
+  id: string,
+  data: any,
+  actor: { userId?: string; employeeId?: string; name: string; email: string; roleSlug: string }
+): Promise<SafeUser> {
+  await connectToDatabase();
+
+  const user = await User.findById(id);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // If email change requested, verify uniqueness
+  if (data.email && data.email.toLowerCase() !== user.email) {
+    const existing = await User.findOne({ email: data.email.toLowerCase() });
+    if (existing && existing._id.toString() !== id) {
+      throw new Error(`Email '${data.email}' is already taken by another staff member`);
+    }
+  }
+
+  const oldValues = {
+    name: user.name,
+    email: user.email,
+    mobile: user.mobile,
+    department: user.department,
+    designation: user.designation,
+    branch: user.branch,
+    roleId: user.roleId.toString(),
+    status: user.status,
+    team: user.team,
+  };
+
+  if (data.name) user.name = data.name;
+  if (data.email) user.email = data.email.toLowerCase();
+  if (data.mobile) user.mobile = data.mobile;
+  if (data.department) user.department = data.department;
+  if (data.designation) user.designation = data.designation;
+  if (data.branch) user.branch = data.branch;
+  if (data.profilePhoto !== undefined) user.profilePhoto = data.profilePhoto;
+  if (data.joiningDate) user.joiningDate = data.joiningDate;
+  if (data.team !== undefined) user.team = data.team;
+  if (data.reportingManagerId !== undefined) user.reportingManagerId = data.reportingManagerId;
+
+  if (data.roleId) {
+    const role = await Role.findById(data.roleId);
+    if (!role) {
+      throw new Error('Assigned role does not exist');
+    }
+    user.roleId = role._id as any;
+  }
+
+  if (data.password) {
+    user.passwordHash = await hashPassword(data.password);
+  }
+
+  if (data.status) {
+    user.status = data.status;
+  }
+
+  await user.save();
+
+  await recordAuditEvent({
+    actor,
+    action: 'update',
+    entity: 'user',
+    entityId: user._id.toString(),
+    oldValues,
+    newValues: {
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      department: user.department,
+      designation: user.designation,
+      branch: user.branch,
+      roleId: user.roleId.toString(),
+      status: user.status,
+      team: user.team,
+    },
+    source: 'web_app',
+  });
+
+  return getUserById(id) as Promise<SafeUser>;
+}
+
+export async function updateUserStatus(
+  id: string,
+  status: UserStatus,
+  reason: string = '',
+  actor: { userId?: string; employeeId?: string; name: string; email: string; roleSlug: string }
+): Promise<SafeUser> {
+  await connectToDatabase();
+
+  const user = await User.findById(id).populate('roleId');
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const role = user.roleId as any;
+
+  // Prevent deactivating the only active Super Admin
+  if (status === 'inactive' && role?.slug === 'super_admin') {
+    const superAdminRole = await Role.findOne({ slug: 'super_admin' });
+    const activeSuperAdmins = await User.countDocuments({
+      roleId: superAdminRole?._id,
+      status: 'active',
+    });
+    if (activeSuperAdmins <= 1) {
+      throw new Error('Cannot deactivate the last remaining active Super Administrator account');
+    }
+  }
+
+  const oldStatus = user.status;
+  user.status = status;
+  if (status === 'inactive') {
+    user.loginStatus = 'offline';
+  }
+  await user.save();
+
+  await recordAuditEvent({
+    actor,
+    action: 'status_change',
+    entity: 'user',
+    entityId: user._id.toString(),
+    oldValues: { status: oldStatus },
+    newValues: { status, reason },
+    source: 'web_app',
+  });
+
+  return getUserById(id) as Promise<SafeUser>;
+}
