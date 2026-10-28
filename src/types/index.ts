@@ -148,6 +148,7 @@ export interface IUser {
   reportingManagerId?: string | IUser;
   team?: string;
   lastLoginAt?: string | Date;
+  lastLogoutAt?: string | Date;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }
@@ -205,6 +206,8 @@ export interface AuthTokenPayload {
   department: string;
   branch: string;
   team?: string;
+  iat?: number;
+  exp?: number;
 }
 
 export interface ApiResponse<T = any> {

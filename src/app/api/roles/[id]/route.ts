@@ -46,8 +46,13 @@ export async function PUT(
       return errorResponse('Unauthorized', 401);
     }
 
-    if (!hasPermission(authContext.role, 'master_settings', 'edit')) {
-      return errorResponse('Forbidden: You lack permission to edit role permissions', 403);
+    // Role-grant changes require a specific authorized administrative principal (Super Admin)
+    // or distinct role-management authorization (system_settings: edit)
+    const isSuperAdminPrincipal = authContext.role.slug === 'super_admin';
+    const hasRoleManagementPerm = hasPermission(authContext.role, 'system_settings', 'edit');
+
+    if (!isSuperAdminPrincipal && !hasRoleManagementPerm) {
+      return errorResponse('Forbidden: Modifying role grants requires authorized administrative privileges', 403);
     }
 
     const body = await req.json();
@@ -58,17 +63,30 @@ export async function PUT(
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
-    const updatedRole = await updateRole(params.id, parseResult.data as any, {
-      userId: authContext.user._id,
-      employeeId: authContext.user.employeeId,
-      name: authContext.user.name,
-      email: authContext.user.email,
-      roleSlug: authContext.role.slug,
-    });
+    const updatedRole = await updateRole(
+      params.id,
+      parseResult.data as any,
+      {
+        userId: authContext.user._id,
+        employeeId: authContext.user.employeeId,
+        name: authContext.user.name,
+        email: authContext.user.email,
+        roleSlug: authContext.role.slug,
+        roleId: authContext.role._id?.toString(),
+      },
+      authContext.role
+    );
 
     return jsonResponse(updatedRole);
   } catch (error: any) {
     console.error(`PUT /api/roles/${params.id} error:`, error);
-    return errorResponse(error.message || 'Failed to update role', 400);
+    const msg = error.message || 'Failed to update role';
+    if (msg.includes('forbidden') || msg.includes('Forbidden') || msg.includes('Cannot alter permissions of system role')) {
+      return errorResponse(msg, 403);
+    }
+    if (msg.includes('not found') || msg.includes('Not found')) {
+      return errorResponse(msg, 404);
+    }
+    return errorResponse(msg, 400);
   }
 }

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthToken } from './jwt';
 import { connectToDatabase } from '../mongodb/db';
-import { User, IUserDocument } from '../../models/User';
+import { User } from '../../models/User';
 import { Role, IRoleDocument } from '../../models/Role';
 import { SafeUser } from '../../types';
+import { validateCsrfProtection } from './csrf';
 
 import { SESSION_COOKIE_NAME } from './constants';
 export { SESSION_COOKIE_NAME };
@@ -32,6 +33,14 @@ export function extractTokenFromRequest(req: NextRequest): string | null {
 export async function getAuthenticatedContext(
   req: NextRequest
 ): Promise<AuthenticatedContext | null> {
+  // 1. CSRF Protection for state-changing requests
+  const csrfResult = validateCsrfProtection(req);
+  if (!csrfResult.valid) {
+    console.warn(`CSRF validation blocked request: ${csrfResult.reason}`);
+    return null;
+  }
+
+  // 2. Token Extraction & Cryptographic Verification
   const token = extractTokenFromRequest(req);
   if (!token) {
     return null;
@@ -42,15 +51,27 @@ export async function getAuthenticatedContext(
     return null;
   }
 
+  // 3. Independent Database Verification of Current Active User & Authoritative Role
   await connectToDatabase();
   const user = await User.findById(payload.userId).populate('roleId');
   if (!user) {
     return null;
   }
 
-  // CRITICAL SECURITY RULE: Deactivated users must not retain ordinary authenticated access
+  // CRITICAL SECURITY RULE: Deactivated users must not retain authenticated access
   if (user.status !== 'active') {
     return null;
+  }
+
+  // 4. Session Revocation Check:
+  // If user logged out after this token was issued, reject the session token
+  if (user.lastLogoutAt && payload.iat) {
+    const tokenIssuedMs = payload.iat * 1000;
+    const logoutMs = new Date(user.lastLogoutAt).getTime();
+    // Allow 1 second clock variance
+    if (tokenIssuedMs < logoutMs - 1000) {
+      return null;
+    }
   }
 
   const role = user.roleId as unknown as IRoleDocument;
@@ -59,7 +80,7 @@ export async function getAuthenticatedContext(
   }
 
   const safeUser = user.toSafeUser();
-  safeUser.role = role.toObject();
+  safeUser.role = role.toObject ? role.toObject() : (role as any);
 
   return {
     user: safeUser,

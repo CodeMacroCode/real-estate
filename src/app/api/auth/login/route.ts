@@ -8,6 +8,11 @@ import { setSessionCookie } from '@/lib/auth/session';
 import { loginSchema, formatZodError } from '@/lib/validation/schemas';
 import { jsonResponse, errorResponse } from '@/lib/apiResponse';
 import { recordAuditEvent } from '@/services/auditService';
+import {
+  checkLoginRateLimit,
+  recordFailedLoginAttempt,
+  resetLoginRateLimit,
+} from '@/lib/auth/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,16 +26,39 @@ export async function POST(req: NextRequest) {
 
     const { email, password } = parseResult.data;
 
+    // Rate Limiting Enforcement (IP + normalized email)
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    const rateLimitKey = `${ip}:${email.toLowerCase()}`;
+    const rateCheck = checkLoginRateLimit(rateLimitKey);
+
+    if (!rateCheck.allowed) {
+      const retryAfter = rateCheck.retryAfterSeconds || 60;
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many failed login attempts. Please try again later.',
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(retryAfter),
+          },
+        }
+      );
+    }
+
     await connectToDatabase();
 
     const user = await User.findOne({ email }).select('+passwordHash').populate('roleId');
 
     if (!user || !user.passwordHash) {
+      recordFailedLoginAttempt(rateLimitKey);
       return errorResponse('Invalid email or password', 401);
     }
 
     const isValidPassword = await verifyPassword(password, user.passwordHash);
     if (!isValidPassword) {
+      recordFailedLoginAttempt(rateLimitKey);
       return errorResponse('Invalid email or password', 401);
     }
 
@@ -44,12 +72,15 @@ export async function POST(req: NextRequest) {
       return errorResponse('User has no valid role assigned', 403);
     }
 
+    // Reset rate limiter on successful authentication
+    resetLoginRateLimit(rateLimitKey);
+
     // Update login status and lastLoginAt
     user.loginStatus = 'online';
     user.lastLoginAt = new Date();
     await user.save();
 
-    // Sign JWT
+    // Sign JWT session token
     const token = await signAuthToken({
       userId: user._id.toString(),
       employeeId: user.employeeId,
@@ -85,9 +116,10 @@ export async function POST(req: NextRequest) {
       userAgent,
     });
 
+    // CRITICAL SECURITY: Do not expose raw JWT in JSON response.
+    // The session token is transmitted exclusively in the secure HttpOnly cookie.
     const response = jsonResponse({
       user: safeUser,
-      token,
     });
 
     setSessionCookie(response, token);

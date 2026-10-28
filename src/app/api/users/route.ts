@@ -4,6 +4,7 @@ import { hasPermission } from '@/policies/permissionPolicy';
 import { listUsers, createUser } from '@/services/userService';
 import { createUserSchema, formatZodError } from '@/lib/validation/schemas';
 import { jsonResponse, errorResponse } from '@/lib/apiResponse';
+import { Role } from '@/models/Role';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,33 @@ export async function POST(req: NextRequest) {
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
+    // Role assignment authority validation
+    const targetRole = await Role.findById(parseResult.data.roleId);
+    if (!targetRole) {
+      return errorResponse('Assigned role does not exist', 400);
+    }
+
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const canAssignRole = hasPermission(authContext.role, 'staff_users', 'assign');
+
+    if (!isSuperAdmin && !canAssignRole) {
+      return errorResponse('Forbidden: You lack permission to assign user roles', 403);
+    }
+
+    if (targetRole.slug === 'super_admin' && !isSuperAdmin) {
+      return errorResponse('Forbidden: Only a Super Admin can assign the Super Admin role', 403);
+    }
+
+    if (!isSuperAdmin) {
+      for (const p of targetRole.permissions || []) {
+        for (const action of p.actions || []) {
+          if (!hasPermission(authContext.role, p.module, action)) {
+            return errorResponse('Forbidden: You cannot assign a role with privileges exceeding your own authority', 403);
+          }
+        }
+      }
+    }
+
     const newUser = await createUser(parseResult.data, {
       userId: authContext.user._id,
       employeeId: authContext.user.employeeId,
@@ -74,6 +102,10 @@ export async function POST(req: NextRequest) {
     return jsonResponse(newUser, 201);
   } catch (error: any) {
     console.error('POST /api/users error:', error);
-    return errorResponse(error.message || 'Failed to create user', 400);
+    const msg = error.message || 'Failed to create user';
+    if (msg.includes('Forbidden') || msg.includes('forbidden')) {
+      return errorResponse(msg, 403);
+    }
+    return errorResponse(msg, 400);
   }
 }

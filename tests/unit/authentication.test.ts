@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { hashPassword, verifyPassword } from '../../src/lib/auth/password';
-import { signAuthToken, verifyAuthToken } from '../../src/lib/auth/jwt';
+import { signAuthToken, verifyAuthToken, getAuthSecret, isAuthSecretConfigured } from '../../src/lib/auth/jwt';
 import { AuthTokenPayload } from '../../src/types';
 
 describe('E. Authentication and Security Cryptography', () => {
@@ -74,6 +74,29 @@ describe('E. Authentication and Security Cryptography', () => {
 
       const verified = await verifyAuthToken(token);
       expect(verified).toBeNull();
+    });
+
+    it('CRITICAL: should fail safely when AUTH_SECRET is missing or too short without hardcoded fallback', async () => {
+      const originalSecret = process.env.AUTH_SECRET;
+      try {
+        // Missing AUTH_SECRET
+        delete process.env.AUTH_SECRET;
+        expect(isAuthSecretConfigured()).toBe(false);
+        expect(() => getAuthSecret()).toThrow(/AUTH_SECRET environment variable is missing/);
+        await expect(signAuthToken(mockPayload)).rejects.toThrow(/AUTH_SECRET environment variable is missing/);
+        const verifiedWhenMissing = await verifyAuthToken('some.dummy.jwt');
+        expect(verifiedWhenMissing).toBeNull();
+
+        // Insecure / too short AUTH_SECRET (< 32 characters)
+        process.env.AUTH_SECRET = 'short-secret';
+        expect(isAuthSecretConfigured()).toBe(false);
+        expect(() => getAuthSecret()).toThrow(/minimum 32 characters required/);
+        await expect(signAuthToken(mockPayload)).rejects.toThrow(/minimum 32 characters required/);
+        const verifiedWhenShort = await verifyAuthToken('some.dummy.jwt');
+        expect(verifiedWhenShort).toBeNull();
+      } finally {
+        process.env.AUTH_SECRET = originalSecret;
+      }
     });
   });
 });

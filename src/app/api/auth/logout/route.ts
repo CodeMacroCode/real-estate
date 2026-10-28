@@ -10,7 +10,11 @@ export async function POST(req: NextRequest) {
 
     if (authContext) {
       const { user, role } = authContext;
-      await User.findByIdAndUpdate(user._id, { loginStatus: 'offline' });
+      // Revoke all existing sessions by recording lastLogoutAt
+      await User.findByIdAndUpdate(user._id, {
+        loginStatus: 'offline',
+        lastLogoutAt: new Date(),
+      });
 
       const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
       const userAgent = req.headers.get('user-agent') || '';

@@ -110,6 +110,7 @@ Ensure `.env` contains:
 
 ```dotenv
 MONGODB_URI=mongodb://127.0.0.1:27017/real_estate_crm
+# Mandatory: minimum 32 characters, no fallback secret. Fails safely if missing.
 AUTH_SECRET=your-minimum-32-character-secret-key-goes-here
 APP_URL=http://localhost:3000
 NODE_ENV=development

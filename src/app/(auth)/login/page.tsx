@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Eye, EyeOff, Lock, Mail, ArrowRight, Building } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Building } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 
@@ -43,11 +43,6 @@ export default function LoginPage() {
       setError(err.message || 'Network error occurred. Please try again.');
       setLoading(false);
     }
-  };
-
-  const handleQuickFill = () => {
-    setEmail('superadmin@realestatecrm.com');
-    setPassword('SuperAdmin@Secure123!');
   };
 
   return (
@@ -119,21 +114,20 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder="••••••••••••"
                 className="block w-full rounded-lg border border-slate-300 pl-10 pr-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
@@ -153,18 +147,6 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-
-        {/* Development Quick-Fill Helper */}
-        <div className="border-t border-slate-100 pt-4 text-center">
-          <p className="text-xs text-slate-400 mb-2">Development Super Admin Bootstrap Account</p>
-          <button
-            type="button"
-            onClick={handleQuickFill}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
-          >
-            Quick Fill Super Admin Credentials
-          </button>
-        </div>
       </div>
     </div>
   );

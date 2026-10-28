@@ -10,6 +10,7 @@ import {
   canPublish,
   canApprove,
 } from '../../src/policies/permissionPolicy';
+import { BASELINE_ROLES } from '../../src/policies/baselineRoles';
 import { IRole } from '../../src/types';
 
 describe('B. Permission Evaluation & Fail-Closed RBAC Engine', () => {
@@ -30,12 +31,7 @@ describe('B. Permission Evaluation & Fail-Closed RBAC Engine', () => {
     ],
   };
 
-  const superAdminRole: Partial<IRole> = {
-    name: 'Super Admin',
-    slug: 'super_admin',
-    isSystem: true,
-    permissions: [],
-  };
+  const legitimateSuperAdmin = BASELINE_ROLES.find((r) => r.slug === 'super_admin')!;
 
   it('should grant access to explicitly permitted operations', () => {
     expect(hasPermission(viewerRole, 'dashboard', 'view')).toBe(true);
@@ -74,15 +70,50 @@ describe('B. Permission Evaluation & Fail-Closed RBAC Engine', () => {
     expect(hasPermission(undefined, 'properties', 'view')).toBe(false);
     expect(hasPermission({} as any, 'properties', 'view')).toBe(false);
     expect(hasPermission({ permissions: [] } as any, 'properties', 'view')).toBe(false);
+    expect(hasPermission({ permissions: 'all' } as any, 'properties', 'view')).toBe(false);
+    expect(hasPermission({ permissions: null } as any, 'properties', 'view')).toBe(false);
+    expect(hasPermission({ permissions: [null] } as any, 'properties', 'view')).toBe(false);
+    expect(hasPermission({ permissions: [{ module: 'properties' }] } as any, 'properties', 'view')).toBe(false);
+    expect(hasPermission({ permissions: [{ module: 'properties', actions: null }] } as any, 'properties', 'view')).toBe(false);
+    expect(hasPermission({ permissions: [{ module: 'properties', actions: [] }] } as any, 'properties', 'view')).toBe(false);
+  });
+
+  it('CRITICAL: Forged super_admin role with empty or missing permissions must fail closed', () => {
+    // Attempted bypass with slug only
+    const forgedSuperAdminEmpty: Partial<IRole> = {
+      name: 'Forged Super Admin',
+      slug: 'super_admin',
+      isSystem: true,
+      permissions: [],
+    };
+    expect(hasPermission(forgedSuperAdminEmpty, 'system_settings', 'delete')).toBe(false);
+    expect(hasPermission(forgedSuperAdminEmpty, 'staff_users', 'create')).toBe(false);
+    expect(canPublish(forgedSuperAdminEmpty, 'properties')).toBe(false);
+
+    // Attempted bypass with missing permissions key
+    const forgedSuperAdminNoPerms: Partial<IRole> = {
+      name: 'Forged Super Admin 2',
+      slug: 'super_admin',
+      isSystem: true,
+    };
+    expect(hasPermission(forgedSuperAdminNoPerms, 'system_settings', 'view')).toBe(false);
+
+    // Attempted bypass with non-array permissions
+    const forgedSuperAdminStringPerms: any = {
+      slug: 'super_admin',
+      permissions: 'all',
+    };
+    expect(hasPermission(forgedSuperAdminStringPerms, 'dashboard', 'view')).toBe(false);
   });
 
   it('should evaluate unknown modules as denied', () => {
     expect(hasPermission(viewerRole, 'unknown_module' as any, 'view')).toBe(false);
   });
 
-  it('should evaluate Super Admin role with full system authorization', () => {
-    expect(hasPermission(superAdminRole, 'system_settings', 'delete')).toBe(true);
-    expect(hasPermission(superAdminRole, 'staff_users', 'create')).toBe(true);
-    expect(canPublish(superAdminRole, 'properties')).toBe(true);
+  it('should evaluate legitimate Super Admin role with full authoritative permissions', () => {
+    expect(hasPermission(legitimateSuperAdmin, 'system_settings', 'delete')).toBe(true);
+    expect(hasPermission(legitimateSuperAdmin, 'staff_users', 'create')).toBe(true);
+    expect(canPublish(legitimateSuperAdmin, 'properties')).toBe(true);
+    expect(canApprove(legitimateSuperAdmin, 'projects')).toBe(true);
   });
 });

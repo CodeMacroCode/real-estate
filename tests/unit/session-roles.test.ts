@@ -61,7 +61,7 @@ describe('Session Utilities and Role Service', () => {
   });
 
   describe('Role Service Integration', () => {
-    const actor = {
+    const superAdminActor = {
       userId: '66f500000000000000000001',
       employeeId: 'EMP001',
       name: 'Super Admin',
@@ -91,30 +91,103 @@ describe('Session Utilities and Role Service', () => {
       expect(retrieved?.slug).toBe(first.slug);
     });
 
-    it('prevents stripping all permissions from Super Admin role', async () => {
+    it('prevents altering permissions of Super Admin system role', async () => {
       const superAdmin = await Role.findOne({ slug: 'super_admin' });
       expect(superAdmin).not.toBeNull();
+
+      // Passing non-super_admin actor or trying to alter super_admin permissions
+      const otherActor = {
+        userId: '66f500000000000000000002',
+        employeeId: 'EMP002',
+        name: 'Another Admin',
+        email: 'other@crm.com',
+        roleSlug: 'admin',
+      };
 
       await expect(
         updateRole(
           superAdmin!._id.toString(),
-          { permissions: [] },
-          actor
+          { permissions: [{ module: 'properties', actions: ['view'] }] },
+          otherActor
         )
-      ).rejects.toThrow('Cannot strip all permissions from Super Admin role');
+      ).rejects.toThrow(/Cannot alter permissions of system role 'super_admin'/);
     });
 
     it('prevents changing Super Admin visibility scope away from company', async () => {
       const superAdmin = await Role.findOne({ slug: 'super_admin' });
       expect(superAdmin).not.toBeNull();
 
+      const otherActor = {
+        userId: '66f500000000000000000002',
+        employeeId: 'EMP002',
+        name: 'Another Admin',
+        email: 'other@crm.com',
+        roleSlug: 'admin',
+      };
+
       await expect(
         updateRole(
           superAdmin!._id.toString(),
           { leadVisibilityScope: 'assigned' },
-          actor
+          otherActor
         )
       ).rejects.toThrow('Super Admin visibility scope must remain company-wide');
+    });
+
+    it('prevents self-escalation when an actor attempts to modify their own assigned role', async () => {
+      const adminRole = await Role.findOne({ slug: 'admin' });
+      expect(adminRole).not.toBeNull();
+
+      const adminActor = {
+        userId: '66f500000000000000000003',
+        employeeId: 'EMP003',
+        name: 'Self Escalator',
+        email: 'escalator@crm.com',
+        roleSlug: 'admin',
+        roleId: adminRole!._id.toString(),
+      };
+
+      await expect(
+        updateRole(
+          adminRole!._id.toString(),
+          { description: 'Escalated Admin' },
+          adminActor
+        )
+      ).rejects.toThrow(/Self-escalation forbidden/);
+    });
+
+    it('prevents granting privileges exceeding actor own authority', async () => {
+      const salesExec = await Role.findOne({ slug: 'sales_executive' });
+      expect(salesExec).not.toBeNull();
+
+      const salesMgrActor = {
+        userId: '66f500000000000000000004',
+        employeeId: 'EMP004',
+        name: 'Sales Manager',
+        email: 'mgr@crm.com',
+        roleSlug: 'sales_manager',
+      };
+
+      // Actor role has only limited permissions (e.g. no master_settings edit)
+      const actorRole = {
+        name: 'Sales Manager',
+        slug: 'sales_manager' as const,
+        permissions: [{ module: 'leads' as const, actions: ['view' as const, 'edit' as const] }],
+      };
+
+      // Tries to grant 'master_settings: edit' to sales_executive
+      await expect(
+        updateRole(
+          salesExec!._id.toString(),
+          {
+            permissions: [
+              { module: 'master_settings', actions: ['edit'] },
+            ],
+          },
+          salesMgrActor,
+          actorRole
+        )
+      ).rejects.toThrow(/Privilege escalation forbidden/);
     });
   });
 });

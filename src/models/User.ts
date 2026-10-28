@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { IUser, SafeUser } from '../types';
+import './Role';
 
 export interface IUserDocument extends Omit<IUser, '_id'>, Document {
   toSafeUser(): SafeUser;
@@ -90,6 +91,10 @@ const UserSchema = new Schema<IUserDocument>(
       default: '',
     },
     lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+    lastLogoutAt: {
       type: Date,
       default: null,
     },

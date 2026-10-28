@@ -119,6 +119,11 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
     throw new Error('Assigned role does not exist');
   }
 
+  // Privilege ceiling check on initial creation
+  if (role.slug === 'super_admin' && actor.roleSlug !== 'super_admin') {
+    throw new Error('Forbidden: Only a Super Admin can assign the Super Admin role');
+  }
+
   const passwordHash = await hashPassword(data.password);
 
   const newUser = await User.create({
@@ -206,10 +211,16 @@ export async function updateUser(
   if (data.team !== undefined) user.team = data.team;
   if (data.reportingManagerId !== undefined) user.reportingManagerId = data.reportingManagerId;
 
-  if (data.roleId) {
+  if (data.roleId && data.roleId !== user.roleId.toString()) {
+    if (actor.userId && actor.userId.toString() === id.toString()) {
+      throw new Error('Self-escalation forbidden: You cannot change your own role');
+    }
     const role = await Role.findById(data.roleId);
     if (!role) {
       throw new Error('Assigned role does not exist');
+    }
+    if (role.slug === 'super_admin' && actor.roleSlug !== 'super_admin') {
+      throw new Error('Forbidden: Only a Super Admin can assign the Super Admin role');
     }
     user.roleId = role._id as any;
   }

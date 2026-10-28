@@ -57,7 +57,7 @@ export const BASELINE_ROLES: BaselineRoleDefinition[] = [
       { module: 'documents', actions: ['view', 'create', 'edit', 'delete', 'export', 'approve'] },
       { module: 'communications', actions: ['view', 'create', 'edit', 'export'] },
       { module: 'campaigns_lead_sources', actions: ['view', 'create', 'edit', 'delete', 'export'] },
-      { module: 'staff_users', actions: ['view', 'create', 'edit', 'export'] },
+      { module: 'staff_users', actions: ['view', 'create', 'edit', 'export', 'assign'] },
       { module: 'reports', actions: ['view', 'export'] },
       { module: 'website_cms', actions: ['view', 'create', 'edit', 'publish'] },
       { module: 'media_library', actions: ['view', 'create', 'edit', 'delete'] },

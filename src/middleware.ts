@@ -21,6 +21,39 @@ export async function middleware(request: NextRequest) {
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
+  // CSRF protection: evaluate cookie-authenticated state-changing requests
+  const method = request.method.toUpperCase();
+  const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+
+  if (isStateChanging && token) {
+    const secFetchSite = request.headers.get('sec-fetch-site');
+    if (secFetchSite === 'cross-site') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Cross-site request rejected by CSRF policy' },
+        { status: 403 }
+      );
+    }
+
+    const host = request.headers.get('host');
+    const origin = request.headers.get('origin');
+    if (origin && host) {
+      try {
+        const originUrl = new URL(origin);
+        if (originUrl.host !== host) {
+          return NextResponse.json(
+            { success: false, error: 'Forbidden: Origin mismatch rejected by CSRF policy' },
+            { status: 403 }
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden: Invalid Origin header' },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   let isValidSession = false;
   if (token) {
     const payload = await verifyAuthToken(token);
