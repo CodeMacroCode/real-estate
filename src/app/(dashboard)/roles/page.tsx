@@ -38,13 +38,12 @@ export default function RolesPage() {
       const res = await fetch('/api/roles');
       const data = await res.json();
       if (res.ok && data.success) {
-        setRoles(data.data || []);
-        if (data.data?.length > 0 && !selectedRole) {
-          setSelectedRole(data.data[0]);
-        } else if (selectedRole) {
-          const updated = data.data.find((r: IRole) => r._id === selectedRole._id);
-          if (updated) setSelectedRole(updated);
-        }
+        const rolesList = data.data || [];
+        setRoles(rolesList);
+        setSelectedRole((prev) => {
+          if (!prev) return rolesList[0] || null;
+          return rolesList.find((r: IRole) => r._id === prev._id) || rolesList[0] || null;
+        });
       } else {
         throw new Error(data.error || 'Failed to fetch roles');
       }
@@ -53,7 +52,7 @@ export default function RolesPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedRole]);
+  }, []);
 
   useEffect(() => {
     fetchRoles();

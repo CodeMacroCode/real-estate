@@ -98,14 +98,12 @@ export default function UsersPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setRoles(data.data || []);
-        if (data.data?.length > 0 && !formData.roleId) {
-          setFormData((prev) => ({ ...prev, roleId: data.data[0]._id }));
-        }
+        setFormData((prev) => (!prev.roleId && data.data?.length > 0 ? { ...prev, roleId: data.data[0]._id } : prev));
       }
     } catch (err) {
       console.error('Failed to load roles:', err);
     }
-  }, [formData.roleId]);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
