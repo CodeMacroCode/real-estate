@@ -9,7 +9,10 @@ export interface RecordAuditParams {
     name: string;
     email: string;
     roleSlug: string;
+    parentAdminId?: string;
   };
+  targetUserId?: string;
+  parentAdminId?: string;
   action: AuditAction;
   entity: string;
   entityId: string;
@@ -64,7 +67,10 @@ export async function recordAuditEvent(params: RecordAuditParams): Promise<IAudi
       name: params.actor.name,
       email: params.actor.email,
       roleSlug: params.actor.roleSlug,
+      parentAdminId: params.actor.parentAdminId || null,
     },
+    parentAdminId: params.parentAdminId || params.actor.parentAdminId || null,
+    targetUserId: params.targetUserId || null,
     action: params.action,
     entity: params.entity,
     entityId: params.entityId,
@@ -88,6 +94,9 @@ export interface AuditQueryOptions {
   userId?: string;
   startDate?: Date;
   endDate?: Date;
+  parentAdminId?: string;
+  excludeSuperAdmin?: boolean;
+  allowedUserIds?: string[];
 }
 
 export async function getAuditLogs(options: AuditQueryOptions = {}) {
@@ -98,6 +107,22 @@ export async function getAuditLogs(options: AuditQueryOptions = {}) {
   const skip = (page - 1) * limit;
 
   const query: Record<string, any> = {};
+
+  if (options.excludeSuperAdmin) {
+    query['actor.roleSlug'] = { $ne: 'super_admin' };
+  }
+
+  if (options.allowedUserIds && options.allowedUserIds.length > 0) {
+    query.$or = [
+      { 'actor.userId': { $in: options.allowedUserIds } },
+      { targetUserId: { $in: options.allowedUserIds } },
+    ];
+  } else if (options.parentAdminId) {
+    query.$or = [
+      { 'actor.userId': options.parentAdminId },
+      { parentAdminId: options.parentAdminId },
+    ];
+  }
 
   if (options.entity) {
     query.entity = options.entity;

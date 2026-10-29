@@ -25,32 +25,52 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
 
-  const phase1NavItems = [
+  const roleSlug = user?.role?.slug || '';
+  const isSuperAdmin = roleSlug === 'super_admin';
+  const isAdmin = roleSlug === 'admin';
+  const isSubRole = !isSuperAdmin && !isAdmin;
+
+  // Role-wise navigation items:
+  // SuperAdmin sees: Dashboard, Users (Admins), Staff Management, Roles & Permissions, Audit Logs
+  // Admin sees: Dashboard, Staff Management, Roles & Permissions, Audit Logs
+  // Sub-Role staff sees: Dashboard only (with welcome / personalized overview)
+  const navItems = [
     {
       name: 'Dashboard',
       href: '/dashboard',
       icon: LayoutDashboard,
       active: pathname === '/dashboard',
+      visible: true,
     },
     {
-      name: 'Staff & Users',
+      name: 'Users (Admins)',
       href: '/users',
       icon: Users,
-      active: pathname.startsWith('/users'),
+      active: pathname === '/users',
+      visible: isSuperAdmin,
+    },
+    {
+      name: 'Staff Management',
+      href: '/staff',
+      icon: Briefcase,
+      active: pathname.startsWith('/staff'),
+      visible: isSuperAdmin || isAdmin,
     },
     {
       name: 'Roles & Permissions',
       href: '/roles',
       icon: ShieldCheck,
       active: pathname.startsWith('/roles'),
+      visible: isSuperAdmin || isAdmin,
     },
     {
       name: 'Audit Logs',
       href: '/audit-logs',
       icon: History,
       active: pathname.startsWith('/audit-logs'),
+      visible: isSuperAdmin || isAdmin,
     },
-  ];
+  ].filter((item) => item.visible);
 
   const laterPhaseModules = [
     { name: 'Leads & Enquiries', icon: PhoneIncoming },
@@ -73,7 +93,11 @@ export function Sidebar({ user }: SidebarProps) {
             Real Estate CRM
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wider text-blue-600">
-            Phase 1 Foundation
+            {isSuperAdmin
+              ? 'Super Admin Portal'
+              : isAdmin
+              ? 'Admin Portal'
+              : `${user?.role?.name || 'Staff'} Workspace`}
           </span>
         </div>
       </div>
@@ -82,10 +106,10 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
         <div>
           <div className="px-2 mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Phase 1 Implementation
+            {isSubRole ? 'Staff Workspace' : 'Management Modules'}
           </div>
           <nav className="space-y-1">
-            {phase1NavItems.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -107,7 +131,7 @@ export function Sidebar({ user }: SidebarProps) {
 
         <div>
           <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            <span>Future Modules</span>
+            <span>CRM Modules</span>
             <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-normal">
               Phase 2+
             </span>
@@ -137,12 +161,14 @@ export function Sidebar({ user }: SidebarProps) {
       {user && (
         <div className="border-t border-slate-200 p-4 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-700 font-semibold text-xs">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-xs">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs font-semibold text-slate-900 truncate">{user.name}</span>
-              <span className="text-[11px] text-slate-500 truncate">{user.email}</span>
+              <span className="text-[11px] text-slate-500 truncate capitalize">
+                {user.role?.name || user.role?.slug?.replace(/_/g, ' ') || 'Staff Member'}
+              </span>
             </div>
           </div>
         </div>

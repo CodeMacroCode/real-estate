@@ -83,6 +83,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
       joiningDate: new Date(),
       status: 'active',
       loginStatus: 'online',
+      allowedSubRoles: ['sales_executive', 'property_manager', 'sales_manager', 'website_manager'],
     });
 
     adminToken = await signAuthToken({
@@ -137,6 +138,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
       joiningDate: new Date(),
       status: 'active',
       loginStatus: 'never_logged_in',
+      parentAdminId: adminUser._id,
     });
   });
 

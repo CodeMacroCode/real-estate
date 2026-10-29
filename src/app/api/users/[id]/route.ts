@@ -28,6 +28,21 @@ export async function GET(
       return errorResponse('User not found', 404);
     }
 
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
+
+    // Shield Super Admin from non-SuperAdmin
+    if ((user.role as any)?.slug === 'super_admin' && !isSuperAdmin) {
+      return errorResponse('User not found', 404);
+    }
+
+    // If Admin, ensure target user is self or belongs to their sub-roles
+    if (isAdmin && user._id.toString() !== authContext.user._id.toString()) {
+      if ((user as any).parentAdminId?.toString() !== authContext.user._id.toString()) {
+        return errorResponse('Forbidden: You can only view users within your delegated sub-roles', 403);
+      }
+    }
+
     return jsonResponse(user);
   } catch (error: any) {
     console.error(`GET /api/users/${params.id} error:`, error);
@@ -58,20 +73,34 @@ export async function PUT(
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
-    const existingUser = await User.findById(params.id);
+    const existingUser = await User.findById(params.id).populate('roleId');
     if (!existingUser) {
       return errorResponse('User not found', 404);
     }
 
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
+
+    // Shield Super Admin from modification by non-Super Admin
+    if ((existingUser.roleId as any)?.slug === 'super_admin' && !isSuperAdmin) {
+      return errorResponse('User not found', 404);
+    }
+
+    // If Admin, ensure target user belongs to their sub-roles or is self
+    if (isAdmin && existingUser._id.toString() !== authContext.user._id.toString()) {
+      if (existingUser.parentAdminId?.toString() !== authContext.user._id.toString()) {
+        return errorResponse('Forbidden: You can only edit users within your delegated sub-roles', 403);
+      }
+    }
+
     // Separate ordinary staff editing from privileged role assignment
-    if (parseResult.data.roleId && parseResult.data.roleId !== existingUser.roleId.toString()) {
+    if (parseResult.data.roleId && parseResult.data.roleId !== (existingUser.roleId as any)._id.toString()) {
       // 1. Prevent self-escalation
       if (params.id.toString() === authContext.user._id.toString()) {
         return errorResponse('Self-escalation forbidden: You cannot change your own role', 403);
       }
 
       // 2. Validate role assignment authority
-      const isSuperAdmin = authContext.role.slug === 'super_admin';
       const canAssign = hasPermission(authContext.role, 'staff_users', 'assign');
 
       if (!isSuperAdmin && !canAssign) {
@@ -83,9 +112,22 @@ export async function PUT(
         return errorResponse('Assigned role does not exist', 400);
       }
 
-      // 3. Prevent non-super-admin from assigning super_admin
+      // 3. Prevent non-super-admin from assigning super_admin or admin
       if (newRole.slug === 'super_admin' && !isSuperAdmin) {
         return errorResponse('Forbidden: Only a Super Admin can assign the Super Admin role', 403);
+      }
+
+      if (isAdmin) {
+        if (newRole.slug === 'admin') {
+          return errorResponse('Forbidden: Admins cannot assign Admin roles', 403);
+        }
+        const allowedRoles = authContext.user.allowedSubRoles || [];
+        if (!allowedRoles.includes(newRole.slug)) {
+          return errorResponse(
+            `Forbidden: You are not authorized to assign role '${newRole.name}'`,
+            403
+          );
+        }
       }
 
       // 4. Prevent assigning roles with privileges exceeding actor's own authority

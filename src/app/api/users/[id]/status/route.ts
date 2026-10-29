@@ -24,6 +24,26 @@ export async function PATCH(
       return errorResponse('Forbidden: You lack permission to change staff account status', 403);
     }
 
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
+
+    // Verify target user exists and check scope
+    const { User } = await import('@/models/User');
+    const existingTarget = await User.findById(params.id).populate('roleId');
+    if (!existingTarget) {
+      return errorResponse('User not found', 404);
+    }
+
+    if ((existingTarget.roleId as any)?.slug === 'super_admin' && !isSuperAdmin) {
+      return errorResponse('User not found', 404);
+    }
+
+    if (isAdmin && existingTarget._id.toString() !== authContext.user._id.toString()) {
+      if (existingTarget.parentAdminId?.toString() !== authContext.user._id.toString()) {
+        return errorResponse('Forbidden: You can only alter status for users within your delegated sub-roles', 403);
+      }
+    }
+
     const body = await req.json();
     const parseResult = userStatusSchema.safeParse(body);
 

@@ -16,6 +16,8 @@ import {
   Building,
   Calendar,
   Briefcase,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { SafeUser, IRole } from '@/types';
 import { StatusBadge, LoginStatusBadge, RoleBadge } from '@/components/ui/Badge';
@@ -45,23 +47,37 @@ export default function UsersPage() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SafeUser | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const [currentUserRoleSlug, setCurrentUserRoleSlug] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form State
   const initialForm = {
-    employeeId: '',
     name: '',
     email: '',
     password: '',
     mobile: '',
-    department: 'Sales',
-    designation: 'Sales Executive',
-    branch: 'Main Branch',
+    department: 'Operations',
+    designation: 'Admin',
+    branch: 'Headquarters',
     roleId: '',
     joiningDate: new Date().toISOString().split('T')[0],
     team: '',
     profilePhoto: '',
+    allowedSubRoles: [] as string[],
   };
   const [formData, setFormData] = useState(initialForm);
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (res.ok && data.success && data.data?.role) {
+        setCurrentUserRoleSlug(data.data.role.slug || '');
+      }
+    } catch (err) {
+      console.error('Failed to load current user profile:', err);
+    }
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -70,6 +86,7 @@ export default function UsersPage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '10',
+        userType: 'admin',
       });
       if (searchTerm) params.append('search', searchTerm);
       if (departmentFilter) params.append('department', departmentFilter);
@@ -111,12 +128,22 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchRoles();
-  }, [fetchRoles]);
+    fetchCurrentUser();
+  }, [fetchRoles, fetchCurrentUser]);
 
   const handleOpenAddModal = () => {
+    // When Super Admin creates, default to 'admin' role
+    const defaultRole = currentUserRoleSlug === 'super_admin'
+      ? roles.find((r) => r.slug === 'admin')?._id || roles[0]?._id || ''
+      : roles.find((r) => r.slug === 'sales_executive')?._id || roles[0]?._id || '';
+
     setFormData({
       ...initialForm,
-      roleId: roles.find((r) => r.slug === 'sales_executive')?._id || roles[0]?._id || '',
+      department: currentUserRoleSlug === 'super_admin' ? 'Administration' : 'Sales',
+      designation: currentUserRoleSlug === 'super_admin' ? 'System Administrator' : 'Sales Executive',
+      branch: currentUserRoleSlug === 'super_admin' ? 'Headquarters' : 'Main Branch',
+      roleId: defaultRole,
+      allowedSubRoles: currentUserRoleSlug === 'super_admin' ? ['property_manager', 'sales_executive', 'sales_manager', 'website_manager'] : [],
     });
     setError(null);
     setIsAddModalOpen(true);
@@ -125,7 +152,6 @@ export default function UsersPage() {
   const handleOpenEditModal = (user: SafeUser) => {
     setSelectedUser(user);
     setFormData({
-      employeeId: user.employeeId,
       name: user.name,
       email: user.email,
       password: '',
@@ -137,6 +163,7 @@ export default function UsersPage() {
       joiningDate: new Date(user.joiningDate).toISOString().split('T')[0],
       team: user.team || '',
       profilePhoto: user.profilePhoto || '',
+      allowedSubRoles: (user as any).allowedSubRoles || [],
     });
     setError(null);
     setIsEditModalOpen(true);
@@ -165,7 +192,7 @@ export default function UsersPage() {
         throw new Error(data.error || 'Failed to create user');
       }
 
-      setSuccessMsg(`Staff member ${data.data.name} (${data.data.employeeId}) created successfully!`);
+      setSuccessMsg(`Admin account ${data.data.name} created successfully!`);
       setIsAddModalOpen(false);
       fetchUsers();
     } catch (err: any) {
@@ -193,6 +220,7 @@ export default function UsersPage() {
         joiningDate: formData.joiningDate,
         team: formData.team,
         profilePhoto: formData.profilePhoto,
+        allowedSubRoles: formData.allowedSubRoles || [],
       };
       if (formData.password) {
         payload.password = formData.password;
@@ -256,10 +284,10 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Staff & User Management
+            Admin User Management
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Section 48 Directory: Employee records, departments, designations, branches, and account security.
+            Super Administrator Portal: Provision administrators and configure delegated sub-role management authorities.
           </p>
         </div>
         <button
@@ -267,7 +295,7 @@ export default function UsersPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Add New Staff</span>
+          <span>Add New Admin</span>
         </button>
       </div>
 
@@ -357,11 +385,16 @@ export default function UsersPage() {
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Staff Member</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Employee ID</th>
+                  <th scope="col" className="px-6 py-3.5 font-semibold">Admin Member</th>
                   <th scope="col" className="px-6 py-3.5 font-semibold">Role</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Department & Designation</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Branch</th>
+                  {currentUserRoleSlug === 'super_admin' ? (
+                    <th scope="col" className="px-6 py-3.5 font-semibold">Delegated Sub-Roles</th>
+                  ) : (
+                    <>
+                      <th scope="col" className="px-6 py-3.5 font-semibold">Department & Designation</th>
+                      <th scope="col" className="px-6 py-3.5 font-semibold">Branch</th>
+                    </>
+                  )}
                   <th scope="col" className="px-6 py-3.5 font-semibold">Status</th>
                   <th scope="col" className="px-6 py-3.5 font-semibold">Login Status</th>
                   <th scope="col" className="px-6 py-3.5 font-semibold">Joining Date</th>
@@ -383,22 +416,40 @@ export default function UsersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-mono font-medium text-slate-700">
-                      {user.employeeId}
-                    </td>
                     <td className="px-6 py-4">
                       <RoleBadge
                         roleSlug={user.role?.slug}
                         roleName={user.role?.name}
                       />
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-800">{user.department}</div>
-                      <div className="text-xs text-slate-500">{user.designation}</div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 font-medium">
-                      {user.branch}
-                    </td>
+                    {currentUserRoleSlug === 'super_admin' ? (
+                      <td className="px-6 py-4">
+                        {(user as any).allowedSubRoles && (user as any).allowedSubRoles.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {(user as any).allowedSubRoles.map((sub: string) => (
+                              <span
+                                key={sub}
+                                className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200"
+                              >
+                                {sub.replace(/_/g, ' ')}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">No sub-roles assigned</span>
+                        )}
+                      </td>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-slate-800">{user.department}</div>
+                          <div className="text-xs text-slate-500">{user.designation}</div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-700 font-medium">
+                          {user.branch}
+                        </td>
+                      </>
+                    )}
                     <td className="px-6 py-4">
                       <StatusBadge status={user.status} />
                     </td>
@@ -471,8 +522,8 @@ export default function UsersPage() {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New Staff Member"
-        description="Provision a new employee record per Section 48 specification."
+        title="Add New Admin"
+        description="Provision an administrator account and assign delegated sub-roles."
         maxWidth="2xl"
       >
         <form onSubmit={handleCreateUser} className="space-y-4">
@@ -480,29 +531,16 @@ export default function UsersPage() {
             <Alert type="error" title="Validation Failed" message={error} onClose={() => setError(null)} />
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Employee ID *</label>
-              <input
-                type="text"
-                required
-                value={formData.employeeId}
-                onChange={(e) => setFormData({ ...formData, employeeId: e.target.value.toUpperCase() })}
-                placeholder="EMP102"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Full Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Jane Doe"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase">Full Name *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g. Rahul Verma"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -519,14 +557,23 @@ export default function UsersPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase">Initial Password *</label>
-              <input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Min 8 chars, 1 upper, 1 lower, 1 num"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
+              <div className="relative mt-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Min 8 chars, 1 upper, 1 lower, 1 num"
+                  className="block w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -550,7 +597,10 @@ export default function UsersPage() {
                 onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               >
-                {roles.map((r) => (
+                {(currentUserRoleSlug === 'super_admin'
+                  ? roles.filter((r) => r.slug === 'admin')
+                  : roles
+                ).map((r) => (
                   <option key={r._id} value={r._id}>
                     {r.name} ({r.slug})
                   </option>
@@ -559,61 +609,107 @@ export default function UsersPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Department *</label>
-              <input
-                type="text"
-                required
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Designation *</label>
-              <input
-                type="text"
-                required
-                value={formData.designation}
-                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Branch *</label>
-              <input
-                type="text"
-                required
-                value={formData.branch}
-                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Subroles checkboxes when SuperAdmin selects 'admin' role */}
+          {currentUserRoleSlug === 'super_admin' &&
+            roles.find((r) => r._id === formData.roleId)?.slug === 'admin' && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-blue-900">
+                  <Shield className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Delegated Sub-Roles For This Admin</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Select which sub-roles this Admin can create and manage in their staff directory:
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  {[
+                    { slug: 'property_manager', label: 'Property Manager' },
+                    { slug: 'sales_executive', label: 'Sales Executive' },
+                    { slug: 'sales_manager', label: 'Sales Manager' },
+                    { slug: 'website_manager', label: 'Website Manager' },
+                  ].map((subrole) => {
+                    const checked = formData.allowedSubRoles?.includes(subrole.slug);
+                    return (
+                      <label key={subrole.slug} className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            const current = formData.allowedSubRoles || [];
+                            const updated = e.target.checked
+                              ? [...current, subrole.slug]
+                              : current.filter((s) => s !== subrole.slug);
+                            setFormData({ ...formData, allowedSubRoles: updated });
+                          }}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{subrole.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Joining Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.joiningDate}
-                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Team / Unit (Optional)</label>
-              <input
-                type="text"
-                value={formData.team}
-                onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                placeholder="Alpha Sales Team"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Omit Department, Designation, Branch, Joining Date, and Team inputs when SuperAdmin is creating an Admin */}
+          {currentUserRoleSlug !== 'super_admin' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Department *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Designation *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.designation}
+                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Branch *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.branch}
+                    onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Joining Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.joiningDate}
+                    onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Team / Unit (Optional)</label>
+                  <input
+                    type="text"
+                    value={formData.team}
+                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                    placeholder="Alpha Sales Team"
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
@@ -639,8 +735,8 @@ export default function UsersPage() {
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title="Edit Staff Member"
-        description={`Modify details for ${selectedUser?.name} (${selectedUser?.employeeId}).`}
+        title="Edit Admin Account"
+        description={`Modify configuration and sub-roles for ${selectedUser?.name}.`}
         maxWidth="2xl"
       >
         <form onSubmit={handleUpdateUser} className="space-y-4">
@@ -648,26 +744,15 @@ export default function UsersPage() {
             <Alert type="error" title="Update Failed" message={error} onClose={() => setError(null)} />
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Employee ID (Read-only)</label>
-              <input
-                type="text"
-                disabled
-                value={formData.employeeId}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500 cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Full Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase">Full Name *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -683,13 +768,22 @@ export default function UsersPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase">Reset Password (Optional)</label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Leave blank to keep current"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
+              <div className="relative mt-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Leave blank to keep current"
+                  className="block w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -712,7 +806,10 @@ export default function UsersPage() {
                 onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               >
-                {roles.map((r) => (
+                {(currentUserRoleSlug === 'super_admin'
+                  ? roles.filter((r) => r.slug === 'admin')
+                  : roles
+                ).map((r) => (
                   <option key={r._id} value={r._id}>
                     {r.name} ({r.slug})
                   </option>
@@ -721,60 +818,106 @@ export default function UsersPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Department *</label>
-              <input
-                type="text"
-                required
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Designation *</label>
-              <input
-                type="text"
-                required
-                value={formData.designation}
-                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Branch *</label>
-              <input
-                type="text"
-                required
-                value={formData.branch}
-                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Subroles checkboxes when SuperAdmin selects 'admin' role */}
+          {currentUserRoleSlug === 'super_admin' &&
+            roles.find((r) => r._id === formData.roleId)?.slug === 'admin' && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-blue-900">
+                  <Shield className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Delegated Sub-Roles For This Admin</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Select which sub-roles this Admin can create and manage in their staff directory:
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  {[
+                    { slug: 'property_manager', label: 'Property Manager' },
+                    { slug: 'sales_executive', label: 'Sales Executive' },
+                    { slug: 'sales_manager', label: 'Sales Manager' },
+                    { slug: 'website_manager', label: 'Website Manager' },
+                  ].map((subrole) => {
+                    const checked = formData.allowedSubRoles?.includes(subrole.slug);
+                    return (
+                      <label key={subrole.slug} className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            const current = formData.allowedSubRoles || [];
+                            const updated = e.target.checked
+                              ? [...current, subrole.slug]
+                              : current.filter((s) => s !== subrole.slug);
+                            setFormData({ ...formData, allowedSubRoles: updated });
+                          }}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{subrole.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Joining Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.joiningDate}
-                onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Team / Unit</label>
-              <input
-                type="text"
-                value={formData.team}
-                onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
+          {/* Omit Department, Designation, Branch, Joining Date, and Team inputs when SuperAdmin is editing an Admin */}
+          {currentUserRoleSlug !== 'super_admin' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Department *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Designation *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.designation}
+                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Branch *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.branch}
+                    onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Joining Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.joiningDate}
+                    onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase">Team / Unit</label>
+                  <input
+                    type="text"
+                    value={formData.team}
+                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button

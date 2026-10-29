@@ -13,6 +13,11 @@ export interface UserListFilters {
   branch?: string;
   roleId?: string;
   status?: string;
+  parentAdminId?: string;
+  excludeSuperAdmin?: boolean;
+  allowedUserIds?: string[];
+  roleSlug?: string;
+  userType?: 'admin' | 'staff'; // 'admin' = only Admins, 'staff' = only Sub-Role staff (non-admin, non-superadmin)
 }
 
 export async function listUsers(filters: UserListFilters = {}) {
@@ -24,14 +29,54 @@ export async function listUsers(filters: UserListFilters = {}) {
 
   const query: Record<string, any> = {};
 
+  if (filters.userType === 'admin') {
+    const adminRole = await Role.findOne({ slug: 'admin' });
+    if (adminRole) {
+      query.roleId = adminRole._id;
+    }
+  } else if (filters.userType === 'staff') {
+    const excludedRoles = await Role.find({ slug: { $in: ['super_admin', 'admin'] } });
+    query.roleId = { $nin: excludedRoles.map((r) => r._id) };
+  } else if (filters.roleSlug) {
+    const targetRole = await Role.findOne({ slug: filters.roleSlug });
+    if (targetRole) {
+      query.roleId = targetRole._id;
+    }
+  } else if (filters.excludeSuperAdmin) {
+    const superAdminRole = await Role.findOne({ slug: 'super_admin' });
+    if (superAdminRole) {
+      query.roleId = { $ne: superAdminRole._id };
+    }
+  }
+
+  if (filters.allowedUserIds && filters.allowedUserIds.length > 0) {
+    query._id = { $in: filters.allowedUserIds };
+  } else if (filters.parentAdminId) {
+    if (filters.userType === 'staff') {
+      // In Staff section, only return staff belonging to this admin
+      query.parentAdminId = filters.parentAdminId;
+    } else {
+      query.$or = [
+        { parentAdminId: filters.parentAdminId },
+        { _id: filters.parentAdminId },
+      ];
+    }
+  }
+
   if (filters.search && filters.search.trim()) {
     const searchRegex = new RegExp(filters.search.trim(), 'i');
-    query.$or = [
+    const searchCondition = [
       { name: searchRegex },
       { email: searchRegex },
       { employeeId: searchRegex },
       { mobile: searchRegex },
     ];
+    if (query.$or) {
+      query.$and = [{ $or: query.$or }, { $or: searchCondition }];
+      delete query.$or;
+    } else {
+      query.$or = searchCondition;
+    }
   }
 
   if (filters.department) {
@@ -51,6 +96,11 @@ export async function listUsers(filters: UserListFilters = {}) {
     User.find(query)
       .populate('roleId', 'name slug description isSystem leadVisibilityScope')
       .populate('reportingManagerId', 'name employeeId email designation')
+      .populate({
+        path: 'parentAdminId',
+        select: 'name employeeId email designation',
+        strictPopulate: false,
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -99,17 +149,22 @@ export async function getUserById(id: string): Promise<SafeUser | null> {
 export async function createUser(data: any, actor: { userId?: string; employeeId?: string; name: string; email: string; roleSlug: string }): Promise<SafeUser> {
   await connectToDatabase();
 
+  // Auto-generate employeeId if not provided
+  const employeeId = data.employeeId && data.employeeId.trim()
+    ? data.employeeId.trim().toUpperCase()
+    : `STF${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
+
   // Validate uniqueness
   const existingUser = await User.findOne({
-    $or: [{ email: data.email.toLowerCase() }, { employeeId: data.employeeId.toUpperCase() }],
+    $or: [{ email: data.email.toLowerCase() }, { employeeId }],
   });
 
   if (existingUser) {
     if (existingUser.email.toLowerCase() === data.email.toLowerCase()) {
       throw new Error(`User with email '${data.email}' already exists`);
     }
-    if (existingUser.employeeId.toUpperCase() === data.employeeId.toUpperCase()) {
-      throw new Error(`User with Employee ID '${data.employeeId}' already exists`);
+    if (existingUser.employeeId?.toUpperCase() === employeeId) {
+      throw new Error(`User with Employee ID '${employeeId}' already exists`);
     }
   }
 
@@ -127,7 +182,7 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
   const passwordHash = await hashPassword(data.password);
 
   const newUser = await User.create({
-    employeeId: data.employeeId.toUpperCase(),
+    employeeId,
     name: data.name,
     email: data.email.toLowerCase(),
     passwordHash,
@@ -142,6 +197,9 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
     loginStatus: 'never_logged_in',
     reportingManagerId: data.reportingManagerId || null,
     team: data.team || '',
+    allowedSubRoles: data.allowedSubRoles || [],
+    parentAdminId: data.parentAdminId || (actor.roleSlug === 'admin' ? actor.userId : null),
+    createdBy: actor.userId || null,
   });
 
   // Record audit log
@@ -150,6 +208,8 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
     action: 'create',
     entity: 'user',
     entityId: newUser._id.toString(),
+    targetUserId: newUser._id.toString(),
+    parentAdminId: newUser.parentAdminId ? newUser.parentAdminId.toString() : undefined,
     newValues: {
       employeeId: newUser.employeeId,
       name: newUser.name,
@@ -159,6 +219,8 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
       designation: newUser.designation,
       branch: newUser.branch,
       status: newUser.status,
+      allowedSubRoles: newUser.allowedSubRoles,
+      parentAdminId: newUser.parentAdminId,
     },
     source: 'web_app',
   });
@@ -232,6 +294,12 @@ export async function updateUser(
   if (data.status) {
     user.status = data.status;
   }
+  if (data.allowedSubRoles !== undefined) {
+    user.allowedSubRoles = data.allowedSubRoles;
+  }
+  if (data.parentAdminId !== undefined) {
+    user.parentAdminId = data.parentAdminId;
+  }
 
   await user.save();
 
@@ -240,6 +308,8 @@ export async function updateUser(
     action: 'update',
     entity: 'user',
     entityId: user._id.toString(),
+    targetUserId: user._id.toString(),
+    parentAdminId: user.parentAdminId ? user.parentAdminId.toString() : undefined,
     oldValues,
     newValues: {
       name: user.name,
@@ -251,6 +321,8 @@ export async function updateUser(
       roleId: user.roleId.toString(),
       status: user.status,
       team: user.team,
+      allowedSubRoles: user.allowedSubRoles,
+      parentAdminId: user.parentAdminId,
     },
     source: 'web_app',
   });
@@ -297,10 +369,47 @@ export async function updateUserStatus(
     action: 'status_change',
     entity: 'user',
     entityId: user._id.toString(),
+    targetUserId: user._id.toString(),
+    parentAdminId: user.parentAdminId ? user.parentAdminId.toString() : undefined,
     oldValues: { status: oldStatus },
     newValues: { status, reason },
     source: 'web_app',
   });
 
   return getUserById(id) as Promise<SafeUser>;
+}
+
+export async function deleteUser(
+  id: string,
+  actor: { userId?: string; employeeId?: string; name: string; email: string; roleSlug: string }
+): Promise<void> {
+  await connectToDatabase();
+
+  const user = await User.findById(id).populate('roleId');
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const role = user.roleId as any;
+  if (role?.slug === 'super_admin') {
+    throw new Error('Super Admin accounts cannot be deleted');
+  }
+
+  await User.findByIdAndDelete(id);
+
+  await recordAuditEvent({
+    actor,
+    action: 'delete',
+    entity: 'user',
+    entityId: id,
+    targetUserId: id,
+    parentAdminId: user.parentAdminId ? user.parentAdminId.toString() : undefined,
+    oldValues: {
+      name: user.name,
+      email: user.email,
+      employeeId: user.employeeId,
+      role: role?.name,
+    },
+    source: 'web_app',
+  });
 }

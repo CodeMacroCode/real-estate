@@ -82,6 +82,19 @@ export async function getAuthenticatedContext(
   const safeUser = user.toSafeUser();
   safeUser.role = role.toObject ? role.toObject() : (role as any);
 
+  // If user has customized user-centric permissions, overlay them onto role for runtime authorization
+  if (user.customPermissions && user.customPermissions.length > 0 && role.slug !== 'super_admin') {
+    const effectiveRole: any = {
+      ...(role.toObject ? role.toObject() : (role as any)),
+      permissions: user.customPermissions,
+    };
+    safeUser.role = effectiveRole;
+    return {
+      user: safeUser,
+      role: effectiveRole,
+    };
+  }
+
   return {
     user: safeUser,
     role,

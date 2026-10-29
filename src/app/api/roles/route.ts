@@ -21,7 +21,23 @@ export async function GET(req: NextRequest) {
     }
 
     const roles = await listRoles();
-    return jsonResponse(roles);
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
+
+    // If Admin, only show their allowedSubRoles in role lists
+    let filteredRoles = roles;
+    if (!isSuperAdmin) {
+      // Exclude super_admin
+      filteredRoles = filteredRoles.filter((r) => r.slug !== 'super_admin');
+    }
+    if (isAdmin) {
+      const allowed = authContext.user.allowedSubRoles || [];
+      filteredRoles = filteredRoles.filter(
+        (r) => allowed.includes(r.slug) || r.slug === 'admin'
+      );
+    }
+
+    return jsonResponse(filteredRoles);
   } catch (error: any) {
     console.error('GET /api/roles error:', error);
     return errorResponse(error.message || 'Failed to retrieve roles', 500);

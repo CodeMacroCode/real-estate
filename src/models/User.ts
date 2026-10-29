@@ -10,11 +10,11 @@ const UserSchema = new Schema<IUserDocument>(
   {
     employeeId: {
       type: String,
-      required: [true, 'Employee ID is required'],
       unique: true,
       trim: true,
       uppercase: true,
       maxlength: [50, 'Employee ID cannot exceed 50 characters'],
+      default: () => `EMP${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`,
     },
     name: {
       type: String,
@@ -42,8 +42,8 @@ const UserSchema = new Schema<IUserDocument>(
     },
     department: {
       type: String,
-      required: [true, 'Department is required'],
       trim: true,
+      default: 'General',
     },
     roleId: {
       type: Schema.Types.ObjectId,
@@ -52,13 +52,13 @@ const UserSchema = new Schema<IUserDocument>(
     },
     designation: {
       type: String,
-      required: [true, 'Designation is required'],
       trim: true,
+      default: 'Staff',
     },
     branch: {
       type: String,
-      required: [true, 'Branch is required'],
       trim: true,
+      default: 'Headquarters',
     },
     profilePhoto: {
       type: String,
@@ -89,6 +89,29 @@ const UserSchema = new Schema<IUserDocument>(
       type: String,
       trim: true,
       default: '',
+    },
+    allowedSubRoles: {
+      type: [String],
+      default: [],
+    },
+    parentAdminId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    customPermissions: [
+      {
+        module: { type: String, required: true },
+        actions: { type: [String], default: [] },
+        leadVisibilityScope: { type: String, enum: ['assigned', 'team', 'company'], default: 'assigned' },
+      },
+    ],
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
     },
     lastLoginAt: {
       type: Date,
@@ -124,6 +147,16 @@ UserSchema.methods.toSafeUser = function (): SafeUser {
 };
 
 export const User: Model<IUserDocument> =
-  mongoose.models.User || mongoose.model<IUserDocument>('User', UserSchema);
+  mongoose.models.User
+    ? (mongoose.models.User.schema.path('parentAdminId')
+        ? (mongoose.models.User as Model<IUserDocument>)
+        : mongoose.model<IUserDocument>('User', UserSchema))
+    : mongoose.model<IUserDocument>('User', UserSchema);
+
+// If the model was already registered in a previous HMR cycle without the new fields, update schema paths
+if (mongoose.models.User && !mongoose.models.User.schema.path('parentAdminId')) {
+  delete (mongoose.models as any).User;
+  mongoose.model<IUserDocument>('User', UserSchema);
+}
 
 export default User;

@@ -26,6 +26,11 @@ const AuditActorSchema = new Schema(
       type: String,
       required: true,
     },
+    parentAdminId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
   },
   { _id: false }
 );
@@ -35,6 +40,18 @@ const AuditLogSchema = new Schema<IAuditLogDocument>(
     actor: {
       type: AuditActorSchema,
       required: true,
+    },
+    parentAdminId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
+    },
+    targetUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
     },
     action: {
       type: String,

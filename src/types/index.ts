@@ -38,6 +38,15 @@ export const BASELINE_ROLE_SLUGS: BaselineRoleSlug[] = [
   'management_viewer',
 ];
 
+export const ADMIN_DELEGATABLE_SUBROLES = [
+  'property_manager',
+  'sales_executive',
+  'sales_manager',
+  'website_manager',
+] as const;
+
+export type AdminDelegatableSubrole = (typeof ADMIN_DELEGATABLE_SUBROLES)[number];
+
 export type CRMModule =
   | 'dashboard'
   | 'leads'
@@ -147,6 +156,10 @@ export interface IUser {
   loginStatus: LoginStatus;
   reportingManagerId?: string | IUser;
   team?: string;
+  allowedSubRoles?: string[];
+  parentAdminId?: string | IUser;
+  customPermissions?: ModulePermissionConfig[];
+  createdBy?: string | IUser;
   lastLoginAt?: string | Date;
   lastLogoutAt?: string | Date;
   createdAt?: string | Date;
@@ -179,7 +192,10 @@ export interface IAuditLog {
     name: string;
     email: string;
     roleSlug: string;
+    parentAdminId?: string;
   };
+  targetUserId?: string;
+  parentAdminId?: string;
   action: AuditAction;
   entity: string;
   entityId: string;

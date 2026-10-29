@@ -27,6 +27,14 @@ export async function GET(req: NextRequest) {
     const branch = searchParams.get('branch') || '';
     const roleId = searchParams.get('roleId') || '';
     const status = searchParams.get('status') || '';
+    const userType = searchParams.get('userType') as 'admin' | 'staff' | null;
+
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
+
+    // If an Admin requests without explicit userType, default to 'staff' (their sub-role staff directory)
+    // If SuperAdmin requests with userType='staff', list staff sub-roles; if userType='admin' or not specified, list admins
+    const effectiveUserType = userType || (isAdmin ? 'staff' : (isSuperAdmin ? 'admin' : undefined));
 
     const result = await listUsers({
       page,
@@ -36,6 +44,9 @@ export async function GET(req: NextRequest) {
       branch,
       roleId,
       status,
+      userType: effectiveUserType,
+      excludeSuperAdmin: !isSuperAdmin,
+      parentAdminId: isAdmin ? authContext.user._id : undefined,
     });
 
     return jsonResponse(result.users, 200, result.pagination);
@@ -71,6 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
     const canAssignRole = hasPermission(authContext.role, 'staff_users', 'assign');
 
     if (!isSuperAdmin && !canAssignRole) {
@@ -79,6 +91,22 @@ export async function POST(req: NextRequest) {
 
     if (targetRole.slug === 'super_admin' && !isSuperAdmin) {
       return errorResponse('Forbidden: Only a Super Admin can assign the Super Admin role', 403);
+    }
+
+    // If actor is Admin:
+    // 1. Cannot assign 'super_admin' or 'admin'
+    // 2. Can ONLY assign roles that are inside their allowedSubRoles
+    if (isAdmin) {
+      if (targetRole.slug === 'admin') {
+        return errorResponse('Forbidden: Admins cannot create other Admin accounts', 403);
+      }
+      const allowedRoles = authContext.user.allowedSubRoles || [];
+      if (!allowedRoles.includes(targetRole.slug)) {
+        return errorResponse(
+          `Forbidden: You are not authorized to create staff with role '${targetRole.name}'`,
+          403
+        );
+      }
     }
 
     if (!isSuperAdmin) {

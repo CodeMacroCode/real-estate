@@ -1,77 +1,201 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   ShieldCheck,
-  ShieldAlert,
+  Shield,
   Lock,
-  Edit3,
   Check,
   X,
   Info,
   CheckCircle2,
+  Save,
+  Users,
   ChevronRight,
+  Layers,
+  Filter,
 } from 'lucide-react';
-import { IRole, CRMModule, PermissionAction, PERMISSION_ACTIONS, CRM_MODULES } from '@/types';
-import { RoleBadge, Badge } from '@/components/ui/Badge';
+import {
+  CRMModule,
+  PermissionAction,
+  PERMISSION_ACTIONS,
+  CRM_MODULES,
+  SafeUser,
+  IRole,
+} from '@/types';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner, LoadingOverlay } from '@/components/ui/Spinner';
-import { Modal } from '@/components/ui/Modal';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
-export default function RolesPage() {
-  const [roles, setRoles] = useState<IRole[]>([]);
-  const [selectedRole, setSelectedRole] = useState<IRole | null>(null);
+export default function RolesAndPermissionsPage() {
+  const [currentUser, setCurrentUser] = useState<SafeUser | null>(null);
+  const [currentUserRoleSlug, setCurrentUserRoleSlug] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Edit Role Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingPermissions, setEditingPermissions] = useState<IRole['permissions']>([]);
-  const [editingScope, setEditingScope] = useState<'assigned' | 'team' | 'company'>('assigned');
-  const [editingDescription, setEditingDescription] = useState('');
-  const [saving, setSaving] = useState(false);
+  // Super Admin view state
+  const [admins, setAdmins] = useState<SafeUser[]>([]);
+  const [selectedAdminId, setSelectedAdminId] = useState<string>('');
 
-  const fetchRoles = useCallback(async () => {
-    setLoading(true);
+  // Admin view state
+  const [subRoleCategories, setSubRoleCategories] = useState<{ slug: string; name: string }[]>([]);
+  const [selectedSubRoleCategory, setSelectedSubRoleCategory] = useState<string>('');
+  const [staffUsers, setStaffUsers] = useState<SafeUser[]>([]);
+  const [selectedStaffUserId, setSelectedStaffUserId] = useState<string>('');
+
+  // Target User Permissions State
+  const [targetUser, setTargetUser] = useState<any>(null);
+  const [userPermissions, setUserPermissions] = useState<
+    Array<{ module: CRMModule; actions: PermissionAction[] }>
+  >([]);
+  const [adminCeiling, setAdminCeiling] = useState<
+    Array<{ module: CRMModule; actions: PermissionAction[] }> | null
+  >(null);
+
+  // Fetch Current Logged-in User
+  const fetchCurrentUser = useCallback(async () => {
     try {
-      const res = await fetch('/api/roles');
+      const res = await fetch('/api/auth/me');
       const data = await res.json();
       if (res.ok && data.success) {
-        const rolesList = data.data || [];
-        setRoles(rolesList);
-        setSelectedRole((prev) => {
-          if (!prev) return rolesList[0] || null;
-          return rolesList.find((r: IRole) => r._id === prev._id) || rolesList[0] || null;
-        });
-      } else {
-        throw new Error(data.error || 'Failed to fetch roles');
+        setCurrentUser(data.data.user);
+        const slug = data.data.role?.slug || '';
+        setCurrentUserRoleSlug(slug);
+
+        if (slug === 'super_admin') {
+          // Fetch all Admins
+          const adminRes = await fetch('/api/users?userType=admin&limit=100');
+          const adminData = await adminRes.json();
+          if (adminRes.ok && adminData.success) {
+            const adminList = adminData.data || [];
+            setAdmins(adminList);
+            if (adminList.length > 0) {
+              setSelectedAdminId(adminList[0]._id);
+            }
+          }
+        } else if (slug === 'admin') {
+          // Allowed subroles for this Admin
+          const allowedSlugs: string[] = data.data.user?.allowedSubRoles || [];
+          const categoryLabels: Record<string, string> = {
+            property_manager: 'Property Manager',
+            sales_executive: 'Sales Executive',
+            sales_manager: 'Sales Manager',
+            website_manager: 'Website Manager',
+          };
+          const categories = allowedSlugs.map((s) => ({
+            slug: s,
+            name: categoryLabels[s] || s.replace(/_/g, ' '),
+          }));
+          setSubRoleCategories(categories);
+          if (categories.length > 0) {
+            setSelectedSubRoleCategory(categories[0].slug);
+          }
+        }
       }
-    } catch (err: any) {
-      setError(err.message || 'Error loading roles');
+    } catch (err) {
+      console.error('Failed to load user info:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchRoles();
-  }, [fetchRoles]);
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
 
-  const handleOpenEdit = (role: IRole) => {
-    setEditingPermissions(JSON.parse(JSON.stringify(role.permissions || [])));
-    setEditingScope(role.leadVisibilityScope);
-    setEditingDescription(role.description);
+  // For Admin: When selectedSubRoleCategory changes, load staff in that category
+  useEffect(() => {
+    if (currentUserRoleSlug === 'admin' && selectedSubRoleCategory) {
+      const fetchStaffInCategory = async () => {
+        try {
+          const res = await fetch(`/api/staff?limit=100`);
+          const data = await res.json();
+          if (res.ok && data.success) {
+            const filtered = (data.data || []).filter(
+              (u: SafeUser) => (u.role as any)?.slug === selectedSubRoleCategory
+            );
+            setStaffUsers(filtered);
+            if (filtered.length > 0) {
+              setSelectedStaffUserId(filtered[0]._id);
+            } else {
+              setSelectedStaffUserId('');
+              setTargetUser(null);
+              setUserPermissions([]);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch staff in category:', err);
+        }
+      };
+      fetchStaffInCategory();
+    }
+  }, [currentUserRoleSlug, selectedSubRoleCategory]);
+
+  // Load Permissions Matrix for active target user
+  const activeUserIdToLoad = useMemo(() => {
+    if (currentUserRoleSlug === 'super_admin') {
+      return selectedAdminId;
+    } else if (currentUserRoleSlug === 'admin') {
+      return selectedStaffUserId;
+    }
+    return '';
+  }, [currentUserRoleSlug, selectedAdminId, selectedStaffUserId]);
+
+  const fetchTargetUserPermissions = useCallback(async (userId: string) => {
+    if (!userId) return;
+    setLoading(true);
     setError(null);
-    setIsEditModalOpen(true);
+    try {
+      const res = await fetch(`/api/permissions/user/${userId}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTargetUser(data.data);
+        setUserPermissions(data.data.permissions || []);
+        setAdminCeiling(data.data.ceilingPermissions || null);
+      } else {
+        throw new Error(data.error || 'Failed to load permissions');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error fetching target permissions');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeUserIdToLoad) {
+      fetchTargetUserPermissions(activeUserIdToLoad);
+    }
+  }, [activeUserIdToLoad, fetchTargetUserPermissions]);
+
+  // Determine which modules are available for assignment
+  const visibleModules = useMemo(() => {
+    if (currentUserRoleSlug === 'super_admin') {
+      return CRM_MODULES;
+    }
+    // Admin only sees modules present in adminCeiling
+    if (adminCeiling) {
+      return adminCeiling.map((p) => p.module);
+    }
+    return [];
+  }, [currentUserRoleSlug, adminCeiling]);
+
+  // Check if an action is assignable by the current user
+  const isActionAllowedByCeiling = (module: CRMModule, action: PermissionAction): boolean => {
+    if (currentUserRoleSlug === 'super_admin') {
+      return true;
+    }
+    if (!adminCeiling) return false;
+    const ceilingForMod = adminCeiling.find((p) => p.module === module);
+    return ceilingForMod ? ceilingForMod.actions.includes(action) : false;
   };
 
   const handleTogglePermission = (module: CRMModule, action: PermissionAction) => {
-    if (selectedRole?.slug === 'super_admin') {
-      return; // Protected
-    }
+    if (!isActionAllowedByCeiling(module, action)) return;
 
-    setEditingPermissions((prev) => {
+    setUserPermissions((prev) => {
       const existing = prev.find((p) => p.module === module);
       if (!existing) {
         return [...prev, { module, actions: [action] }];
@@ -85,32 +209,43 @@ export default function RolesPage() {
     });
   };
 
-  const handleSaveRole = async () => {
-    if (!selectedRole?._id) return;
+  const handleToggleAllForModule = (module: CRMModule) => {
+    const existing = userPermissions.find((p) => p.module === module);
+    const availableActions = PERMISSION_ACTIONS.filter((act) => isActionAllowedByCeiling(module, act));
+
+    const allSelected = existing && availableActions.every((a) => existing.actions.includes(a));
+
+    setUserPermissions((prev) => {
+      if (allSelected) {
+        return prev.filter((p) => p.module !== module);
+      } else {
+        const withoutCurrent = prev.filter((p) => p.module !== module);
+        return [...withoutCurrent, { module, actions: availableActions }];
+      }
+    });
+  };
+
+  const handleSavePermissions = async () => {
+    if (!activeUserIdToLoad) return;
     setSaving(true);
     setError(null);
+    setSuccessMsg(null);
 
     try {
-      const res = await fetch(`/api/roles/${selectedRole._id}`, {
+      const res = await fetch(`/api/permissions/user/${activeUserIdToLoad}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description: editingDescription,
-          leadVisibilityScope: editingScope,
-          permissions: editingPermissions,
-        }),
+        body: JSON.stringify({ permissions: userPermissions }),
       });
-
       const data = await res.json();
+
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to update role');
+        throw new Error(data.error || 'Failed to update permissions');
       }
 
-      setSuccessMsg(`Role '${selectedRole.name}' permissions updated successfully.`);
-      setIsEditModalOpen(false);
-      fetchRoles();
+      setSuccessMsg(`Permissions matrix successfully updated for ${targetUser?.name}!`);
     } catch (err: any) {
-      setError(err.message || 'Error saving role');
+      setError(err.message || 'Error updating permissions matrix');
     } finally {
       setSaving(false);
     }
@@ -118,275 +253,243 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Roles & Permissions Matrix
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Section 49 Specification: 7 baseline roles, 8 permission actions (View, Create, Edit, Delete, Export, Assign, Publish, Approve), and lead visibility scopes.
-        </p>
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <ShieldCheck className="w-7 h-7 text-blue-600" />
+            Roles & Permission Matrix
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {currentUserRoleSlug === 'super_admin'
+              ? 'Select an Admin user to grant/revoke CRM modules and 8-Action privilege matrices.'
+              : 'Configure personalized module permissions for staff users within your authorized sub-roles.'}
+          </p>
+        </div>
+
+        {activeUserIdToLoad && (
+          <button
+            onClick={handleSavePermissions}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition"
+          >
+            {saving ? <Spinner size="sm" className="text-white" /> : <Save className="w-4 h-4" />}
+            <span>Save Permission Matrix</span>
+          </button>
+        )}
       </div>
 
+      {/* Notifications */}
       {successMsg && (
         <Alert
           type="success"
-          title="Updated"
+          title="Updated Successfully"
           message={successMsg}
           onClose={() => setSuccessMsg(null)}
         />
       )}
-
-      {error && !isEditModalOpen && (
-        <Alert type="error" title="Error" message={error} onClose={() => setError(null)} />
+      {error && (
+        <Alert
+          type="error"
+          title="Error"
+          message={error}
+          onClose={() => setError(null)}
+        />
       )}
 
-      {loading ? (
-        <LoadingOverlay message="Loading access control policies..." />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Roles List Sidebar */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-1 space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-2 mb-3">
-              Baseline System Roles ({roles.length})
-            </h3>
-            <div className="space-y-1">
-              {roles.map((role) => (
-                <button
-                  key={role._id}
-                  onClick={() => setSelectedRole(role)}
-                  className={`w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                    selectedRole?._id === role._id
-                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{role.name}</span>
-                    <span className="text-[11px] font-mono text-slate-400">{role.slug}</span>
-                  </div>
-                  <ChevronRight
-                    className={`w-4 h-4 ${
-                      selectedRole?._id === role._id ? 'text-blue-600' : 'text-slate-300'
-                    }`}
-                  />
-                </button>
-              ))}
+      {/* Controls & User Selection Area */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        {currentUserRoleSlug === 'super_admin' ? (
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+              Select Admin User To Configure *
+            </label>
+            <div className="w-full sm:w-96">
+              <SearchableSelect
+                options={admins.map((admin) => ({
+                  value: admin._id,
+                  label: admin.name,
+                  subLabel: admin.email,
+                }))}
+                value={selectedAdminId}
+                onChange={(val) => setSelectedAdminId(val)}
+                placeholder="Search and select an Admin..."
+                searchPlaceholder="Search by admin name or email..."
+              />
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                1. Select Sub-Role Category
+              </label>
+              <select
+                value={selectedSubRoleCategory}
+                onChange={(e) => setSelectedSubRoleCategory(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {subRoleCategories.map((cat) => (
+                  <option key={cat.slug} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Selected Role Detail & Matrix */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-3 space-y-6">
-            {selectedRole && (
-              <>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-slate-200 gap-4">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-xl font-bold text-slate-900">{selectedRole.name}</h2>
-                      <RoleBadge roleSlug={selectedRole.slug} roleName={selectedRole.name} />
-                      {selectedRole.isSystem && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                          <Lock className="w-3 h-3" />
-                          System Role
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">{selectedRole.description}</p>
-                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
-                      <span>
-                        Lead Visibility Scope:{' '}
-                        <strong className="capitalize text-slate-800">
-                          {selectedRole.leadVisibilityScope}
-                        </strong>
-                      </span>
-                      <span>&bull;</span>
-                      <span>
-                        Active Module Permissions:{' '}
-                        <strong className="text-slate-800">
-                          {selectedRole.permissions?.length || 0}
-                        </strong>
-                      </span>
-                    </div>
-                  </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                2. Select Staff Member
+              </label>
+              <SearchableSelect
+                options={staffUsers.map((u) => ({
+                  value: u._id,
+                  label: u.name,
+                  subLabel: u.email,
+                }))}
+                value={selectedStaffUserId}
+                onChange={(val) => setSelectedStaffUserId(val)}
+                disabled={staffUsers.length === 0}
+                placeholder={staffUsers.length === 0 ? "No staff in this category" : "Search and select staff member..."}
+                searchPlaceholder="Search by staff name or email..."
+              />
+            </div>
+          </div>
+        )}
 
-                  <div>
-                    <button
-                      onClick={() => handleOpenEdit(selectedRole)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Configure Permissions</span>
-                    </button>
-                  </div>
+        {/* Selected User Details Banner */}
+        {targetUser && (
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm">
+                {targetUser.name?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {targetUser.name}{' '}
+                  <span className="text-xs font-normal text-slate-500">({targetUser.email})</span>
                 </div>
-
-                {/* Permissions Matrix */}
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                    Module Action Matrix (8 Required Actions)
-                  </h3>
-                  <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
-                        <tr>
-                          <th className="px-4 py-3">CRM Module</th>
-                          {PERMISSION_ACTIONS.map((action) => (
-                            <th key={action} className="px-2 py-3 text-center capitalize">
-                              {action}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700">
-                        {CRM_MODULES.map((module) => {
-                          const config = selectedRole.permissions?.find((p) => p.module === module);
-                          return (
-                            <tr key={module} className="hover:bg-slate-50/50">
-                              <td className="px-4 py-2.5 font-medium text-slate-900 capitalize">
-                                {module.replace(/_/g, ' ')}
-                              </td>
-                              {PERMISSION_ACTIONS.map((action) => {
-                                const isAllowed =
-                                  selectedRole.slug === 'super_admin' ||
-                                  Boolean(config?.actions?.includes(action));
-                                return (
-                                  <td key={action} className="px-2 py-2.5 text-center">
-                                    {isAllowed ? (
-                                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold">
-                                        <Check className="w-3 h-3" />
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-slate-300">
-                                        &bull;
-                                      </span>
-                                    )}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                    Role: {targetUser.role?.name || targetUser.role?.slug}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Active Granted Modules: <strong>{userPermissions.length}</strong>
+                  </span>
                 </div>
-              </>
-            )}
+              </div>
+            </div>
+
+            <div className="text-xs text-slate-500">
+              {currentUserRoleSlug === 'super_admin' ? (
+                <span className="text-blue-600 font-medium">
+                  Full Authority: You can grant any of the 10+ CRM Modules
+                </span>
+              ) : (
+                <span className="text-amber-600 font-medium">
+                  Privilege Ceiling: Restricted to your assigned modules ({visibleModules.length})
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Module Action Matrix (8 Required Actions) */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Module Action Matrix</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Check actions to grant permissions across CRM modules.
+            </p>
           </div>
         </div>
-      )}
 
-      {/* Edit Role Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title={`Configure Role: ${selectedRole?.name}`}
-        description="Update lead visibility scope and action grants."
-        maxWidth="4xl"
-      >
-        <div className="space-y-5">
-          {error && isEditModalOpen && (
-            <Alert type="error" title="Failed to Update" message={error} onClose={() => setError(null)} />
-          )}
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase">
-              Role Description
-            </label>
-            <textarea
-              rows={2}
-              value={editingDescription}
-              onChange={(e) => setEditingDescription(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            />
+        {loading ? (
+          <div className="p-12 text-center">
+            <LoadingOverlay message="Loading user permission matrix..." />
           </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase">
-              Default Lead Visibility Scope (Section 50)
-            </label>
-            <select
-              value={editingScope}
-              disabled={selectedRole?.slug === 'super_admin'}
-              onChange={(e) => setEditingScope(e.target.value as any)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
-            >
-              <option value="assigned">Only Assigned Leads</option>
-              <option value="team">Team Leads</option>
-              <option value="company">All Company Leads</option>
-            </select>
-            {selectedRole?.slug === 'super_admin' && (
-              <p className="mt-1 text-xs text-slate-400">Super Admin scope is locked to Company-wide.</p>
-            )}
+        ) : !activeUserIdToLoad ? (
+          <div className="p-8 text-center text-sm text-slate-500">
+            Please select a user above to configure their permissions.
           </div>
-
-          <div>
-            <h4 className="text-xs font-semibold text-slate-700 uppercase mb-2">
-              Action Permissions Toggle Matrix
-            </h4>
-            <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-lg">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 sticky top-0 text-slate-600 uppercase border-b border-slate-200">
-                  <tr>
-                    <th className="px-3 py-2 font-semibold">Module</th>
-                    {PERMISSION_ACTIONS.map((action) => (
-                      <th key={action} className="px-2 py-2 text-center capitalize">
-                        {action}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {CRM_MODULES.map((module) => {
-                    const cfg = editingPermissions.find((p) => p.module === module);
-                    return (
-                      <tr key={module} className="hover:bg-slate-50/50">
-                        <td className="px-3 py-2 font-medium capitalize">
-                          {module.replace(/_/g, ' ')}
-                        </td>
-                        {PERMISSION_ACTIONS.map((action) => {
-                          const checked =
-                            selectedRole?.slug === 'super_admin' ||
-                            Boolean(cfg?.actions?.includes(action));
-                          return (
-                            <td key={action} className="px-2 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                disabled={selectedRole?.slug === 'super_admin'}
-                                onChange={() => handleTogglePermission(module, action)}
-                                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
-                              />
-                            </td>
-                          );
-                        })}
-                      </tr>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-100/75 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th scope="col" className="px-6 py-3.5 font-semibold w-1/4">
+                    CRM Module
+                  </th>
+                  {PERMISSION_ACTIONS.map((action) => (
+                    <th key={action} scope="col" className="px-3 py-3.5 font-semibold text-center">
+                      {action}
+                    </th>
+                  ))}
+                  <th scope="col" className="px-4 py-3.5 font-semibold text-right">
+                    Toggle All
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {visibleModules.map((module) => {
+                  const modConfig = userPermissions.find((p) => p.module === module);
+                  const isAllChecked =
+                    modConfig &&
+                    PERMISSION_ACTIONS.filter((act) => isActionAllowedByCeiling(module, act)).every((a) =>
+                      modConfig.actions.includes(a)
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setIsEditModalOpen(false)}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleSaveRole}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving && <Spinner size="sm" className="text-white" />}
-              <span>Save Permissions</span>
-            </button>
+                  return (
+                    <tr key={module} className="hover:bg-slate-50/75 transition">
+                      <td className="px-6 py-3.5 font-medium text-slate-800">
+                        <div className="capitalize">{module.replace(/_/g, ' ')}</div>
+                      </td>
+
+                      {PERMISSION_ACTIONS.map((action) => {
+                        const isGranted = modConfig?.actions.includes(action) || false;
+                        const allowed = isActionAllowedByCeiling(module, action);
+
+                        return (
+                          <td key={action} className="px-3 py-3.5 text-center">
+                            {allowed ? (
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePermission(module, action)}
+                                className={`w-6 h-6 rounded flex items-center justify-center transition border ${
+                                  isGranted
+                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                    : 'border-slate-300 hover:border-blue-400 bg-white'
+                                }`}
+                              >
+                                {isGranted && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                              </button>
+                            ) : (
+                              <span className="text-slate-200 text-xs">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAllForModule(module)}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                        >
+                          {isAllChecked ? 'Deselect All' : 'Select All'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </Modal>
+        )}
+      </div>
     </div>
   );
 }
