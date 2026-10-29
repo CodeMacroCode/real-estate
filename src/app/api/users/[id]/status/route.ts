@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -29,7 +30,7 @@ export async function PATCH(
 
     // Verify target user exists and check scope
     const { User } = await import('@/models/User');
-    const existingTarget = await User.findById(params.id).populate('roleId');
+    const existingTarget = await User.findById(id).populate('roleId');
     if (!existingTarget) {
       return errorResponse('User not found', 404);
     }
@@ -54,7 +55,7 @@ export async function PATCH(
 
     const { status, reason } = parseResult.data;
 
-    const updatedUser = await updateUserStatus(params.id, status, reason, {
+    const updatedUser = await updateUserStatus(id, status, reason, {
       userId: authContext.user._id,
       employeeId: authContext.user.employeeId,
       name: authContext.user.name,
@@ -64,7 +65,8 @@ export async function PATCH(
 
     return jsonResponse(updatedUser);
   } catch (error: any) {
-    console.error(`PATCH /api/users/${params.id}/status error:`, error);
+    const { id } = await params;
+    console.error(`PATCH /api/users/${id}/status error:`, error);
     return errorResponse(error.message || 'Failed to update account status', 400);
   }
 }

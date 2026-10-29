@@ -11,9 +11,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse("Unauthorized", 401);
@@ -26,7 +27,7 @@ export async function GET(
       );
     }
 
-    const staffMember = await getUserById(params.id);
+    const staffMember = await getUserById(id);
     if (!staffMember) {
       return errorResponse("Staff member not found", 404);
     }
@@ -57,7 +58,8 @@ export async function GET(
 
     return jsonResponse(staffMember);
   } catch (error: any) {
-    console.error(`GET /api/staff/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`GET /api/staff/${id} error:`, error);
     return errorResponse(
       error.message || "Failed to retrieve staff member",
       500,
@@ -67,9 +69,10 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse("Unauthorized", 401);
@@ -90,7 +93,7 @@ export async function PUT(
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
-    const existingStaff = await User.findById(params.id).populate("roleId");
+    const existingStaff = await User.findById(id).populate("roleId");
     if (!existingStaff) {
       return errorResponse("Staff member not found", 404);
     }
@@ -170,7 +173,7 @@ export async function PUT(
       delete updatePayload.parentAdminId; // Admins cannot reassign staff to other admins
     }
 
-    const updated = await updateUser(params.id, updatePayload, {
+    const updated = await updateUser(id, updatePayload, {
       userId: authContext.user._id,
       employeeId: authContext.user.employeeId,
       name: authContext.user.name,
@@ -180,7 +183,8 @@ export async function PUT(
 
     return jsonResponse(updated);
   } catch (error: any) {
-    console.error(`PUT /api/staff/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`PUT /api/staff/${id} error:`, error);
     const msg = error.message || "Failed to update staff member";
     if (msg.includes("forbidden") || msg.includes("Forbidden")) {
       return errorResponse(msg, 403);
@@ -194,9 +198,10 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse("Unauthorized", 401);
@@ -209,7 +214,7 @@ export async function DELETE(
       );
     }
 
-    const existingStaff = await User.findById(params.id).populate("roleId");
+    const existingStaff = await User.findById(id).populate("roleId");
     if (!existingStaff) {
       return errorResponse("Staff member not found", 404);
     }
@@ -233,7 +238,7 @@ export async function DELETE(
       );
     }
 
-    await deleteUser(params.id, {
+    await deleteUser(id, {
       userId: authContext.user._id,
       employeeId: authContext.user.employeeId,
       name: authContext.user.name,
@@ -243,7 +248,8 @@ export async function DELETE(
 
     return jsonResponse({ message: "Staff member deleted successfully" });
   } catch (error: any) {
-    console.error(`DELETE /api/staff/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`DELETE /api/staff/${id} error:`, error);
     return errorResponse(error.message || "Failed to delete staff member", 500);
   }
 }

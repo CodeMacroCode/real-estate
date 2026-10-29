@@ -11,9 +11,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -23,7 +24,7 @@ export async function GET(
       return errorResponse('Forbidden: You lack permission to view staff user details', 403);
     }
 
-    const user = await getUserById(params.id);
+    const user = await getUserById(id);
     if (!user) {
       return errorResponse('User not found', 404);
     }
@@ -45,16 +46,18 @@ export async function GET(
 
     return jsonResponse(user);
   } catch (error: any) {
-    console.error(`GET /api/users/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`GET /api/users/${id} error:`, error);
     return errorResponse(error.message || 'Failed to retrieve user', 500);
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -73,7 +76,7 @@ export async function PUT(
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
-    const existingUser = await User.findById(params.id).populate('roleId');
+    const existingUser = await User.findById(id).populate('roleId');
     if (!existingUser) {
       return errorResponse('User not found', 404);
     }
@@ -96,7 +99,7 @@ export async function PUT(
     // Separate ordinary staff editing from privileged role assignment
     if (parseResult.data.roleId && parseResult.data.roleId !== (existingUser.roleId as any)._id.toString()) {
       // 1. Prevent self-escalation
-      if (params.id.toString() === authContext.user._id.toString()) {
+      if (id.toString() === authContext.user._id.toString()) {
         return errorResponse('Self-escalation forbidden: You cannot change your own role', 403);
       }
 
@@ -142,7 +145,7 @@ export async function PUT(
       }
     }
 
-    const updatedUser = await updateUser(params.id, parseResult.data, {
+    const updatedUser = await updateUser(id, parseResult.data, {
       userId: authContext.user._id,
       employeeId: authContext.user.employeeId,
       name: authContext.user.name,
@@ -152,7 +155,8 @@ export async function PUT(
 
     return jsonResponse(updatedUser);
   } catch (error: any) {
-    console.error(`PUT /api/users/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`PUT /api/users/${id} error:`, error);
     const msg = error.message || 'Failed to update user';
     if (msg.includes('forbidden') || msg.includes('Forbidden') || msg.includes('Self-escalation')) {
       return errorResponse(msg, 403);

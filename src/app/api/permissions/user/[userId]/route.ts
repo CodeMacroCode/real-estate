@@ -16,9 +16,10 @@ const updateCustomPermissionsSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -31,7 +32,7 @@ export async function GET(
       return errorResponse('Forbidden: You lack authority to view user permission matrices', 403);
     }
 
-    const targetUser = await User.findById(params.userId).populate('roleId');
+    const targetUser = await User.findById(userId).populate('roleId');
     if (!targetUser) {
       return errorResponse('User not found', 404);
     }
@@ -73,16 +74,18 @@ export async function GET(
       ceilingPermissions,
     });
   } catch (error: any) {
-    console.error(`GET /api/permissions/user/${params.userId} error:`, error);
+    const { userId } = await params;
+    console.error(`GET /api/permissions/user/${userId} error:`, error);
     return errorResponse(error.message || 'Failed to retrieve user permissions', 500);
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -101,7 +104,7 @@ export async function PUT(
       return errorResponse('Invalid permissions payload structure', 400, parseResult.error.format());
     }
 
-    const targetUser = await User.findById(params.userId).populate('roleId');
+    const targetUser = await User.findById(userId).populate('roleId');
     if (!targetUser) {
       return errorResponse('User not found', 404);
     }
@@ -179,7 +182,8 @@ export async function PUT(
       permissions: targetUser.customPermissions,
     });
   } catch (error: any) {
-    console.error(`PUT /api/permissions/user/${params.userId} error:`, error);
+    const { userId } = await params;
+    console.error(`PUT /api/permissions/user/${userId} error:`, error);
     return errorResponse(error.message || 'Failed to update user permissions', 500);
   }
 }

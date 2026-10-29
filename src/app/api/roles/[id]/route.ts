@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -24,23 +25,25 @@ export async function GET(
       return errorResponse('Forbidden: You lack permission to view role details', 403);
     }
 
-    const role = await getRoleById(params.id);
+    const role = await getRoleById(id);
     if (!role) {
       return errorResponse('Role not found', 404);
     }
 
     return jsonResponse(role);
   } catch (error: any) {
-    console.error(`GET /api/roles/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`GET /api/roles/${id} error:`, error);
     return errorResponse(error.message || 'Failed to retrieve role', 500);
   }
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authContext = await getAuthenticatedContext(req);
     if (!authContext) {
       return errorResponse('Unauthorized', 401);
@@ -64,7 +67,7 @@ export async function PUT(
     }
 
     const updatedRole = await updateRole(
-      params.id,
+      id,
       parseResult.data as any,
       {
         userId: authContext.user._id,
@@ -79,7 +82,8 @@ export async function PUT(
 
     return jsonResponse(updatedRole);
   } catch (error: any) {
-    console.error(`PUT /api/roles/${params.id} error:`, error);
+    const { id } = await params;
+    console.error(`PUT /api/roles/${id} error:`, error);
     const msg = error.message || 'Failed to update role';
     if (msg.includes('forbidden') || msg.includes('Forbidden') || msg.includes('Cannot alter permissions of system role')) {
       return errorResponse(msg, 403);

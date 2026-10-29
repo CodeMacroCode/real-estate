@@ -254,7 +254,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateUserHandler(req, { params: { id: targetStaffUser._id.toString() } });
+      const res = await updateUserHandler(req, { params: Promise.resolve({ id: targetStaffUser._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(200);
@@ -275,7 +275,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateUserHandler(req, { params: { id: targetStaffUser._id.toString() } });
+      const res = await updateUserHandler(req, { params: Promise.resolve({ id: targetStaffUser._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(403);
@@ -295,7 +295,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateUserHandler(req, { params: { id: adminUser._id.toString() } });
+      const res = await updateUserHandler(req, { params: Promise.resolve({ id: adminUser._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(403);
@@ -307,6 +307,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
   // --- ROLE MANAGEMENT & SYSTEM ROLE PROTECTIONS ---
   describe('Role Management Authorization (PUT /api/roles/[id])', () => {
     it('Success: Super Admin can update permissions of a non-super-admin role', async () => {
+      await Role.deleteOne({ slug: 'custom_editable_role' });
       const targetRole = await Role.create({
         name: 'Editable Custom Role',
         slug: 'custom_editable_role',
@@ -331,7 +332,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateRoleHandler(req, { params: { id: targetRole._id.toString() } });
+      const res = await updateRoleHandler(req, { params: Promise.resolve({ id: targetRole._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(200);
@@ -351,7 +352,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateRoleHandler(req, { params: { id: superAdminRole._id.toString() } });
+      const res = await updateRoleHandler(req, { params: Promise.resolve({ id: superAdminRole._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(403);
@@ -371,7 +372,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateRoleHandler(req, { params: { id: salesExecRole._id.toString() } });
+      const res = await updateRoleHandler(req, { params: Promise.resolve({ id: salesExecRole._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(403);
@@ -381,6 +382,8 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
 
     it('Rejection: Self-escalation blocked when administrative actor attempts to modify their own assigned role', async () => {
       // Create a temporary custom admin role so we can test self-escalation
+      await Role.deleteOne({ slug: 'custom_admin_escalate' });
+      await User.deleteOne({ employeeId: 'CUSTOM_ESC_01' });
       const customRole = await Role.create({
         name: 'Custom Admin',
         slug: 'custom_admin_escalate',
@@ -430,7 +433,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
         }),
       });
 
-      const res = await updateRoleHandler(req, { params: { id: customRole._id.toString() } });
+      const res = await updateRoleHandler(req, { params: Promise.resolve({ id: customRole._id.toString() }) });
       const data = await res.json();
 
       expect(res.status).toBe(403);
@@ -471,6 +474,7 @@ describe('Integration: Comprehensive API Handlers & Authorization Security', () 
 
     it('CRITICAL: Token is invalidated after user logs out via POST /api/auth/logout', async () => {
       // Create user and token for logout test
+      await User.deleteOne({ employeeId: 'LOGOUT_USER_01' });
       const logoutUser = await User.create({
         employeeId: 'LOGOUT_USER_01',
         name: 'Logout Test User',
