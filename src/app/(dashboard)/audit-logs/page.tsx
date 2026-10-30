@@ -20,6 +20,14 @@ import { Alert } from '@/components/ui/Alert';
 import { LoadingOverlay } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<IAuditLog[]>([]);
@@ -504,51 +512,51 @@ export default function AuditLogsPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Timestamp</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Actor</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Action</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Entity & ID</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Source</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
+          <div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[190px]">Timestamp</TableHead>
+                  <TableHead className="w-[220px]">Actor</TableHead>
+                  <TableHead className="w-[120px]">Action</TableHead>
+                  <TableHead className="w-[180px]">Entity &amp; ID</TableHead>
+                  <TableHead className="w-[120px]">Source</TableHead>
+                  <TableHead className="text-right">Details</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {logs.map((log) => (
-                  <tr key={log._id} className="hover:bg-slate-50/75 transition">
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
+                  <TableRow key={log._id}>
+                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
                         <span>{new Date(log.timestamp).toLocaleString()}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell>
                       <div className="font-semibold text-slate-900">{log.actor.name}</div>
                       <div className="text-xs text-slate-500">{log.actor.email}</div>
                       <div className="text-[11px] font-mono text-purple-600 capitalize">
                         {log.actor.roleSlug?.replace(/_/g, ' ')}
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell>
                       {getActionBadge(log.action)}
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell>
                       <div className="font-mono text-xs font-semibold text-slate-800 uppercase">
                         {log.entity}
                       </div>
                       <div className="font-mono text-[11px] text-slate-400 truncate max-w-[120px]">
                         {log.entityId}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-500">
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-500">
                       <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-[11px]">
                         {log.source}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       <button
                         onClick={() => handleOpenDetail(log)}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
@@ -556,11 +564,11 @@ export default function AuditLogsPage() {
                         <Eye className="w-3.5 h-3.5" />
                         <span>Inspect Payload</span>
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 

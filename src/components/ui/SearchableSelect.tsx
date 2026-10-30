@@ -44,16 +44,21 @@ export function SearchableSelect({
     [options, value]
   );
 
-  // Debounced server-side search callback
+  // Debounced server-side search callback only when searchTerm changes and dropdown is open
+  const isFirstMount = useRef(true);
   useEffect(() => {
     if (!onSearchChange) return;
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return; // Do NOT trigger on initial mount
+    }
 
     const timer = setTimeout(() => {
       onSearchChange(searchTerm);
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, onSearchChange, debounceMs]);
+  }, [searchTerm, debounceMs]); // Note: removed onSearchChange from deps to avoid re-triggering when parent re-renders!
 
   // Client-side fallback filter if no server-side handler is provided
   const displayOptions = useMemo(() => {

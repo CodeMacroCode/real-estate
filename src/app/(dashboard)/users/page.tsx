@@ -25,6 +25,14 @@ import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner, LoadingOverlay } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<SafeUser[]>([]);
@@ -381,30 +389,30 @@ export default function UsersPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Admin Member</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Role</th>
+          <div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[220px]">Admin Member</TableHead>
+                  <TableHead className="w-[140px]">Role</TableHead>
                   {currentUserRoleSlug === 'super_admin' ? (
-                    <th scope="col" className="px-6 py-3.5 font-semibold">Delegated Sub-Roles</th>
+                    <TableHead className="w-[240px]">Delegated Sub-Roles</TableHead>
                   ) : (
                     <>
-                      <th scope="col" className="px-6 py-3.5 font-semibold">Department & Designation</th>
-                      <th scope="col" className="px-6 py-3.5 font-semibold">Branch</th>
+                      <TableHead className="w-[200px]">Department &amp; Designation</TableHead>
+                      <TableHead className="w-[140px]">Branch</TableHead>
                     </>
                   )}
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Status</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Login Status</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Joining Date</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
+                  <TableHead className="w-[110px]">Status</TableHead>
+                  <TableHead className="w-[120px]">Login Status</TableHead>
+                  <TableHead className="w-[130px]">Joining Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {users.map((user) => (
-                  <tr key={user._id} className="hover:bg-slate-50/75 transition">
-                    <td className="px-6 py-4">
+                  <TableRow key={user._id}>
+                    <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-bold text-sm">
                           {user.name.charAt(0).toUpperCase()}
@@ -415,15 +423,15 @@ export default function UsersPage() {
                           <div className="text-xs text-slate-400">{user.mobile}</div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell>
                       <RoleBadge
                         roleSlug={user.role?.slug}
                         roleName={user.role?.name}
                       />
-                    </td>
+                    </TableCell>
                     {currentUserRoleSlug === 'super_admin' ? (
-                      <td className="px-6 py-4">
+                      <TableCell>
                         {(user as any).allowedSubRoles && (user as any).allowedSubRoles.length > 0 ? (
                           <div className="flex flex-wrap gap-1 max-w-xs">
                             {(user as any).allowedSubRoles.map((sub: string) => (
@@ -438,28 +446,28 @@ export default function UsersPage() {
                         ) : (
                           <span className="text-xs text-slate-400 italic">No sub-roles assigned</span>
                         )}
-                      </td>
+                      </TableCell>
                     ) : (
                       <>
-                        <td className="px-6 py-4">
+                        <TableCell>
                           <div className="font-medium text-slate-800">{user.department}</div>
                           <div className="text-xs text-slate-500">{user.designation}</div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-700 font-medium">
+                        </TableCell>
+                        <TableCell className="text-slate-700 font-medium">
                           {user.branch}
-                        </td>
+                        </TableCell>
                       </>
                     )}
-                    <td className="px-6 py-4">
+                    <TableCell>
                       <StatusBadge status={user.status} />
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell>
                       <LoginStatusBadge status={user.loginStatus} />
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-500 whitespace-nowrap">
                       {new Date(user.joiningDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleOpenEditModal(user)}
@@ -480,11 +488,11 @@ export default function UsersPage() {
                           <Power className="w-4 h-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 

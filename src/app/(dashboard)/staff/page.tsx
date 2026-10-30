@@ -26,6 +26,14 @@ import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
 import { Spinner, LoadingOverlay } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 export default function StaffPage() {
   const [users, setUsers] = useState<SafeUser[]>([]);
@@ -427,24 +435,24 @@ export default function StaffPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Staff Member</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Sub-Role</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Mobile Number</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Joining Date</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Managing Admin</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Status</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold">Login Status</th>
-                  <th scope="col" className="px-6 py-3.5 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
+          <div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Staff Member</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Sub-Role</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Mobile Number</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Joining Date</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Managing Admin</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Status</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold">Login Status</TableHead>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {users.map((user) => (
-                  <tr key={user._id} className="hover:bg-slate-50/75 transition">
-                    <td className="px-6 py-4">
+                  <TableRow key={user._id} className="hover:bg-slate-50/75 transition">
+                    <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-700 font-bold text-sm">
                           {user.name.charAt(0).toUpperCase()}
@@ -454,20 +462,20 @@ export default function StaffPage() {
                           <div className="text-xs text-slate-500">{user.email}</div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       <RoleBadge
                         roleSlug={user.role?.slug}
                         roleName={user.role?.name}
                       />
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-700">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 font-medium text-slate-700">
                       {user.mobile}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-slate-600">
                       {user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       {(user as any).parentAdminId?.name ? (
                         <div className="text-xs">
                           <span className="font-semibold text-slate-800">
@@ -480,14 +488,14 @@ export default function StaffPage() {
                       ) : (
                         <span className="text-xs text-slate-400 italic">Self / Unassigned</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       <StatusBadge status={user.status} />
-                    </td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
                       <LoginStatusBadge status={user.loginStatus} />
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleOpenEditModal(user)}
@@ -508,11 +516,11 @@ export default function StaffPage() {
                           <Power className="w-4 h-4" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 

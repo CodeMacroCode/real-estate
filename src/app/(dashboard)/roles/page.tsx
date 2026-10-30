@@ -26,6 +26,14 @@ import {
 import { Alert } from '@/components/ui/Alert';
 import { Spinner, LoadingOverlay } from '@/components/ui/Spinner';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 export default function RolesAndPermissionsPage() {
   const [currentUser, setCurrentUser] = useState<SafeUser | null>(null);
@@ -262,7 +270,7 @@ export default function RolesAndPermissionsPage() {
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {currentUserRoleSlug === 'super_admin'
-              ? 'Select an Admin user to grant/revoke CRM modules and 8-Action privilege matrices.'
+              ? 'Select an Admin user to grant/revoke allowed sub-roles and 8-Action privilege matrices.'
               : 'Configure personalized module permissions for staff users within your authorized sub-roles.'}
           </p>
         </div>
@@ -416,24 +424,24 @@ export default function RolesAndPermissionsPage() {
             Please select a user above to configure their permissions.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-100/75 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th scope="col" className="px-6 py-3.5 font-semibold w-1/4">
+          <div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col" className="px-6 py-3.5 font-semibold w-1/4">
                     CRM Module
-                  </th>
+                  </TableHead>
                   {PERMISSION_ACTIONS.map((action) => (
-                    <th key={action} scope="col" className="px-3 py-3.5 font-semibold text-center">
+                    <TableHead key={action} scope="col" className="px-3 py-3.5 font-semibold text-center">
                       {action}
-                    </th>
+                    </TableHead>
                   ))}
-                  <th scope="col" className="px-4 py-3.5 font-semibold text-right">
+                  <TableHead scope="col" className="px-4 py-3.5 font-semibold text-right">
                     Toggle All
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {visibleModules.map((module) => {
                   const modConfig = userPermissions.find((p) => p.module === module);
                   const isAllChecked =
@@ -443,17 +451,17 @@ export default function RolesAndPermissionsPage() {
                     );
 
                   return (
-                    <tr key={module} className="hover:bg-slate-50/75 transition">
-                      <td className="px-6 py-3.5 font-medium text-slate-800">
+                    <TableRow key={module} className="hover:bg-slate-50/75 transition">
+                      <TableCell className="px-6 py-3.5 font-medium text-slate-800">
                         <div className="capitalize">{module.replace(/_/g, ' ')}</div>
-                      </td>
+                      </TableCell>
 
                       {PERMISSION_ACTIONS.map((action) => {
                         const isGranted = modConfig?.actions.includes(action) || false;
                         const allowed = isActionAllowedByCeiling(module, action);
 
                         return (
-                          <td key={action} className="px-3 py-3.5 text-center">
+                          <TableCell key={action} className="px-3 py-3.5 text-center">
                             {allowed ? (
                               <button
                                 type="button"
@@ -469,11 +477,11 @@ export default function RolesAndPermissionsPage() {
                             ) : (
                               <span className="text-slate-200 text-xs">—</span>
                             )}
-                          </td>
+                          </TableCell>
                         );
                       })}
 
-                      <td className="px-4 py-3.5 text-right">
+                      <TableCell className="px-4 py-3.5 text-right">
                         <button
                           type="button"
                           onClick={() => handleToggleAllForModule(module)}
@@ -481,12 +489,12 @@ export default function RolesAndPermissionsPage() {
                         >
                           {isAllChecked ? 'Deselect All' : 'Select All'}
                         </button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

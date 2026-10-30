@@ -50,11 +50,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
       <Sidebar user={user} />
-      <div className="flex flex-1 flex-col pl-64">
+      <div className="flex flex-1 flex-col pl-64 min-w-0">
         <Header user={user} />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-6 md:p-8 w-full min-w-0">
           {children}
         </main>
       </div>

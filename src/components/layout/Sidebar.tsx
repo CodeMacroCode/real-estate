@@ -15,6 +15,10 @@ import {
   Globe,
   Settings,
   ChevronRight,
+  Calendar,
+  CheckCircle,
+  FileSpreadsheet,
+  Share2,
 } from 'lucide-react';
 import { SafeUser } from '@/types';
 
@@ -33,7 +37,7 @@ export function Sidebar({ user }: SidebarProps) {
   // Role-wise navigation items:
   // SuperAdmin sees: Dashboard, Users (Admins), Staff Management, Roles & Permissions, Audit Logs
   // Admin sees: Dashboard, Staff Management, Roles & Permissions, Audit Logs
-  // Sub-Role staff sees: Dashboard only (with welcome / personalized overview)
+  // Sub-Role staff sees: Dashboard only in Management (plus assigned CRM modules below)
   const navItems = [
     {
       name: 'Dashboard',
@@ -72,8 +76,55 @@ export function Sidebar({ user }: SidebarProps) {
     },
   ].filter((item) => item.visible);
 
+  // Active Phase 2 CRM Engine Modules
+  // SuperAdmin only sees Dynamic Forms (per blueprint: SuperAdmin creates & assigns form schemas)
+  // Admin and Sub-Roles handle day-to-day operational leads, appointments, and client confirmations
+  const phase2CrmItems = [
+    {
+      name: 'Dynamic Forms',
+      href: '/custom-forms',
+      icon: FileSpreadsheet,
+      active: pathname.startsWith('/custom-forms'),
+      visible: isSuperAdmin, // Form Builder owned exclusively by SuperAdmin
+    },
+    {
+      name: 'Leads & Enquiries',
+      href: '/leads',
+      icon: PhoneIncoming,
+      active: pathname.startsWith('/leads'),
+      visible: !isSuperAdmin, // Admin & Sub-Roles
+    },
+    {
+      name: 'Appointments & Meetings',
+      href: '/appointments',
+      icon: Calendar,
+      active: pathname.startsWith('/appointments'),
+      visible: !isSuperAdmin, // Admin & Sub-Roles
+    },
+    {
+      name: 'Client Confirmations',
+      href: '/client-confirmations',
+      icon: CheckCircle,
+      active: pathname.startsWith('/client-confirmations'),
+      visible: !isSuperAdmin, // Admin & Sub-Roles
+    },
+    {
+      name: 'Client Information (CRM)',
+      href: '/client-information',
+      icon: Users,
+      active: pathname.startsWith('/client-information'),
+      visible: !isSuperAdmin, // Admin & Sub-Roles
+    },
+    {
+      name: 'Connect Social Media',
+      href: '/connect-social-media',
+      icon: Share2,
+      active: pathname.startsWith('/connect-social-media'),
+      visible: isAdmin, // Connected at Admin organization level
+    },
+  ].filter((item) => item.visible);
+
   const laterPhaseModules = [
-    { name: 'Leads & Enquiries', icon: PhoneIncoming },
     { name: 'Properties Inventory', icon: Building2 },
     { name: 'Projects', icon: Layers },
     { name: 'Clients & Owners', icon: Briefcase },
@@ -129,11 +180,41 @@ export function Sidebar({ user }: SidebarProps) {
           </nav>
         </div>
 
+        {/* Active Phase 2 CRM Engine Navigation */}
         <div>
           <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            <span>CRM Modules</span>
+            <span>Leads & CRM</span>
+            <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">
+              Phase 2 Active
+            </span>
+          </div>
+          <nav className="space-y-1">
+            {phase2CrmItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    item.active
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${item.active ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Future Modules */}
+        <div>
+          <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span>Upcoming Modules</span>
             <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-normal">
-              Phase 2+
+              Phase 3+
             </span>
           </div>
           <div className="space-y-1">
