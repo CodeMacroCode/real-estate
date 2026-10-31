@@ -239,32 +239,6 @@ export function RolesClient({
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <ShieldCheck className="w-7 h-7 text-blue-600" />
-            Roles & Permission Matrix
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {currentUserRoleSlug === 'super_admin'
-              ? 'Select an Admin user to grant/revoke allowed sub-roles and 8-Action privilege matrices.'
-              : 'Configure personalized module permissions for staff users within your authorized sub-roles.'}
-          </p>
-        </div>
-
-        {activeUserIdToLoad && (
-          <button
-            onClick={handleSavePermissions}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition"
-          >
-            {saving ? <Spinner size="sm" className="text-white" /> : <Save className="w-4 h-4" />}
-            <span>Save Permission Matrix</span>
-          </button>
-        )}
-      </div>
-
       {/* Notifications */}
       {successMsg && (
         <Alert
@@ -284,7 +258,25 @@ export function RolesClient({
       )}
 
       {/* Controls & User Selection Area */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {currentUserRoleSlug === 'super_admin'
+              ? 'Admin User Privilege Configuration'
+              : 'Staff Role & Permission Matrix'}
+          </div>
+
+          {activeUserIdToLoad && (
+            <button
+              onClick={handleSavePermissions}
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 disabled:opacity-50 transition shrink-0"
+            >
+              {saving ? <Spinner size="sm" className="text-white" /> : <Save className="w-4 h-4" />}
+              <span>Save Permission Matrix</span>
+            </button>
+          )}
+        </div>
         {currentUserRoleSlug === 'super_admin' ? (
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">

@@ -18,6 +18,7 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   Award,
   Plus,
@@ -208,49 +209,6 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Users className="w-7 h-7 text-blue-600" />
-            <span>Client Information (CRM Directory)</span>
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Permanent accounts of graduated clients with won deals, contracts, and lifetime value tracking.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            onClick={() => fetchClients()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setSelectedClientForEdit(null);
-              setFormMode('create');
-              setIsFormModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Client</span>
-          </button>
-        </div>
-      </div>
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
@@ -294,33 +252,69 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+      {/* Filters & Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded-xl shadow-xs">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search clients by name, phone, email, or company..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+            className="w-full h-10 pl-9 pr-4 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </form>
 
-        <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="h-10 appearance-none pl-3.5 pr-10 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="VIP">VIP</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="flex h-10 items-center gap-1.5 px-3 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
+            title="Export CSV report"
           >
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="VIP">VIP</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fetchClients()}
+            className="flex h-10 items-center gap-1.5 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
+            title="Refresh clients list"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedClientForEdit(null);
+              setFormMode('create');
+              setIsFormModalOpen(true);
+            }}
+            className="flex h-10 items-center gap-1.5 px-4 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Client</span>
+          </button>
         </div>
       </div>
 

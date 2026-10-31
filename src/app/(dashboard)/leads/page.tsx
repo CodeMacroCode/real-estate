@@ -13,6 +13,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Edit2,
   FileSpreadsheet,
   AlertTriangle,
@@ -564,99 +565,87 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <PhoneIncoming className="w-6 h-6 text-blue-600" />
-            Leads &amp; Inquiries
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {isSuperAdmin
-              ? 'Platform-wide inbound leads across all organizations, dynamic forms, and advertising channels.'
-              : isAdmin
-              ? 'Inbound inquiries from Social Media (Meta/LinkedIn/Google) and dynamic forms for your organization.'
-              : 'Your assigned client inquiries, follow-ups, and scheduled meetings.'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => fetchLeads()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm"
-          >
-            <RefreshCw className="w-4 h-4 text-slate-400" />
-            <span>Refresh</span>
-          </button>
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Lead</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Toolbar */}
-      <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search client, phone, title..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Assigned">Assigned</option>
-              <option value="In-Progress">In-Progress</option>
-              <option value="Completed">Deal Won (Completed)</option>
-              <option value="Rejected">Deal Lost (Rejected)</option>
-            </select>
-          </div>
-
-          {/* Source Filter */}
-          <div>
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">All Inbound Sources</option>
-              <option value="Meta">Meta (Facebook/Instagram)</option>
-              <option value="LinkedIn">LinkedIn Lead Gen</option>
-              <option value="GoogleAds">Google Ads</option>
-              <option value="DynamicForm">Dynamic Form Builder</option>
-              <option value="Manual">Manual Entry</option>
-            </select>
-          </div>
-
-          {/* Admin Selector for Super Admin */}
-          {isSuperAdmin && (
-            <div>
-              <SearchableSelect
-                placeholder="Filter by Admin Org..."
-                options={adminOptions}
-                value={selectedAdminId}
-                onChange={setSelectedAdminId}
-                onSearchChange={fetchAdmins}
+      {/* Filter & Action Toolbar */}
+      <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 min-w-0">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search client, phone, title..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               />
             </div>
-          )}
+
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-10 appearance-none px-3.5 pr-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
+              >
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In-Progress">In-Progress</option>
+                <option value="Completed">Deal Won (Completed)</option>
+                <option value="Rejected">Deal Lost (Rejected)</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            </div>
+
+            {/* Source Filter */}
+            <div className="relative">
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="w-full h-10 appearance-none px-3.5 pr-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
+              >
+                <option value="">All Inbound Sources</option>
+                <option value="Meta">Meta (Facebook/Instagram)</option>
+                <option value="LinkedIn">LinkedIn Lead Gen</option>
+                <option value="GoogleAds">Google Ads</option>
+                <option value="DynamicForm">Dynamic Form Builder</option>
+                <option value="Manual">Manual Entry</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            </div>
+
+            {/* Admin Selector for Super Admin */}
+            {isSuperAdmin && (
+              <div>
+                <SearchableSelect
+                  placeholder="Filter by Admin Org..."
+                  options={adminOptions}
+                  value={selectedAdminId}
+                  onChange={setSelectedAdminId}
+                  onSearchChange={fetchAdmins}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => fetchLeads()}
+              className="flex h-10 items-center gap-1.5 px-3 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-xs transition"
+              title="Refresh leads list"
+            >
+              <RefreshCw className="w-4 h-4 text-slate-400" />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <button
+              onClick={handleOpenAddModal}
+              className="flex h-10 items-center gap-1.5 px-4 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-xs transition whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New Lead</span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -133,40 +133,7 @@ export function CustomFormsClient({
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <FileSpreadsheet className="w-7 h-7 text-purple-600" />
-            Form Builder &amp; Admin Assignments
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Design custom lead capture forms and assign them to specific Admin organizations.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => fetchFormsData()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm"
-          >
-            <RefreshCw className="w-4 h-4 text-slate-400" />
-            <span>Refresh</span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedFormToEdit(null);
-              setIsBuilderOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 shadow-sm transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create New Form</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Top Tab Switcher & Metrics */}
+      {/* Top Tab Switcher & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div className="flex items-center rounded-xl bg-slate-100 p-1 text-sm font-semibold">
           <button
@@ -200,19 +167,44 @@ export function CustomFormsClient({
           </button>
         </div>
 
-        {/* Metric Counters */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-            <span className="text-slate-400">Total Templates: </span>
-            <span className="font-bold text-slate-900">{totalTemplates}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Metric Counters */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+              <span className="text-slate-400">Total: </span>
+              <span className="font-bold text-slate-900">{totalTemplates}</span>
+            </div>
+            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+              <span className="text-slate-400">Active: </span>
+              <span className="font-bold text-emerald-700">{activeForms}</span>
+            </div>
+            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+              <span className="text-slate-400">Unassigned: </span>
+              <span className="font-bold text-amber-700">{unassignedForms}</span>
+            </div>
           </div>
-          <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-            <span className="text-slate-400">Active Forms: </span>
-            <span className="font-bold text-emerald-700">{activeForms}</span>
-          </div>
-          <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-            <span className="text-slate-400">Unassigned: </span>
-            <span className="font-bold text-amber-700">{unassignedForms}</span>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fetchFormsData()}
+              className="flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
+              title="Refresh forms"
+            >
+              <RefreshCw className="w-4 h-4 text-slate-400" />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedFormToEdit(null);
+                setIsBuilderOpen(true);
+              }}
+              className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition shadow-xs whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Form</span>
+            </button>
           </div>
         </div>
       </div>

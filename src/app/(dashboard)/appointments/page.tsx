@@ -414,44 +414,32 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <CalendarIcon className="w-7 h-7 text-blue-600" />
-            <span>Appointments & Meetings Hub</span>
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage multi-meeting chains, client decision gates, proposal templates, and Google Meet video links.
-          </p>
-        </div>
+      {/* Top Action Toolbar */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={handleExportCSV}
+          className="flex h-9 items-center gap-1.5 px-3 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
+          title="Export CSV report"
+        >
+          <Download className="w-3.5 h-3.5 text-slate-500" />
+          <span>Export CSV</span>
+        </button>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
-            title="Export CSV report"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export CSV</span>
-          </button>
+        <button
+          onClick={() => fetchAppointments()}
+          className="flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </button>
 
-          <button
-            onClick={() => fetchAppointments()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
-
-          <button
-            onClick={() => setIsScheduleOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Schedule Meeting</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setIsScheduleOpen(true)}
+          className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Schedule Meeting</span>
+        </button>
       </div>
 
       {/* 1. TOP TOOLBAR KPI FILTER CARDS */}

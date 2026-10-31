@@ -308,21 +308,6 @@ export function AuditLogsClient({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <History className="w-6 h-6 text-blue-600" />
-            Audit &amp; Compliance Trail
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {currentUserRoleSlug === 'super_admin'
-              ? 'Super Admin Audit: Inspect your own activity, specific Admin logs, or drill down into sub-role staff users.'
-              : 'Admin Audit: Inspect activity across your designated team members and delegated sub-roles.'}
-          </p>
-        </div>
-      </div>
-
       {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
       {/* Filter Matrix Card */}
