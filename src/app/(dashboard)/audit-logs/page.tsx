@@ -4,6 +4,7 @@ import { getServerAuthContext } from '@/lib/auth/session';
 import { hasPermission } from '@/policies/permissionPolicy';
 import { getAuditLogs } from '@/services/auditService';
 import { listUsers } from '@/services/userService';
+import { logSsrData } from '@/lib/ssrLogger';
 import { AuditLogsClient } from './AuditLogsClient';
 import { IAuditLog, SafeUser } from '@/types';
 
@@ -49,6 +50,12 @@ export default async function AuditLogsPage() {
   }
 
   const cleanUser = JSON.parse(JSON.stringify(currentUser));
+
+  logSsrData('/audit-logs', {
+    logs: initialLogs,
+    admins: initialAdmins,
+    pagination: { totalPages, totalCount },
+  });
 
   return (
     <AuditLogsClient

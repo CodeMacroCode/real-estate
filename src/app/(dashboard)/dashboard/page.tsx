@@ -16,6 +16,7 @@ import {
 import { getServerAuthContext } from '@/lib/auth/session';
 import { listUsers } from '@/services/userService';
 import { getAuditLogs } from '@/services/auditService';
+import { logSsrData } from '@/lib/ssrLogger';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +70,13 @@ export default async function DashboardPage() {
   } catch (err) {
     console.error('Failed to load dashboard metrics on server:', err);
   }
+
+  logSsrData('/dashboard', {
+    role: roleSlug,
+    adminCount,
+    staffCount,
+    auditCount,
+  });
 
   const grantedModulesCount = isSuperAdmin ? 28 : userPermissions.length;
 

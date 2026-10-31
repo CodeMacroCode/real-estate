@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getServerAuthContext } from '@/lib/auth/session';
 import { listUsers } from '@/services/userService';
 import { User } from '@/models/User';
+import { logSsrData } from '@/lib/ssrLogger';
 import { RolesClient } from './RolesClient';
 
 export const dynamic = 'force-dynamic';
@@ -79,6 +80,13 @@ export default async function RolesPage() {
   } catch (err) {
     console.error('Failed to pre-fetch roles data on server:', err);
   }
+
+  logSsrData('/roles', {
+    admins: initialAdmins,
+    selectedAdminId: initialSelectedAdminId,
+    targetUser: initialTargetUser,
+    userPermissionsCount: initialUserPermissions.length,
+  });
 
   return (
     <RolesClient

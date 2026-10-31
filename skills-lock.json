@@ -13,6 +13,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
     },
+    "hallmark": {
+      "source": "Nutlope/hallmark",
+      "sourceType": "github",
+      "skillPath": "skills/hallmark/SKILL.md",
+      "computedHash": "611aa02a0444197b38896cb3073866ae9563f10005f7d14e7bf4baf8ab58f437"
+    },
     "mongodb-query-optimizer": {
       "source": "mongodb/agent-skills",
       "sourceType": "github",

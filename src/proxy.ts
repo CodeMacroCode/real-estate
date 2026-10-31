@@ -18,6 +18,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith('/api/')) {
+    console.log(`\x1b[34m[API Request]\x1b[0m ${request.method} ${pathname}${request.nextUrl.search}`);
+  }
+
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 

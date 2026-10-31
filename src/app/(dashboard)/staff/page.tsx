@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getServerAuthContext } from '@/lib/auth/session';
 import { listUsers } from '@/services/userService';
 import { listRoles } from '@/services/roleService';
+import { logSsrData } from '@/lib/ssrLogger';
 import { StaffClient } from './StaffClient';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,12 @@ export default async function StaffPage() {
   const initialStaff = JSON.parse(JSON.stringify(staffResult.users));
   const initialRoles = JSON.parse(JSON.stringify(rolesResult));
   const initialAdmins = adminsResult ? JSON.parse(JSON.stringify(adminsResult.users)) : [];
+
+  logSsrData('/staff', {
+    staff: initialStaff,
+    admins: initialAdmins,
+    pagination: staffResult.pagination,
+  });
 
   return (
     <StaffClient

@@ -55,6 +55,7 @@ export async function verifySessionToken(
 ): Promise<AuthenticatedContext | null> {
   const payload = await verifyAuthToken(token);
   if (!payload || !payload.userId) {
+    console.warn('[auth] Session verification failed: Invalid or expired JWT token payload.');
     return null;
   }
 
@@ -62,11 +63,13 @@ export async function verifySessionToken(
   await connectToDatabase();
   const user = await User.findById(payload.userId).populate('roleId');
   if (!user) {
+    console.warn(`[auth] Session verification failed: User ${payload.userId} not found in database.`);
     return null;
   }
 
   // CRITICAL SECURITY RULE: Deactivated users must not retain authenticated access
   if (user.status !== 'active') {
+    console.warn(`[auth] Session verification failed: User ${user.email} account is not active.`);
     return null;
   }
 
@@ -77,12 +80,14 @@ export async function verifySessionToken(
     const logoutMs = new Date(user.lastLogoutAt).getTime();
     // Allow 1 second clock variance
     if (tokenIssuedMs < logoutMs - 1000) {
+      console.warn(`[auth] Session verification failed: Token issued before last logout for ${user.email}.`);
       return null;
     }
   }
 
   const role = user.roleId as unknown as IRoleDocument;
   if (!role) {
+    console.warn(`[auth] Session verification failed: Role not found for user ${user.email}.`);
     return null;
   }
 

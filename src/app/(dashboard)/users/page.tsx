@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthContext } from "@/lib/auth/session";
 import { listUsers } from "@/services/userService";
 import { listRoles } from "@/services/roleService";
+import { logSsrData } from "@/lib/ssrLogger";
 import { UsersClient } from "./UsersClient";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,11 @@ export default async function UsersPage() {
 
   const initialUsers = JSON.parse(JSON.stringify(usersResult.users));
   const initialRoles = JSON.parse(JSON.stringify(rolesResult));
+
+  logSsrData("/users", {
+    users: initialUsers,
+    pagination: usersResult.pagination,
+  });
 
   return (
     <UsersClient

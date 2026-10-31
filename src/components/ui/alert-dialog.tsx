@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 
 interface AlertDialogContextType {
   open: boolean;
@@ -73,7 +74,17 @@ export function AlertDialogTrigger({
 }
 
 export function AlertDialogPortal({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(children, document.body);
 }
 
 export const AlertDialogOverlay = React.forwardRef<
@@ -101,16 +112,18 @@ export const AlertDialogContent = React.forwardRef<
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <AlertDialogPortal>
       <AlertDialogOverlay />
       <div
         ref={ref}
-        className={`relative z-50 grid w-full max-w-lg gap-4 border border-slate-200 bg-white p-6 shadow-xl rounded-2xl ${className}`}
+        role="alertdialog"
+        aria-modal="true"
+        className={`fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border border-slate-200 bg-white p-6 shadow-xl rounded-2xl duration-200 ${className}`}
         {...props}
       >
         {children}
       </div>
-    </div>
+    </AlertDialogPortal>
   );
 });
 AlertDialogContent.displayName = "AlertDialogContent";
