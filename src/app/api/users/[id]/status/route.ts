@@ -53,7 +53,35 @@ export async function PATCH(
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
-    const { status, reason } = parseResult.data;
+    const { status, reason, superAdminPassword } = parseResult.data;
+
+    // Security Re-authentication: Require Super Admin password before deactivating an account
+    if (status === 'inactive') {
+      if (!superAdminPassword || superAdminPassword.trim().length === 0) {
+        return errorResponse(
+          isSuperAdmin
+            ? 'Super Admin password is required to deactivate an account'
+            : 'Password confirmation is required to deactivate an account',
+          400
+        );
+      }
+
+      const currentActor = await User.findById(authContext.user._id).select('+passwordHash');
+      if (!currentActor || !currentActor.passwordHash) {
+        return errorResponse('Authentication record not found', 401);
+      }
+
+      const { verifyPassword } = await import('@/lib/auth/password');
+      const isPasswordValid = await verifyPassword(superAdminPassword, currentActor.passwordHash);
+      if (!isPasswordValid) {
+        return errorResponse(
+          isSuperAdmin
+            ? 'Incorrect Super Admin password. Deactivation rejected.'
+            : 'Incorrect password. Deactivation rejected.',
+          403
+        );
+      }
+    }
 
     const updatedUser = await updateUserStatus(id, status, reason, {
       userId: authContext.user._id,

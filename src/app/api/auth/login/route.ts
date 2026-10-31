@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
       return errorResponse(formatted.message, 400, formatted.errors);
     }
 
-    const { email, password } = parseResult.data;
+    const { username, email, password } = parseResult.data as any;
+    const loginIdentifier = (username || email || '').trim().toLowerCase();
 
-    // Rate Limiting Enforcement (IP + normalized email)
+    // Rate Limiting Enforcement (IP + normalized username/email)
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
-    const rateLimitKey = `${ip}:${email.toLowerCase()}`;
+    const rateLimitKey = `${ip}:${loginIdentifier}`;
     const rateCheck = checkLoginRateLimit(rateLimitKey);
 
     if (!rateCheck.allowed) {
@@ -49,17 +50,22 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    const user = await User.findOne({ email }).select('+passwordHash').populate('roleId');
+    const user = await User.findOne({
+      $or: [
+        { username: loginIdentifier },
+        { email: loginIdentifier },
+      ],
+    }).select('+passwordHash').populate('roleId');
 
     if (!user || !user.passwordHash) {
       recordFailedLoginAttempt(rateLimitKey);
-      return errorResponse('Invalid email or password', 401);
+      return errorResponse('Invalid username or password', 401);
     }
 
     const isValidPassword = await verifyPassword(password, user.passwordHash);
     if (!isValidPassword) {
       recordFailedLoginAttempt(rateLimitKey);
-      return errorResponse('Invalid email or password', 401);
+      return errorResponse('Invalid username or password', 401);
     }
 
     // Check account status
@@ -84,6 +90,7 @@ export async function POST(req: NextRequest) {
     const token = await signAuthToken({
       userId: user._id.toString(),
       employeeId: user.employeeId,
+      username: user.username,
       email: user.email,
       name: user.name,
       roleSlug: role.slug,

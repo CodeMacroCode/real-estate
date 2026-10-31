@@ -14,7 +14,7 @@ export default async function DashboardLayout({
 }) {
   const authContext = await getServerAuthContext();
   if (!authContext) {
-    redirect('/login');
+    redirect('/login?reason=deactivated');
   }
 
   const cleanUser = JSON.parse(JSON.stringify(authContext.user));

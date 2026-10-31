@@ -1,0 +1,3048 @@
+[16:24:58.228] [INFO] Storybook upgrade - v10.6.5
+[16:24:58.229] [INFO] detect-projects-spinner-start: Detecting projects...
+[16:24:58.230] [DEBUG] Finding Storybook projects...
+[16:24:58.451] [DEBUG] Found 1 Storybook projects
+[16:24:58.453] [INFO] detect-projects-spinner: Detecting projects: 1 projects
+[16:24:58.453] [DEBUG] Getting Storybook data...
+[16:24:58.453] [DEBUG] Getting Storybook info...
+[16:24:58.456] [DEBUG] Getting stories paths...
+[16:24:58.468] [DEBUG] Getting package manager...
+[16:24:58.610] [DEBUG] Getting package.json info for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:24:58.610] [DEBUG] Getting Storybook version...
+[16:24:58.610] [DEBUG] Detecting CSF factory usage...
+[16:24:58.628] [DEBUG] /.storybook - Validating before version... 8.6.19
+[16:24:58.628] [DEBUG] /.storybook - Validating upgrade compatibility...
+[16:24:58.628] [DEBUG] /.storybook - Fetching NPM version information...
+[16:24:58.628] [DEBUG] Getting CLI versions from NPM for storybook...
+[16:24:58.628] [DEBUG] Executing command: npm info storybook version
+[16:24:58.636] [DEBUG] Getting CLI versions from NPM for storybook@next...
+[16:24:58.636] [DEBUG] Executing command: npm info storybook@next version
+[16:24:59.412] [DEBUG] /.storybook - Evaluating blockers...
+[16:24:59.417] [DEBUG] Getting installed version for @storybook/experimental-addon-test...
+[16:24:59.418] [DEBUG] Executing command: npm ls --json --depth=99
+[16:24:59.765] [DEBUG] Executing command: npm ls --json --depth=0
+[16:25:00.036] [DEBUG] Error finding installations for @storybook/experimental-addon-test: SB_CLI_0003 (ExecaCommandFailedError): Command failed: npm ls --json --depth=0
+
+Command failed with exit code 1: npm ls --json '--depth=0'
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+Command failed with exit code 1: npm ls --json '--depth=0'
+
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+[16:25:00.036] [DEBUG] No installations found for @storybook/experimental-addon-test
+[16:25:00.036] [INFO] detect-projects-spinner-stop: 1 project detected
+[16:25:00.036] [DEBUG] Found 1 valid projects and 0 error projects
+[16:25:00.036] [INFO] Upgrading from [1m8.6.19[22m to [1m10.6.5[22m
+[16:25:00.036] [DEBUG] Executing command: npm config get min-release-age --workspaces=false --include-workspace-root
+[16:25:00.162] [INFO] upgrade-dependencies-task-start: Fetching versions to update package.json files..
+[16:25:00.162] [DEBUG] Updating dependencies in /.storybook...
+[16:25:00.162] [INFO] upgrade-dependencies-task: /package.json
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] {
+  "upgradedDependencies": []
+}
+[16:25:00.162] [DEBUG] {
+  "upgradedDevDependencies": [
+    "@storybook/addon-a11y@^10.6.5",
+    "@storybook/nextjs@^10.6.5",
+    "@storybook/react@^10.6.5",
+    "@storybook/react-vite@^10.6.5",
+    "storybook@^10.6.5"
+  ]
+}
+[16:25:00.162] [DEBUG] {
+  "upgradedPeerDependencies": []
+}
+[16:25:00.162] [DEBUG] Getting package.json info for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Getting package.json info for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Getting package.json info for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.162] [INFO] upgrade-dependencies-task-success: Updated package versions in package.json files
+[16:25:00.163] [INFO] detect-automigrations-task-start: Detecting automigrations...
+[16:25:00.163] [DEBUG] Starting automigration collection across 1 projects and 27 fixes...
+[16:25:00.163] [INFO] detect-automigrations-task: Checking automigrations for /.storybook...
+[16:25:00.163] [DEBUG] Processing project: /.storybook
+[16:25:00.163] [DEBUG] Checking fix eslintPlugin for project /.storybook...
+[16:25:00.163] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.163] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.163] [DEBUG] Checking fix addon-mdx-gfm-remove for project /.storybook...
+[16:25:00.163] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.163] [DEBUG] Checking fix addon-storysource-code-panel for project /.storybook...
+[16:25:00.163] [DEBUG] Checking fix upgrade-storybook-related-dependencies for project /.storybook...
+[16:25:00.163] [DEBUG] Checking for incompatible storybook packages...
+[16:25:00.163] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.165] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:00.165] [DEBUG] Getting installed version for @storybook/addon-essentials...
+[16:25:00.165] [DEBUG] Getting installed version for @storybook/addon-interactions...
+[16:25:00.165] [DEBUG] Getting installed version for @storybook/blocks...
+[16:25:00.165] [DEBUG] Getting installed version for @storybook/test...
+[16:25:00.165] [DEBUG] Executing command: npm ls --json --depth=99
+[16:25:00.167] [DEBUG] Executing command: npm ls --json --depth=99
+[16:25:00.170] [DEBUG] Executing command: npm ls --json --depth=99
+[16:25:00.172] [DEBUG] Executing command: npm ls --json --depth=99
+[16:25:00.566] [DEBUG] Executing command: npm ls --json --depth=0
+[16:25:00.578] [DEBUG] Executing command: npm ls --json --depth=0
+[16:25:00.590] [DEBUG] Executing command: npm ls --json --depth=0
+[16:25:00.601] [DEBUG] Executing command: npm ls --json --depth=0
+[16:25:00.883] [DEBUG] Error finding installations for @storybook/addon-essentials: SB_CLI_0003 (ExecaCommandFailedError): Command failed: npm ls --json --depth=0
+
+Command failed with exit code 1: npm ls --json '--depth=0'
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+Command failed with exit code 1: npm ls --json '--depth=0'
+
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+[16:25:00.883] [DEBUG] No installations found for @storybook/addon-essentials
+[16:25:00.883] [DEBUG] Getting CLI versions from NPM for @storybook/addon-essentials...
+[16:25:00.883] [DEBUG] Executing command: npm info @storybook/addon-essentials version
+[16:25:00.888] [DEBUG] Error finding installations for @storybook/blocks: SB_CLI_0003 (ExecaCommandFailedError): Command failed: npm ls --json --depth=0
+
+Command failed with exit code 1: npm ls --json '--depth=0'
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+Command failed with exit code 1: npm ls --json '--depth=0'
+
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+[16:25:00.888] [DEBUG] No installations found for @storybook/blocks
+[16:25:00.888] [DEBUG] Getting CLI versions from NPM for @storybook/blocks...
+[16:25:00.888] [DEBUG] Executing command: npm info @storybook/blocks version
+[16:25:00.911] [DEBUG] Error finding installations for @storybook/addon-interactions: SB_CLI_0003 (ExecaCommandFailedError): Command failed: npm ls --json --depth=0
+
+Command failed with exit code 1: npm ls --json '--depth=0'
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+Command failed with exit code 1: npm ls --json '--depth=0'
+
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+[16:25:00.911] [DEBUG] No installations found for @storybook/addon-interactions
+[16:25:00.911] [DEBUG] Getting CLI versions from NPM for @storybook/addon-interactions...
+[16:25:00.911] [DEBUG] Executing command: npm info @storybook/addon-interactions version
+[16:25:00.917] [DEBUG] Error finding installations for @storybook/test: SB_CLI_0003 (ExecaCommandFailedError): Command failed: npm ls --json --depth=0
+
+Command failed with exit code 1: npm ls --json '--depth=0'
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+Command failed with exit code 1: npm ls --json '--depth=0'
+
+{
+  "version": "1.0.0",
+  "name": "real-estate-crm",
+  "problems": [
+    "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y",
+    "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs",
+    "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite",
+    "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react",
+    "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+  ],
+  "dependencies": {
+    "@dnd-kit/core": {
+      "version": "6.3.1",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/core/-/core-6.3.1.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/sortable": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/sortable/-/sortable-10.0.0.tgz",
+      "overridden": false
+    },
+    "@dnd-kit/utilities": {
+      "version": "3.2.2",
+      "resolved": "https://registry.npmjs.org/@dnd-kit/utilities/-/utilities-3.2.2.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.64.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.64.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-alert-dialog": {
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz",
+      "overridden": false
+    },
+    "@radix-ui/react-dialog": {
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-a11y": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-a11y/-/addon-a11y-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y"
+      ]
+    },
+    "@storybook/addon-essentials": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-essentials/-/addon-essentials-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/addon-interactions": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/blocks": {
+      "version": "8.6.14",
+      "resolved": "https://registry.npmjs.org/@storybook/blocks/-/blocks-8.6.14.tgz",
+      "overridden": false
+    },
+    "@storybook/nextjs": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs"
+      ]
+    },
+    "@storybook/react-vite": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react-vite/-/react-vite-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite"
+      ]
+    },
+    "@storybook/react": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/react/-/react-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react"
+      ]
+    },
+    "@storybook/test": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/@storybook/test/-/test-8.6.19.tgz",
+      "overridden": false
+    },
+    "@testing-library/jest-dom": {
+      "version": "6.9.1",
+      "resolved": "https://registry.npmjs.org/@testing-library/jest-dom/-/jest-dom-6.9.1.tgz",
+      "overridden": false
+    },
+    "@testing-library/react": {
+      "version": "16.3.3",
+      "resolved": "https://registry.npmjs.org/@testing-library/react/-/react-16.3.3.tgz",
+      "overridden": false
+    },
+    "@types/bcryptjs": {
+      "version": "2.4.6",
+      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.43",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
+      "overridden": false
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz",
+      "overridden": false
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz",
+      "overridden": false
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-2.1.9.tgz",
+      "overridden": false
+    },
+    "ajv": {
+      "version": "8.20.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+      "overridden": false
+    },
+    "autoprefixer": {
+      "version": "10.6.2",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.2.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "1.21.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.21.0.tgz",
+      "overridden": false
+    },
+    "bcryptjs": {
+      "version": "2.4.3",
+      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "eslint-config-next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.4.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.5",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz",
+      "overridden": false
+    },
+    "framer-motion": {
+      "version": "14.8.0",
+      "resolved": "https://registry.npmjs.org/framer-motion/-/framer-motion-14.8.0.tgz",
+      "overridden": false
+    },
+    "googleapis": {
+      "version": "188.0.0",
+      "resolved": "https://registry.npmjs.org/googleapis/-/googleapis-188.0.0.tgz",
+      "overridden": false
+    },
+    "jose": {
+      "version": "5.10.0",
+      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "25.0.1",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-25.0.1.tgz",
+      "overridden": false
+    },
+    "lucide-react": {
+      "version": "1.66.0",
+      "resolved": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.66.0.tgz",
+      "overridden": false
+    },
+    "mongoose": {
+      "version": "8.24.7",
+      "resolved": "https://registry.npmjs.org/mongoose/-/mongoose-8.24.7.tgz",
+      "overridden": false
+    },
+    "next": {
+      "version": "16.4.3",
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+      "overridden": false
+    },
+    "postcss": {
+      "version": "8.5.32",
+      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+      "overridden": false
+    },
+    "react-dom": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz",
+      "overridden": false
+    },
+    "react-icons": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.7.0.tgz",
+      "overridden": false
+    },
+    "react": {
+      "version": "19.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.3.1.tgz",
+      "overridden": false
+    },
+    "sonner": {
+      "version": "2.0.8",
+      "resolved": "https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz",
+      "overridden": false
+    },
+    "storybook": {
+      "version": "8.6.19",
+      "resolved": "https://registry.npmjs.org/storybook/-/storybook-8.6.19.tgz",
+      "overridden": false,
+      "invalid": "\"^10.6.5\" from the root project",
+      "problems": [
+        "invalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook"
+      ]
+    },
+    "tailwindcss": {
+      "version": "3.4.19",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz",
+      "overridden": false
+    },
+    "tsx": {
+      "version": "4.23.15",
+      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "8.3.5",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.5.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "2.1.9",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "overridden": false
+    },
+    "zod": {
+      "version": "3.25.76",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "overridden": false
+    }
+  },
+  "error": {
+    "code": "ELSPROBLEMS",
+    "summary": "invalid: @storybook/addon-a11y@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/addon-a11y\ninvalid: @storybook/nextjs@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/nextjs\ninvalid: @storybook/react-vite@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react-vite\ninvalid: @storybook/react@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/@storybook/react\ninvalid: storybook@8.6.19 /Users/piyushharde/HBGadgets/projects/real-estate/node_modules/storybook",
+    "detail": ""
+  }
+}
+[16:25:00.917] [DEBUG] No installations found for @storybook/test
+[16:25:00.917] [DEBUG] Getting CLI versions from NPM for @storybook/test...
+[16:25:00.917] [DEBUG] Executing command: npm info @storybook/test version
+[16:25:02.197] [DEBUG] Checking fix initial-globals for project /.storybook...
+[16:25:02.200] [DEBUG] Checking fix addon-globals-api for project /.storybook...
+[16:25:02.202] [DEBUG] Checking fix addon-a11y-addon-test for project /.storybook...
+[16:25:02.202] [DEBUG] Checking fix consolidated-imports for project /.storybook...
+[16:25:02.202] [DEBUG] Checking fix addon-experimental-test for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached installed version for @storybook/experimental-addon-test...
+[16:25:02.202] [DEBUG] Checking fix rnstorybook-config for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix rn-ondevice-addons-to-device-addons for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix migrate-addon-console for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix nextjs-to-nextjs-vite for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix angular-to-angular-vite for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix angular-vite-remove-compodoc for project /.storybook...
+[16:25:02.202] [DEBUG] Checking fix react-vite-to-tanstack-react for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix remove-addon-interactions for project /.storybook...
+[16:25:02.202] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.202] [DEBUG] Checking fix addon-mcp for project /.storybook...
+[16:25:02.202] [DEBUG] Checking fix renderer-to-framework for project /.storybook...
+[16:25:02.203] [DEBUG] Checking fix remove-essential-addons for project /.storybook...
+[16:25:02.203] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.203] [DEBUG] Checking fix addon-a11y-parameters for project /.storybook...
+[16:25:02.204] [DEBUG] Checking fix remove-docs-autodocs for project /.storybook...
+[16:25:02.205] [DEBUG] Checking fix wrap-getAbsolutePath for project /.storybook...
+[16:25:02.206] [DEBUG] Checking fix fix-faux-esm-require for project /.storybook...
+[16:25:02.206] [DEBUG] Checking fix storybookPackageNameConflict for project /.storybook...
+[16:25:02.206] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:02.206] [DEBUG] Checking fix enable-experimental-review for project /.storybook...
+[16:25:02.207] [DEBUG] Checking fix enable-experimental-docgen-server for project /.storybook...
+[16:25:02.207] [INFO] detect-automigrations-task: 
+Automigrations detected:
+[16:25:02.208] [INFO] detect-automigrations-task: [32m[32m✔[32m eslintPlugin[39m
+[16:25:02.208] [INFO] detect-automigrations-task: [32m[32m✔[32m addon-globals-api[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m consolidated-imports[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m nextjs-to-nextjs-vite[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m remove-addon-interactions[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m renderer-to-framework[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m remove-essential-addons[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m remove-docs-autodocs[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m fix-faux-esm-require[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m enable-experimental-review[39m
+[16:25:02.209] [INFO] detect-automigrations-task: [32m[32m✔[32m enable-experimental-docgen-server[39m
+[16:25:02.209] [INFO] detect-automigrations-task-success: 11 automigration(s) detected
+[16:25:05.958] [PROMPT] Select automigrations to run {"choice":["eslintPlugin","addon-globals-api","consolidated-imports","remove-addon-interactions","renderer-to-framework","remove-essential-addons","remove-docs-autodocs","fix-faux-esm-require"]}
+[16:25:05.958] [INFO] automigrate-/.storybook-task-start: Running automigrations for /.storybook
+[16:25:05.958] [DEBUG] Adding dependencies: eslint-plugin-storybook@10.6.5
+[16:25:05.958] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:05.959] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:05.959] [DEBUG] Detected flat config at /Users/piyushharde/HBGadgets/projects/real-estate/eslint.config.mjs
+[16:25:05.973] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m eslintPlugin[39m
+[16:25:06.016] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m addon-globals-api[39m
+[16:25:06.022] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m consolidated-imports[39m
+[16:25:06.022] [DEBUG] Uninstalling @storybook/addon-interactions
+[16:25:06.022] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.022] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.023] [DEBUG] Removing '@storybook/addon-interactions' from main.js addons field.
+[16:25:06.023] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m remove-addon-interactions[39m
+[16:25:06.023] [DEBUG] 
+Migrating @storybook/react to @storybook/nextjs
+[16:25:06.025] [DEBUG] Updating package.json files...
+[16:25:06.025] [DEBUG] 
+Migrating @storybook/react to @storybook/react-vite
+[16:25:06.026] [DEBUG] Updating package.json files...
+[16:25:06.026] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m renderer-to-framework[39m
+[16:25:06.026] [DEBUG] Uninstalling @storybook/addon-essentials
+[16:25:06.026] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.026] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.026] [DEBUG] Removing '@storybook/addon-essentials' from main.js addons field.
+[16:25:06.027] [DEBUG] Getting Storybook info...
+[16:25:06.030] [DEBUG] Getting stories paths...
+[16:25:06.030] [DEBUG] Getting package manager...
+[16:25:06.034] [DEBUG] Getting package.json info for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.034] [DEBUG] Getting Storybook version...
+[16:25:06.034] [DEBUG] Detecting CSF factory usage...
+[16:25:06.035] [INFO] Verifying @storybook/addon-docs
+[16:25:06.035] [DEBUG] Getting dependency version for storybook...
+[16:25:06.035] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.035] [INFO] Installing @storybook/addon-docs@^10.6.5
+[16:25:06.035] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.035] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:06.035] [INFO] Adding '@storybook/addon-docs' to the "addons" field in /Users/piyushharde/HBGadgets/projects/real-estate/.storybook/main.ts
+[16:25:06.042] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m remove-essential-addons[39m
+[16:25:06.042] [INFO] automigrate-/.storybook-task: 🔄 Updating [36mdocs[39m parameter in main config file...
+[16:25:06.044] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m remove-docs-autodocs[39m
+[16:25:06.046] [INFO] automigrate-/.storybook-task: [32m[32m✔[32m fix-faux-esm-require[39m
+[16:25:06.046] [INFO] automigrate-/.storybook-task-success: Completed automigrations for /.storybook
+[16:25:06.047] [INFO] Installing dependencies...
+[16:25:06.047] [INFO] install-dependencies-spinner-start: Installing dependencies...
+[16:25:06.047] [DEBUG] Executing command: npm install --force
+[16:25:42.548] [INFO] Installing dependencies...: 
+added 48 packages, removed 57 packages, changed 22 packages, and audited 1110 packages in 36s
+
+[16:25:42.548] [INFO] install-dependencies-spinner: Installing dependencies...: added 48 packages, remove
+[16:25:42.549] [INFO] Installing dependencies...: 
+295 packages are looking for funding
+  run `npm fund` for details
+
+[16:25:42.549] [INFO] install-dependencies-spinner: Installing dependencies...: 295 packages are looking 
+[16:25:42.692] [INFO] Installing dependencies...: 
+43 vulnerabilities (6 low, 29 moderate, 5 high, 3 critical)
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+
+[16:25:42.692] [INFO] install-dependencies-spinner: Installing dependencies...: 43 vulnerabilities (6 low
+[16:25:42.713] [INFO] Dependencies installed
+[16:25:42.713] [INFO] install-dependencies-spinner-stop: Dependencies installed
+[16:25:42.715] [INFO] Checking the health of your project(s)..
+[16:25:42.716] [DEBUG] Using cached package.json for /Users/piyushharde/HBGadgets/projects/real-estate/package.json...
+[16:25:42.717] [DEBUG] Executing command: npm ls --json --depth=99
+[16:25:43.273] [DEBUG] Executing command: npm ls --json --depth=0
+[16:25:43.551] [WARN] /.storybook: 1 issue found
+[16:25:43.551] [INFO] You are currently using Storybook [1m10.6.5[22m but you have packages which are incompatible with it:
+
+- @storybook/blocks@8.6.14 which depends on ^8.6.14
+ Repo: https://github.com/storybookjs/storybook/tree/next/code/lib/blocks
+- @storybook/test@8.6.19 which depends on 8.6.19
+ Repo: https://github.com/storybookjs/storybook/tree/next/code/lib/test
+
+Please consider updating your packages or contacting the maintainers for compatibility details.
+
+For more details on compatibility guidance, see:
+https://github.com/storybookjs/storybook/issues/32836
+[16:25:43.551] [INFO] Storybook doctor is complete!
+[16:25:43.552] [INFO] You can always recheck the health of your project(s) by running:
+[36mnpx storybook doctor[39m
+[16:25:43.552] [INFO] [33mYour project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.[39m
+[16:25:43.553] [INFO] If you want to learn more about the automigrations that executed in your project(s), please check the following links:
+• ]8;;https://storybook.js.org/docs/configure/integration/eslint-plugineslintPlugin]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#viewportbackgrounds-addon-synchronized-configuration-and-globals-usageaddon-globals-api]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packagesconsolidated-imports]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-coreremove-addon-interactions]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#moving-from-renderer-based-to-framework-based-configurationrenderer-to-framework]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-coreremove-essential-addons]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mainjs-docsautodocs-is-deprecatedremove-docs-autodocs]8;;
+• ]8;;https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environmentsfix-faux-esm-require]8;;
+[16:25:43.553] [INFO] For a full list of changes, please check our migration guide: [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[16:25:43.554] [INFO] Storybook collects completely anonymous usage telemetry. We use it to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt out, at https://storybook.js.org/telemetry
+[16:25:46.111] [INFO] Storybook upgrade completed!

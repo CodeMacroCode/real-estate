@@ -2,17 +2,30 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Building } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, ArrowRight, Building } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Alert } from '@/components/ui/Alert';
 
-export function LoginForm() {
+interface LoginFormProps {
+  reason?: string;
+}
+
+export function LoginForm({ reason }: LoginFormProps) {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    reason === 'deactivated'
+      ? 'Your account has been deactivated or your session has expired. Please contact an administrator or log in again.'
+      : null
+  );
+
+  React.useEffect(() => {
+    // If arriving at login with a revoked or stale session, clear the dead cookie
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +38,7 @@ export function LoginForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -56,7 +69,7 @@ export function LoginForm() {
             Real Estate CRM
           </h2>
           <p className="mt-1 text-xs text-slate-500 uppercase tracking-wider font-semibold">
-            Administrative Portal &bull; Phase 1
+            Administrative Portal
           </p>
         </div>
 
@@ -72,24 +85,24 @@ export function LoginForm() {
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
           <div>
             <label
-              htmlFor="email-address"
+              htmlFor="username"
               className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
             >
-              Email Address
+              Username
             </label>
             <div className="relative mt-1.5 rounded-lg shadow-sm">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Mail className="h-4 w-4 text-slate-400" />
+                <User className="h-4 w-4 text-slate-400" />
               </div>
               <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="staff@company.com"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
                 className="block w-full rounded-lg border border-slate-300 pl-10 pr-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition"
               />
             </div>

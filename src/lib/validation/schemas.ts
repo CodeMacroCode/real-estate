@@ -4,8 +4,12 @@ import { CRM_MODULES, PERMISSION_ACTIONS } from '../../types';
 export const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
 export const loginSchema = z.object({
-  email: z.string().trim().email({ message: 'Please enter a valid email address' }),
+  username: z.string().trim().optional(),
+  email: z.string().trim().optional(),
   password: z.string().min(1, { message: 'Password is required' }),
+}).refine((data) => !!(data.username?.trim() || data.email?.trim()), {
+  message: 'Username is required',
+  path: ['username'],
 });
 
 export const createUserSchema = z.object({
@@ -15,6 +19,14 @@ export const createUserSchema = z.object({
     .min(2, { message: 'Employee ID must be at least 2 characters' })
     .max(50, { message: 'Employee ID cannot exceed 50 characters' })
     .toUpperCase()
+    .optional(),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, { message: 'Username must be at least 2 characters' })
+    .max(50, { message: 'Username cannot exceed 50 characters' })
+    .regex(/^[a-z0-9_.-]+$/, { message: 'Username can only contain letters, numbers, underscores, dots, and hyphens' })
     .optional(),
   name: z
     .string()
@@ -56,6 +68,14 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, { message: 'Username must be at least 2 characters' })
+    .max(50, { message: 'Username cannot exceed 50 characters' })
+    .regex(/^[a-z0-9_.-]+$/, { message: 'Username can only contain letters, numbers, underscores, dots, and hyphens' })
+    .optional(),
   name: z
     .string()
     .trim()
@@ -167,6 +187,7 @@ export const userStatusSchema = z.object({
     errorMap: () => ({ message: 'Status must be active or inactive' }),
   }),
   reason: z.string().trim().max(250).optional(),
+  superAdminPassword: z.string().optional(),
 });
 
 export const modulePermissionSchema = z.object({

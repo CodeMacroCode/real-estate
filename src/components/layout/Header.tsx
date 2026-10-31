@@ -98,7 +98,7 @@ export function Header({ user }: HeaderProps) {
             className="flex items-center gap-1.5 rounded-md bg-slate-950 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800 transition shadow-sm disabled:opacity-50"
           >
             {isExitingImpersonation && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Exit &amp; Return to Super Admin</span>
+            <span>{isExitingImpersonation ? 'Exiting Session...' : 'Exit & Return to Super Admin'}</span>
           </button>
         </div>
       )}

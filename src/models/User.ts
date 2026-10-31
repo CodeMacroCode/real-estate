@@ -11,16 +11,24 @@ const UserSchema = new Schema<IUserDocument>(
     employeeId: {
       type: String,
       unique: true,
+      sparse: true,
       trim: true,
       uppercase: true,
       maxlength: [50, 'Employee ID cannot exceed 50 characters'],
-      default: () => `EMP${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`,
     },
     name: {
       type: String,
       required: [true, 'Staff member name is required'],
       trim: true,
       maxlength: [100, 'Name cannot exceed 100 characters'],
+    },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+      maxlength: [50, 'Username cannot exceed 50 characters'],
     },
     email: {
       type: String,
@@ -133,6 +141,10 @@ const UserSchema = new Schema<IUserDocument>(
       transform: function (doc, ret) {
         delete ret.passwordHash;
         delete ret.encryptedPassword;
+        const roleSlug = ret.roleId?.slug || (doc.populated && doc.populated('roleId') && (doc.roleId as any)?.slug);
+        if (roleSlug === 'admin' || roleSlug === 'super_admin') {
+          delete ret.employeeId;
+        }
         return ret;
       },
     },
@@ -150,8 +162,17 @@ UserSchema.methods.toSafeUser = function (): SafeUser {
   const obj = this.toObject();
   delete obj.passwordHash;
   delete obj.encryptedPassword;
+  const roleSlug = obj.roleId?.slug || (this.populated && this.populated('roleId') && (this.roleId as any)?.slug);
+  if (roleSlug === 'admin' || roleSlug === 'super_admin') {
+    delete obj.employeeId;
+  }
   return obj;
 };
+
+// Ensure fresh schema compilation in development so dynamic updates like username/encryptedPassword are always recognized
+if (process.env.NODE_ENV !== 'production' && mongoose.models && mongoose.models.User) {
+  delete mongoose.models.User;
+}
 
 export const User: Model<IUserDocument> =
   (mongoose.models.User as Model<IUserDocument>) ||

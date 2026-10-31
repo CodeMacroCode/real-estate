@@ -141,8 +141,9 @@ export interface IRole {
 
 export interface IUser {
   _id?: string | any;
-  employeeId: string;
+  employeeId?: string;
   name: string;
+  username?: string;
   email: string;
   passwordHash?: string;
   encryptedPassword?: string;
@@ -170,7 +171,7 @@ export interface IUser {
 
 export type SafeUser = Omit<IUser, 'passwordHash' | 'encryptedPassword'> & {
   role?: IRole;
-  reportingManager?: { _id: string; name: string; employeeId: string; email: string };
+  reportingManager?: { _id: string; name: string; employeeId?: string; email: string };
   plainPassword?: string;
   isImpersonating?: boolean;
   impersonator?: { userId: string; email: string; name: string };
@@ -219,7 +220,8 @@ export type WebsiteContentPublicationStatus = 'draft' | 'review' | 'published';
 
 export interface AuthTokenPayload {
   userId: string;
-  employeeId: string;
+  employeeId?: string;
+  username?: string;
   email: string;
   name: string;
   roleSlug: string;

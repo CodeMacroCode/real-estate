@@ -69,6 +69,7 @@ export async function listUsers(filters: UserListFilters = {}) {
     const searchRegex = new RegExp(filters.search.trim(), 'i');
     const searchCondition = [
       { name: searchRegex },
+      { username: searchRegex },
       { email: searchRegex },
       { employeeId: searchRegex },
       { mobile: searchRegex },
@@ -115,6 +116,7 @@ export async function listUsers(filters: UserListFilters = {}) {
     User.countDocuments(query),
   ]);
 
+  const adminIdsWithEmpId: string[] = [];
   const safeUsers: SafeUser[] = users.map((u: any) => {
     let plainPassword: string | undefined = undefined;
     if (filters.includePlainPassword && u.encryptedPassword) {
@@ -122,6 +124,13 @@ export async function listUsers(filters: UserListFilters = {}) {
     }
     delete u.passwordHash;
     delete u.encryptedPassword;
+    const roleSlug = u.roleId?.slug;
+    if (roleSlug === 'admin' || roleSlug === 'super_admin') {
+      if (u.employeeId) {
+        adminIdsWithEmpId.push(u._id.toString());
+      }
+      delete u.employeeId;
+    }
     return {
       ...u,
       _id: u._id.toString(),
@@ -130,6 +139,10 @@ export async function listUsers(filters: UserListFilters = {}) {
       ...(plainPassword ? { plainPassword } : {}),
     };
   });
+
+  if (adminIdsWithEmpId.length > 0) {
+    User.updateMany({ _id: { $in: adminIdsWithEmpId } }, { $unset: { employeeId: 1 } }).exec().catch(() => {});
+  }
 
   return {
     users: safeUsers,
@@ -162,6 +175,12 @@ export async function getUserById(id: string, includePlainPassword = false): Pro
   const safe = user.toSafeUser();
   safe.role = user.roleId as any;
   safe.reportingManager = user.reportingManagerId as any;
+  if (safe.role?.slug === 'admin' || safe.role?.slug === 'super_admin') {
+    delete (safe as any).employeeId;
+    if ((user as any).employeeId) {
+      User.updateOne({ _id: user._id }, { $unset: { employeeId: 1 } }).exec().catch(() => {});
+    }
+  }
   if (includePlainPassword && (user as any).encryptedPassword) {
     safe.plainPassword = decryptPassword((user as any).encryptedPassword);
   }
@@ -170,25 +189,6 @@ export async function getUserById(id: string, includePlainPassword = false): Pro
 
 export async function createUser(data: any, actor: { userId?: string; employeeId?: string; name: string; email: string; roleSlug: string }): Promise<SafeUser> {
   await connectToDatabase();
-
-  // Auto-generate employeeId if not provided
-  const employeeId = data.employeeId && data.employeeId.trim()
-    ? data.employeeId.trim().toUpperCase()
-    : `STF${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
-
-  // Validate uniqueness
-  const existingUser = await User.findOne({
-    $or: [{ email: data.email.toLowerCase() }, { employeeId }],
-  });
-
-  if (existingUser) {
-    if (existingUser.email.toLowerCase() === data.email.toLowerCase()) {
-      throw new Error(`User with email '${data.email}' already exists`);
-    }
-    if (existingUser.employeeId?.toUpperCase() === employeeId) {
-      throw new Error(`User with Employee ID '${employeeId}' already exists`);
-    }
-  }
 
   // Validate role
   const role = await Role.findById(data.roleId);
@@ -201,11 +201,55 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
     throw new Error('Forbidden: Only a Super Admin can assign the Super Admin role');
   }
 
+  // Admin and Super Admin do not require or use employeeId
+  const isAdmin = role.slug === 'admin' || role.slug === 'super_admin';
+  const employeeId = isAdmin
+    ? undefined
+    : data.employeeId && data.employeeId.trim()
+      ? data.employeeId.trim().toUpperCase()
+      : `STF${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
+
+  // Process username: either user-specified or derived from email
+  let username = data.username && data.username.trim()
+    ? data.username.trim().toLowerCase()
+    : data.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+
+  if (username.length < 2) {
+    username = `user_${Date.now().toString().slice(-4)}`;
+  }
+
+  // Validate uniqueness
+  const orConditions: any[] = [{ email: data.email.toLowerCase() }, { username }];
+  if (employeeId) {
+    orConditions.push({ employeeId });
+  }
+
+  const existingUser = await User.findOne({
+    $or: orConditions,
+  });
+
+  if (existingUser) {
+    if (existingUser.email.toLowerCase() === data.email.toLowerCase()) {
+      throw new Error(`User with email '${data.email}' already exists`);
+    }
+    if (employeeId && existingUser.employeeId?.toUpperCase() === employeeId) {
+      throw new Error(`User with Employee ID '${employeeId}' already exists`);
+    }
+    if (existingUser.username === username) {
+      if (data.username) {
+        throw new Error(`Username '${username}' is already taken`);
+      } else {
+        username = `${username}${Math.floor(100 + Math.random() * 900)}`;
+      }
+    }
+  }
+
   const passwordHash = await hashPassword(data.password);
   const encryptedPassword = encryptPassword(data.password);
 
   const newUser = await User.create({
-    employeeId,
+    ...(employeeId ? { employeeId } : {}),
+    username,
     name: data.name,
     email: data.email.toLowerCase(),
     passwordHash,
@@ -235,7 +279,7 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
     targetUserId: newUser._id.toString(),
     parentAdminId: newUser.parentAdminId ? newUser.parentAdminId.toString() : undefined,
     newValues: {
-      employeeId: newUser.employeeId,
+      ...(newUser.employeeId ? { employeeId: newUser.employeeId } : {}),
       name: newUser.name,
       email: newUser.email,
       role: role.slug,
@@ -251,6 +295,9 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
 
   const safe = newUser.toSafeUser();
   safe.role = role.toObject() as any;
+  if (actor.roleSlug === 'super_admin' && data.password) {
+    safe.plainPassword = data.password;
+  }
   return safe;
 }
 
@@ -266,15 +313,8 @@ export async function updateUser(
     throw new Error('User not found');
   }
 
-  // If email change requested, verify uniqueness
-  if (data.email && data.email.toLowerCase() !== user.email) {
-    const existing = await User.findOne({ email: data.email.toLowerCase() });
-    if (existing && existing._id.toString() !== id) {
-      throw new Error(`Email '${data.email}' is already taken by another staff member`);
-    }
-  }
-
   const oldValues = {
+    username: user.username,
     name: user.name,
     email: user.email,
     mobile: user.mobile,
@@ -285,6 +325,27 @@ export async function updateUser(
     status: user.status,
     team: user.team,
   };
+
+  // If email change requested, verify uniqueness
+  if (data.email && data.email.toLowerCase() !== user.email) {
+    const existing = await User.findOne({ email: data.email.toLowerCase() });
+    if (existing && existing._id.toString() !== id) {
+      throw new Error(`Email '${data.email}' is already taken by another staff member`);
+    }
+    user.email = data.email.toLowerCase();
+  }
+
+  // If username change requested, verify uniqueness
+  if (data.username && data.username.trim()) {
+    const desiredUsername = data.username.trim().toLowerCase();
+    if (desiredUsername !== (user.username || '').toLowerCase()) {
+      const existing = await User.findOne({ username: desiredUsername });
+      if (existing && existing._id.toString() !== id) {
+        throw new Error(`Username '${desiredUsername}' is already taken by another staff member`);
+      }
+      user.username = desiredUsername;
+    }
+  }
 
   if (data.name) user.name = data.name;
   if (data.email) user.email = data.email.toLowerCase();
@@ -326,7 +387,17 @@ export async function updateUser(
     user.parentAdminId = data.parentAdminId;
   }
 
+  const currentRole = await Role.findById(user.roleId);
+  const isAdmin = currentRole?.slug === 'admin' || currentRole?.slug === 'super_admin';
+  if (isAdmin) {
+    user.set('employeeId', undefined);
+  }
+
   await user.save();
+
+  if (isAdmin) {
+    await User.updateOne({ _id: user._id }, { $unset: { employeeId: 1 } });
+  }
 
   await recordAuditEvent({
     actor,
@@ -337,6 +408,7 @@ export async function updateUser(
     parentAdminId: user.parentAdminId ? user.parentAdminId.toString() : undefined,
     oldValues,
     newValues: {
+      username: user.username,
       name: user.name,
       email: user.email,
       mobile: user.mobile,
@@ -352,7 +424,7 @@ export async function updateUser(
     source: 'web_app',
   });
 
-  return getUserById(id) as Promise<SafeUser>;
+  return getUserById(id, actor.roleSlug === 'super_admin') as Promise<SafeUser>;
 }
 
 export async function updateUserStatus(
@@ -401,7 +473,7 @@ export async function updateUserStatus(
     source: 'web_app',
   });
 
-  return getUserById(id) as Promise<SafeUser>;
+  return getUserById(id, actor.roleSlug === 'super_admin') as Promise<SafeUser>;
 }
 
 export async function deleteUser(

@@ -70,9 +70,21 @@ describe('D. User Validation and Sanitization (Section 48)', () => {
     expect(userStatusSchema.safeParse({ status: 'suspended' }).success).toBe(false);
   });
 
-  it('should validate login credentials schema', () => {
+  it('should validate login credentials schema with username or email', () => {
+    expect(loginSchema.safeParse({ username: 'superadmin', password: 'SecretPassword' }).success).toBe(true);
     expect(loginSchema.safeParse({ email: 'admin@crm.com', password: 'SecretPassword' }).success).toBe(true);
+    expect(loginSchema.safeParse({ username: '', password: 'SecretPassword' }).success).toBe(false);
     expect(loginSchema.safeParse({ email: '', password: 'SecretPassword' }).success).toBe(false);
-    expect(loginSchema.safeParse({ email: 'admin@crm.com', password: '' }).success).toBe(false);
+    expect(loginSchema.safeParse({ username: 'superadmin', password: '' }).success).toBe(false);
+  });
+
+  it('should support username field in createUserSchema while preserving email', () => {
+    const withUsername = { ...validUserPayload, username: 'sarah_c' };
+    const res = createUserSchema.safeParse(withUsername);
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.username).toBe('sarah_c');
+      expect(res.data.email).toBe('sarah.connor@realestate.com');
+    }
   });
 });

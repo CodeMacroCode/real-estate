@@ -76,11 +76,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated requests away from login page
-  if (isValidSession && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
   // Redirect root path to dashboard or login
   if (pathname === '/') {
     if (isValidSession) {

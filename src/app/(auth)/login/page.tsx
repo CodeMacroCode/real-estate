@@ -5,11 +5,16 @@ import { LoginForm } from './LoginForm';
 
 export const dynamic = 'force-dynamic';
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ reason?: string }>;
+}) {
   const authContext = await getServerAuthContext();
   if (authContext) {
     redirect('/dashboard');
   }
 
-  return <LoginForm />;
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  return <LoginForm reason={resolvedParams?.reason} />;
 }

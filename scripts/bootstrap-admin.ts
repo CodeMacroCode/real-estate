@@ -8,11 +8,12 @@ import { seedRoles } from './seed-roles';
 
 export async function bootstrapSuperAdmin(): Promise<{
   created: boolean;
-  user: { email: string; employeeId: string; name: string };
+  user: { email: string; employeeId?: string; name: string };
 }> {
   await connectToDatabase();
 
   const email = process.env.BOOTSTRAP_SUPER_ADMIN_EMAIL?.trim().toLowerCase();
+  const username = (process.env.BOOTSTRAP_SUPER_ADMIN_USERNAME?.trim() || 'superadmin').toLowerCase();
   const password = process.env.BOOTSTRAP_SUPER_ADMIN_PASSWORD;
   const name = process.env.BOOTSTRAP_SUPER_ADMIN_NAME?.trim() || 'System Super Admin';
   const employeeId = (process.env.BOOTSTRAP_SUPER_ADMIN_EMP_ID?.trim() || 'EMP001').toUpperCase();
@@ -45,6 +46,10 @@ export async function bootstrapSuperAdmin(): Promise<{
   });
 
   if (existingUser) {
+    if (!existingUser.username) {
+      existingUser.username = username;
+      await existingUser.save();
+    }
     console.log(`Administrator already exists with email '${existingUser.email}' or ID '${existingUser.employeeId}'. No changes made.`);
     return {
       created: false,
@@ -60,6 +65,7 @@ export async function bootstrapSuperAdmin(): Promise<{
 
   const newUser = await User.create({
     employeeId,
+    username,
     name,
     email,
     passwordHash,
