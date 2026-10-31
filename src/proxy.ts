@@ -6,7 +6,7 @@ import { verifyAuthToken } from './lib/auth/jwt';
 // Public paths that do not require authentication
 const PUBLIC_PATHS = ['/login', '/api/auth/login'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip static resources and internal Next.js paths
