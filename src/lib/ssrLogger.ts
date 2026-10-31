@@ -17,7 +17,7 @@ export function logSsrData(pagePath: string, data: Record<string, any>) {
       console.dir(
         {
           count: val.length,
-          sample: val.slice(0, 2),
+          data: val,
           ...(val.length > 2 ? { remaining: `+${val.length - 2} more items` } : {}),
         },
         { depth: 4, colors: true }
