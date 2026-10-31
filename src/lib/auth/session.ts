@@ -93,6 +93,10 @@ export async function verifySessionToken(
 
   const safeUser = user.toSafeUser();
   safeUser.role = role.toObject ? role.toObject() : (role as any);
+  if (payload.isImpersonating) {
+    safeUser.isImpersonating = true;
+    safeUser.impersonator = payload.impersonator;
+  }
 
   // If user has customized user-centric permissions, overlay them onto role for runtime authorization
   if (user.customPermissions && user.customPermissions.length > 0 && role.slug !== 'super_admin') {
@@ -127,6 +131,8 @@ export async function getServerAuthContext(): Promise<AuthenticatedContext | nul
   }
 }
 
+export const IMPERSONATOR_COOKIE_NAME = 'crm_impersonator_token';
+
 export function setSessionCookie(response: NextResponse, token: string): void {
   const isProduction = process.env.NODE_ENV === 'production';
   response.cookies.set({
@@ -137,6 +143,31 @@ export function setSessionCookie(response: NextResponse, token: string): void {
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 8, // 8 hours in seconds
+  });
+}
+
+export function setImpersonatorCookie(response: NextResponse, token: string): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  response.cookies.set({
+    name: IMPERSONATOR_COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 8, // 8 hours in seconds
+  });
+}
+
+export function clearImpersonatorCookie(response: NextResponse): void {
+  response.cookies.set({
+    name: IMPERSONATOR_COOKIE_NAME,
+    value: '',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
   });
 }
 

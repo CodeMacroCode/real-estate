@@ -26,6 +26,21 @@ export function Header({ user }: HeaderProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isExitingImpersonation, setIsExitingImpersonation] = useState(false);
+
+  const handleExitImpersonation = async () => {
+    setIsExitingImpersonation(true);
+    try {
+      const res = await fetch('/api/auth/impersonate/exit', { method: 'POST' });
+      if (res.ok) {
+        window.location.href = '/users';
+      }
+    } catch (err) {
+      console.error('Failed to exit impersonation', err);
+    } finally {
+      setIsExitingImpersonation(false);
+    }
+  };
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -68,9 +83,28 @@ export function Header({ user }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-6 backdrop-blur">
-      {/* Dynamic Breadcrumbs Navigation */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur">
+      {user?.isImpersonating && (
+        <div className="bg-amber-400 border-b border-amber-500 text-slate-950 px-6 py-2 flex items-center justify-between text-xs font-semibold shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-slate-950 animate-pulse" />
+            <span>
+              Impersonation Active: Viewing system as <strong>{user.name}</strong> ({user.role?.name || 'Admin'}). Original Session: Super Admin ({user.impersonator?.name || user.impersonator?.email}).
+            </span>
+          </div>
+          <button
+            onClick={handleExitImpersonation}
+            disabled={isExitingImpersonation}
+            className="flex items-center gap-1.5 rounded-md bg-slate-950 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800 transition shadow-sm disabled:opacity-50"
+          >
+            {isExitingImpersonation && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>Exit &amp; Return to Super Admin</span>
+          </button>
+        </div>
+      )}
+      <div className="flex h-16 w-full items-center justify-between px-6">
+        {/* Dynamic Breadcrumbs Navigation */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
         <Link
           href="/dashboard"
           className="flex items-center gap-1 font-medium text-slate-500 hover:text-blue-600 transition"
@@ -206,6 +240,7 @@ export function Header({ user }: HeaderProps) {
           </div>
         )}
       </div>
-    </header>
-  );
+    </div>
+  </header>
+);
 }

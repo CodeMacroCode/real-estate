@@ -145,6 +145,8 @@ export interface IUser {
   name: string;
   email: string;
   passwordHash?: string;
+  encryptedPassword?: string;
+  plainPassword?: string;
   mobile: string;
   department: string;
   roleId: string | IRole | any;
@@ -166,9 +168,12 @@ export interface IUser {
   updatedAt?: string | Date;
 }
 
-export type SafeUser = Omit<IUser, 'passwordHash'> & {
+export type SafeUser = Omit<IUser, 'passwordHash' | 'encryptedPassword'> & {
   role?: IRole;
   reportingManager?: { _id: string; name: string; employeeId: string; email: string };
+  plainPassword?: string;
+  isImpersonating?: boolean;
+  impersonator?: { userId: string; email: string; name: string };
 };
 
 export type AuditAction =
@@ -222,6 +227,12 @@ export interface AuthTokenPayload {
   department: string;
   branch: string;
   team?: string;
+  isImpersonating?: boolean;
+  impersonator?: {
+    userId: string;
+    email: string;
+    name: string;
+  };
   iat?: number;
   exp?: number;
 }

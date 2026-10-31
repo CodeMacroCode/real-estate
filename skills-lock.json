@@ -25,6 +25,12 @@
       "skillPath": "skills/mongodb-query-optimizer/SKILL.md",
       "computedHash": "129464c93c61bcd2d4352afc7cc99eeb9485d109c5ae7e6ff614481b5693bd55"
     },
+    "security-audit": {
+      "source": "cloudflare/security-audit-skill",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "98b97aad2873b3b9a8e064007c25e7827b493ba27fda8bfbdb41dab586767973"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

@@ -21,7 +21,7 @@ export default async function UsersPage() {
 
   // Pre-fetch initial users and roles on the server
   const [usersResult, rolesResult] = await Promise.all([
-    listUsers({ page: 1, limit: 10, userType: "admin" }),
+    listUsers({ page: 1, limit: 10, userType: "admin", includePlainPassword: true }),
     listRoles(),
   ]);
 

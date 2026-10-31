@@ -24,13 +24,13 @@ export async function GET(
       return errorResponse('Forbidden: You lack permission to view staff user details', 403);
     }
 
-    const user = await getUserById(id);
+    const isSuperAdmin = authContext.role.slug === 'super_admin';
+    const isAdmin = authContext.role.slug === 'admin';
+
+    const user = await getUserById(id, isSuperAdmin);
     if (!user) {
       return errorResponse('User not found', 404);
     }
-
-    const isSuperAdmin = authContext.role.slug === 'super_admin';
-    const isAdmin = authContext.role.slug === 'admin';
 
     // Shield Super Admin from non-SuperAdmin
     if ((user.role as any)?.slug === 'super_admin' && !isSuperAdmin) {

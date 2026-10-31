@@ -2,6 +2,7 @@ import { connectToDatabase } from '../lib/mongodb/db';
 import { User, IUserDocument } from '../models/User';
 import { Role } from '../models/Role';
 import { hashPassword } from '../lib/auth/password';
+import { encryptPassword, decryptPassword } from '../lib/auth/crypto';
 import { recordAuditEvent } from './auditService';
 import { SafeUser, UserStatus } from '../types';
 
@@ -18,6 +19,7 @@ export interface UserListFilters {
   allowedUserIds?: string[];
   roleSlug?: string;
   userType?: 'admin' | 'staff'; // 'admin' = only Admins, 'staff' = only Sub-Role staff (non-admin, non-superadmin)
+  includePlainPassword?: boolean;
 }
 
 export async function listUsers(filters: UserListFilters = {}) {
@@ -92,29 +94,40 @@ export async function listUsers(filters: UserListFilters = {}) {
     query.status = filters.status;
   }
 
+  const queryBuilder = User.find(query)
+    .populate('roleId', 'name slug description isSystem leadVisibilityScope')
+    .populate('reportingManagerId', 'name employeeId email designation')
+    .populate({
+      path: 'parentAdminId',
+      select: 'name employeeId email designation',
+      strictPopulate: false,
+    })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  if (filters.includePlainPassword) {
+    queryBuilder.select('+encryptedPassword');
+  }
+
   const [users, total] = await Promise.all([
-    User.find(query)
-      .populate('roleId', 'name slug description isSystem leadVisibilityScope')
-      .populate('reportingManagerId', 'name employeeId email designation')
-      .populate({
-        path: 'parentAdminId',
-        select: 'name employeeId email designation',
-        strictPopulate: false,
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
+    queryBuilder.lean(),
     User.countDocuments(query),
   ]);
 
   const safeUsers: SafeUser[] = users.map((u: any) => {
+    let plainPassword: string | undefined = undefined;
+    if (filters.includePlainPassword && u.encryptedPassword) {
+      plainPassword = decryptPassword(u.encryptedPassword);
+    }
     delete u.passwordHash;
+    delete u.encryptedPassword;
     return {
       ...u,
       _id: u._id.toString(),
       role: u.roleId,
       reportingManager: u.reportingManagerId,
+      ...(plainPassword ? { plainPassword } : {}),
     };
   });
 
@@ -129,12 +142,18 @@ export async function listUsers(filters: UserListFilters = {}) {
   };
 }
 
-export async function getUserById(id: string): Promise<SafeUser | null> {
+export async function getUserById(id: string, includePlainPassword = false): Promise<SafeUser | null> {
   await connectToDatabase();
 
-  const user = await User.findById(id)
+  const query = User.findById(id)
     .populate('roleId', 'name slug description isSystem leadVisibilityScope permissions')
     .populate('reportingManagerId', 'name employeeId email designation');
+
+  if (includePlainPassword) {
+    query.select('+encryptedPassword');
+  }
+
+  const user = await query;
 
   if (!user) {
     return null;
@@ -143,6 +162,9 @@ export async function getUserById(id: string): Promise<SafeUser | null> {
   const safe = user.toSafeUser();
   safe.role = user.roleId as any;
   safe.reportingManager = user.reportingManagerId as any;
+  if (includePlainPassword && (user as any).encryptedPassword) {
+    safe.plainPassword = decryptPassword((user as any).encryptedPassword);
+  }
   return safe;
 }
 
@@ -180,12 +202,14 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
   }
 
   const passwordHash = await hashPassword(data.password);
+  const encryptedPassword = encryptPassword(data.password);
 
   const newUser = await User.create({
     employeeId,
     name: data.name,
     email: data.email.toLowerCase(),
     passwordHash,
+    encryptedPassword,
     mobile: data.mobile,
     department: data.department,
     roleId: role._id,
@@ -289,6 +313,7 @@ export async function updateUser(
 
   if (data.password) {
     user.passwordHash = await hashPassword(data.password);
+    user.encryptedPassword = encryptPassword(data.password);
   }
 
   if (data.status) {

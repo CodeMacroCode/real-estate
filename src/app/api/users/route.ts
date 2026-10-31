@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
       userType: effectiveUserType,
       excludeSuperAdmin: !isSuperAdmin,
       parentAdminId: isAdmin ? authContext.user._id : undefined,
+      includePlainPassword: isSuperAdmin,
     });
 
     return jsonResponse(result.users, 200, result.pagination);

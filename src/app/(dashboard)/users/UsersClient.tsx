@@ -18,6 +18,9 @@ import {
   Briefcase,
   Eye,
   EyeOff,
+  LogIn,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { SafeUser, IRole } from '@/types';
 import { StatusBadge, LoginStatusBadge, RoleBadge } from '@/components/ui/Badge';
@@ -73,6 +76,50 @@ export function UsersClient({
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [currentUserRoleSlug, setCurrentUserRoleSlug] = useState<string>(initialRoleSlug);
   const [showPassword, setShowPassword] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords((prev) => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }));
+  };
+
+  const handleCopyPassword = (userId: string, passwordText: string) => {
+    if (!passwordText) return;
+    navigator.clipboard.writeText(passwordText);
+    setCopiedId(userId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleLoginAsAdmin = async (targetUser: SafeUser) => {
+    if (
+      !confirm(
+        `Are you sure you want to log in as ${targetUser.name}? You will switch to their session and can return anytime.`
+      )
+    ) {
+      return;
+    }
+    setImpersonatingId(targetUser._id);
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: targetUser._id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to switch session');
+      }
+      window.location.href = '/dashboard';
+    } catch (err: any) {
+      setError(err.message || 'Error logging in as admin');
+      setImpersonatingId(null);
+    }
+  };
 
   // Form State
   const initialForm = {
@@ -190,7 +237,7 @@ export function UsersClient({
     setFormData({
       name: user.name,
       email: user.email,
-      password: '',
+      password: user.plainPassword || '',
       mobile: user.mobile,
       department: user.department,
       designation: user.designation,
@@ -417,90 +464,151 @@ export function UsersClient({
             />
           </div>
         ) : (
-          <div>
-            <Table>
+          <div className="overflow-x-auto min-w-full">
+            <Table className="min-w-[1550px]">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[220px]">Admin Member</TableHead>
-                  <TableHead className="w-[140px]">Role</TableHead>
-                  {currentUserRoleSlug === 'super_admin' ? (
-                    <TableHead className="w-[240px]">Delegated Sub-Roles</TableHead>
-                  ) : (
-                    <>
-                      <TableHead className="w-[200px]">Department &amp; Designation</TableHead>
-                      <TableHead className="w-[140px]">Branch</TableHead>
-                    </>
-                  )}
-                  <TableHead className="w-[110px]">Status</TableHead>
-                  <TableHead className="w-[120px]">Login Status</TableHead>
-                  <TableHead className="w-[130px]">Joining Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="bg-slate-50/80">
+                  <TableHead className="w-[100px] whitespace-nowrap font-bold text-slate-700">Emp ID</TableHead>
+                  <TableHead className="w-[170px] whitespace-nowrap font-bold text-slate-700">Admin Name</TableHead>
+                  <TableHead className="w-[200px] whitespace-nowrap font-bold text-slate-700">Email Address</TableHead>
+                  <TableHead className="w-[130px] whitespace-nowrap font-bold text-slate-700">Mobile</TableHead>
+                  <TableHead className="w-[180px] whitespace-nowrap font-bold text-slate-700">Password</TableHead>
+                  <TableHead className="w-[120px] whitespace-nowrap font-bold text-slate-700">Role</TableHead>
+                  <TableHead className="w-[220px] whitespace-nowrap font-bold text-slate-700">Delegated Sub-Roles</TableHead>
+                  <TableHead className="w-[130px] whitespace-nowrap font-bold text-slate-700">Department</TableHead>
+                  <TableHead className="w-[130px] whitespace-nowrap font-bold text-slate-700">Designation</TableHead>
+                  <TableHead className="w-[120px] whitespace-nowrap font-bold text-slate-700">Branch</TableHead>
+                  <TableHead className="w-[100px] whitespace-nowrap font-bold text-slate-700">Team</TableHead>
+                  <TableHead className="w-[110px] whitespace-nowrap font-bold text-slate-700">Account Status</TableHead>
+                  <TableHead className="w-[120px] whitespace-nowrap font-bold text-slate-700">Login Status</TableHead>
+                  <TableHead className="w-[120px] whitespace-nowrap font-bold text-slate-700">Joining Date</TableHead>
+                  <TableHead className="text-right whitespace-nowrap font-bold text-slate-700 sticky right-0 bg-slate-50/95 backdrop-blur z-10">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user._id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-bold text-sm">
+                  <TableRow key={user._id} className="hover:bg-slate-50/60">
+                    <TableCell className="font-mono text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      {user.employeeId || '-'}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-xs shrink-0">
                           {user.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <div className="font-semibold text-slate-900">{user.name}</div>
-                          <div className="text-xs text-slate-500">{user.email}</div>
-                          <div className="text-xs text-slate-400">{user.mobile}</div>
-                        </div>
+                        <span className="font-semibold text-slate-900">{user.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs text-slate-600 whitespace-nowrap font-medium">
+                      {user.email}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-600 whitespace-nowrap font-mono">
+                      {user.mobile || '-'}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {user.plainPassword ? (
+                        <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 w-fit">
+                          <span className="font-mono text-xs font-semibold text-slate-800 tracking-wide select-all">
+                            {visiblePasswords[user._id] ? user.plainPassword : '••••••••'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => togglePasswordVisibility(user._id)}
+                            className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition"
+                            title={visiblePasswords[user._id] ? 'Hide password' : 'Show password'}
+                          >
+                            {visiblePasswords[user._id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPassword(user._id, user.plainPassword!)}
+                            className="text-slate-400 hover:text-blue-600 p-0.5 rounded transition"
+                            title="Copy password to clipboard"
+                          >
+                            {copiedId === user._id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-slate-400 italic">Not Set (Legacy)</span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(user)}
+                            className="text-xs text-blue-600 hover:underline font-semibold"
+                          >
+                            Set
+                          </button>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <RoleBadge
                         roleSlug={user.role?.slug}
                         roleName={user.role?.name}
                       />
                     </TableCell>
-                    {currentUserRoleSlug === 'super_admin' ? (
-                      <TableCell>
-                        {(user as any).allowedSubRoles && (user as any).allowedSubRoles.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {(user as any).allowedSubRoles.map((sub: string) => (
-                              <span
-                                key={sub}
-                                className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200"
-                              >
-                                {sub.replace(/_/g, ' ')}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">No sub-roles assigned</span>
-                        )}
-                      </TableCell>
-                    ) : (
-                      <>
-                        <TableCell>
-                          <div className="font-medium text-slate-800">{user.department}</div>
-                          <div className="text-xs text-slate-500">{user.designation}</div>
-                        </TableCell>
-                        <TableCell className="text-slate-700 font-medium">
-                          {user.branch}
-                        </TableCell>
-                      </>
-                    )}
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {(user as any).allowedSubRoles && (user as any).allowedSubRoles.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-xs">
+                          {(user as any).allowedSubRoles.map((sub: string) => (
+                            <span
+                              key={sub}
+                              className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200"
+                            >
+                              {sub.replace(/_/g, ' ')}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">None</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs font-medium text-slate-700 whitespace-nowrap">
+                      {user.department || '-'}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-600 whitespace-nowrap">
+                      {user.designation || '-'}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-600 whitespace-nowrap">
+                      {user.branch || '-'}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-500 whitespace-nowrap">
+                      {user.team || '-'}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <StatusBadge status={user.status} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <LoginStatusBadge status={user.loginStatus} />
                     </TableCell>
                     <TableCell suppressHydrationWarning className="text-xs text-slate-500 whitespace-nowrap">
                       {formatDate(user.joiningDate)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <TableCell className="text-right whitespace-nowrap sticky right-0 bg-white/95 backdrop-blur z-10">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {currentUserRoleSlug === 'super_admin' && (
+                          <button
+                            onClick={() => handleLoginAsAdmin(user)}
+                            disabled={impersonatingId === user._id || user.status !== 'active'}
+                            className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 hover:border-amber-300 transition shadow-sm disabled:opacity-50"
+                            title="Log in directly as this Admin"
+                          >
+                            {impersonatingId === user._id ? (
+                              <Spinner className="w-3 h-3 text-amber-800" />
+                            ) : (
+                              <LogIn className="w-3.5 h-3.5" />
+                            )}
+                            <span>Login As</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenEditModal(user)}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
-                          title="Edit staff details"
+                          title="Edit admin details"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -803,13 +911,15 @@ export function UsersClient({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase">Reset Password (Optional)</label>
+              <label className="block text-xs font-semibold text-slate-700 uppercase">
+                Admin Password {formData.password ? '' : '(Optional)'}
+              </label>
               <div className="relative mt-1">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Leave blank to keep current"
+                  placeholder="Enter new password or keep existing"
                   className="block w-full rounded-lg border border-slate-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none"
                 />
                 <button

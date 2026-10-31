@@ -35,6 +35,11 @@ const UserSchema = new Schema<IUserDocument>(
       required: [true, 'Password hash is required'],
       select: false, // Do not return by default in queries
     },
+    encryptedPassword: {
+      type: String,
+      select: false, // Reversible AES-256 encrypted password for SuperAdmin inspection
+      default: null,
+    },
     mobile: {
       type: String,
       required: [true, 'Mobile number is required'],
@@ -127,6 +132,7 @@ const UserSchema = new Schema<IUserDocument>(
     toJSON: {
       transform: function (doc, ret) {
         delete ret.passwordHash;
+        delete ret.encryptedPassword;
         return ret;
       },
     },
@@ -143,6 +149,7 @@ UserSchema.index({ team: 1 });
 UserSchema.methods.toSafeUser = function (): SafeUser {
   const obj = this.toObject();
   delete obj.passwordHash;
+  delete obj.encryptedPassword;
   return obj;
 };
 
