@@ -46,7 +46,7 @@ export function FormCard({
             <Sparkles className="w-3 h-3 text-purple-600" />
             v{form.version}
           </span>
-          <span className="text-xs text-slate-400">
+          <span suppressHydrationWarning className="text-xs text-slate-400">
             {new Date(form.createdAt).toLocaleDateString(undefined, {
               month: 'short',
               day: 'numeric',

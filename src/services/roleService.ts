@@ -13,9 +13,9 @@ export interface RoleActor {
   roleId?: string;
 }
 
-export async function listRoles(): Promise<IRoleDocument[]> {
+export async function listRoles(): Promise<any[]> {
   await connectToDatabase();
-  return Role.find().sort({ isSystem: -1, name: 1 });
+  return Role.find().sort({ isSystem: -1, name: 1 }).lean();
 }
 
 export async function getRoleById(id: string): Promise<IRoleDocument | null> {

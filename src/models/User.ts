@@ -147,16 +147,7 @@ UserSchema.methods.toSafeUser = function (): SafeUser {
 };
 
 export const User: Model<IUserDocument> =
-  mongoose.models.User
-    ? (mongoose.models.User.schema.path('parentAdminId')
-        ? (mongoose.models.User as Model<IUserDocument>)
-        : mongoose.model<IUserDocument>('User', UserSchema))
-    : mongoose.model<IUserDocument>('User', UserSchema);
-
-// If the model was already registered in a previous HMR cycle without the new fields, update schema paths
-if (mongoose.models.User && !mongoose.models.User.schema.path('parentAdminId')) {
-  delete (mongoose.models as any).User;
+  (mongoose.models.User as Model<IUserDocument>) ||
   mongoose.model<IUserDocument>('User', UserSchema);
-}
 
 export default User;

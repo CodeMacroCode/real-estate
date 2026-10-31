@@ -1,98 +1,76 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import {
   Users,
   Briefcase,
   ShieldCheck,
   History,
   CheckCircle2,
-  Lock,
   ArrowRight,
   Database,
   Layers,
   Sparkles,
-  Calendar,
-  Check,
-  Clock,
   User,
 } from 'lucide-react';
-import { Spinner } from '@/components/ui/Spinner';
-import { SafeUser } from '@/types';
+import { getServerAuthContext } from '@/lib/auth/session';
+import { listUsers } from '@/services/userService';
+import { getAuditLogs } from '@/services/auditService';
 
-export default function DashboardPage() {
-  const [currentUser, setCurrentUser] = useState<SafeUser | null>(null);
-  const [roleSlug, setRoleSlug] = useState<string>('');
-  const [userPermissions, setUserPermissions] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    adminCount: 0,
-    staffCount: 0,
-    grantedModulesCount: 0,
-    auditCount: 0,
-    loading: true,
-  });
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        const [meRes, auditRes] = await Promise.all([
-          fetch('/api/auth/me'),
-          fetch('/api/audit-logs?limit=1'),
-        ]);
+export default async function DashboardPage() {
+  const authContext = await getServerAuthContext();
+  if (!authContext) {
+    redirect('/login');
+  }
 
-        const meData = await meRes.json();
-        const auditData = await auditRes.json();
-
-        const user = meData.data?.user || null;
-        const role = meData.data?.role || null;
-        const slug = role?.slug || '';
-
-        setCurrentUser(user);
-        setRoleSlug(slug);
-
-        const activePermissions = role?.permissions || [];
-        setUserPermissions(activePermissions);
-
-        let adminCount = 0;
-        let staffCount = 0;
-
-        if (slug === 'super_admin') {
-          // Superadmin sees all admins and all staff
-          const [adminsRes, staffRes] = await Promise.all([
-            fetch('/api/users?userType=admin&limit=1'),
-            fetch('/api/staff?limit=1'),
-          ]);
-          const adminsData = await adminsRes.json();
-          const staffData = await staffRes.json();
-          adminCount = adminsData.meta?.total || 0;
-          staffCount = staffData.meta?.total || 0;
-        } else if (slug === 'admin') {
-          // Admin only sees their own sub-role staff count
-          const staffRes = await fetch('/api/staff?limit=1');
-          const staffData = await staffRes.json();
-          staffCount = staffData.meta?.total || 0;
-        }
-
-        setStats({
-          adminCount,
-          staffCount,
-          grantedModulesCount: slug === 'super_admin' ? 28 : activePermissions.length,
-          auditCount: auditData.meta?.total || 0,
-          loading: false,
-        });
-      } catch (err) {
-        console.error('Failed to load dashboard metrics:', err);
-        setStats((prev) => ({ ...prev, loading: false }));
-      }
-    }
-
-    fetchDashboardData();
-  }, []);
+  const { user: currentUser, role } = authContext;
+  const roleSlug = role?.slug || '';
+  const userPermissions = (role?.permissions || []) as any[];
 
   const isSuperAdmin = roleSlug === 'super_admin';
   const isAdmin = roleSlug === 'admin';
   const isSubRole = !isSuperAdmin && !isAdmin;
+
+  let adminCount = 0;
+  let staffCount = 0;
+  let auditCount = 0;
+
+  try {
+    if (isSuperAdmin) {
+      const [adminsData, staffData, auditData] = await Promise.all([
+        listUsers({ userType: 'admin', limit: 1 }),
+        listUsers({ userType: 'staff', limit: 1 }),
+        getAuditLogs({ limit: 1, excludeSuperAdmin: false }),
+      ]);
+      adminCount = adminsData.pagination.total;
+      staffCount = staffData.pagination.total;
+      auditCount = auditData.pagination.total;
+    } else if (isAdmin) {
+      const [staffData, auditData] = await Promise.all([
+        listUsers({ userType: 'staff', limit: 1, parentAdminId: currentUser._id }),
+        getAuditLogs({
+          limit: 1,
+          parentAdminId: currentUser._id?.toString(),
+          excludeSuperAdmin: true,
+        }),
+      ]);
+      staffCount = staffData.pagination.total;
+      auditCount = auditData.pagination.total;
+    } else {
+      const auditData = await getAuditLogs({
+        limit: 1,
+        userId: currentUser._id?.toString(),
+        excludeSuperAdmin: true,
+      });
+      auditCount = auditData.pagination.total;
+    }
+  } catch (err) {
+    console.error('Failed to load dashboard metrics on server:', err);
+  }
+
+  const grantedModulesCount = isSuperAdmin ? 28 : userPermissions.length;
 
   return (
     <div className="space-y-8">
@@ -151,11 +129,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  {stats.loading ? (
-                    <Spinner size="sm" className="text-blue-600" />
-                  ) : (
-                    <span className="text-2xl font-bold text-slate-900">{stats.adminCount}</span>
-                  )}
+                  <span className="text-2xl font-bold text-slate-900">{adminCount}</span>
                   <span className="text-xs text-slate-500">Admin Accounts</span>
                 </div>
               </div>
@@ -189,11 +163,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-4 flex items-baseline gap-2">
-                {stats.loading ? (
-                  <Spinner size="sm" className="text-indigo-600" />
-                ) : (
-                  <span className="text-2xl font-bold text-slate-900">{stats.staffCount}</span>
-                )}
+                <span className="text-2xl font-bold text-slate-900">{staffCount}</span>
                 <span className="text-xs text-slate-500">Sub-Role Staff</span>
               </div>
             </div>
@@ -209,13 +179,9 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-4 flex items-baseline gap-2">
-                {stats.loading ? (
-                  <Spinner size="sm" className="text-purple-600" />
-                ) : (
-                  <span className="text-2xl font-bold text-slate-900">
-                    {stats.grantedModulesCount}
-                  </span>
-                )}
+                <span className="text-2xl font-bold text-slate-900">
+                  {grantedModulesCount}
+                </span>
                 <span className="text-xs text-slate-500">
                   {isSuperAdmin ? 'Full System Modules' : 'Granted by Super Admin'}
                 </span>
@@ -233,11 +199,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="mt-4 flex items-baseline gap-2">
-                {stats.loading ? (
-                  <Spinner size="sm" className="text-amber-600" />
-                ) : (
-                  <span className="text-2xl font-bold text-slate-900">{stats.auditCount}</span>
-                )}
+                <span className="text-2xl font-bold text-slate-900">{auditCount}</span>
                 <span className="text-xs text-slate-500">
                   {isSuperAdmin ? 'All System Logs' : 'Admin & Staff Logs'}
                 </span>
@@ -245,7 +207,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Management Modules (1 Row of 4 Cards) */}
+          {/* Management Modules (1 Row of Cards) */}
           <div>
             <h2 className="text-base font-semibold text-slate-900 mb-3">Management Modules</h2>
             <div className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${isSuperAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
@@ -389,7 +351,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {userPermissions.map((p) => (
+                {userPermissions.map((p: any) => (
                   <div
                     key={p.module}
                     className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-sm transition"

@@ -1,63 +1,36 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-import { LoadingOverlay } from '@/components/ui/Spinner';
-import { SafeUser } from '@/types';
+import { AuthProvider } from '@/components/providers/AuthProvider';
+import { getServerAuthContext } from '@/lib/auth/session';
 
-export default function DashboardLayout({
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const [user, setUser] = useState<SafeUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          router.push('/login');
-          return;
-        }
-        const data = await res.json();
-        if (data.success && data.data?.user) {
-          setUser(data.data.user);
-        } else {
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('Session load error:', err);
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadUser();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
-        <LoadingOverlay message="Initializing CRM Session..." />
-      </div>
-    );
+  const authContext = await getServerAuthContext();
+  if (!authContext) {
+    redirect('/login');
   }
 
+  const cleanUser = JSON.parse(JSON.stringify(authContext.user));
+  const cleanRole = JSON.parse(JSON.stringify(authContext.role));
+
   return (
-    <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
-      <Sidebar user={user} />
-      <div className="flex flex-1 flex-col pl-64 min-w-0">
-        <Header user={user} />
-        <main className="flex-1 p-6 md:p-8 w-full min-w-0">
-          {children}
-        </main>
+    <AuthProvider user={cleanUser} role={cleanRole}>
+      <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
+        <Sidebar user={cleanUser} />
+        <div className="flex flex-1 flex-col pl-64 min-w-0">
+          <Header user={cleanUser} />
+          <main className="flex-1 p-6 md:p-8 w-full min-w-0">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthProvider>
   );
 }

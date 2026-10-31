@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { verifyAuthToken } from './jwt';
 import { connectToDatabase } from '../mongodb/db';
 import { User } from '../../models/User';
@@ -46,12 +47,18 @@ export async function getAuthenticatedContext(
     return null;
   }
 
+  return verifySessionToken(token);
+}
+
+export async function verifySessionToken(
+  token: string
+): Promise<AuthenticatedContext | null> {
   const payload = await verifyAuthToken(token);
   if (!payload || !payload.userId) {
     return null;
   }
 
-  // 3. Independent Database Verification of Current Active User & Authoritative Role
+  // Independent Database Verification of Current Active User & Authoritative Role
   await connectToDatabase();
   const user = await User.findById(payload.userId).populate('roleId');
   if (!user) {
@@ -63,7 +70,7 @@ export async function getAuthenticatedContext(
     return null;
   }
 
-  // 4. Session Revocation Check:
+  // Session Revocation Check:
   // If user logged out after this token was issued, reject the session token
   if (user.lastLogoutAt && payload.iat) {
     const tokenIssuedMs = payload.iat * 1000;
@@ -97,8 +104,22 @@ export async function getAuthenticatedContext(
 
   return {
     user: safeUser,
-    role,
+    role: safeUser.role as any,
   };
+}
+
+export async function getServerAuthContext(): Promise<AuthenticatedContext | null> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (!token) {
+      return null;
+    }
+    return verifySessionToken(token);
+  } catch (error) {
+    console.error('Failed to get server auth context:', error);
+    return null;
+  }
 }
 
 export function setSessionCookie(response: NextResponse, token: string): void {

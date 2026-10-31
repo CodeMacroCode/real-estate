@@ -11,6 +11,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { FormTemplate } from "./frombuild";
+import { formatDate } from "@/lib/dateUtils";
 import {
   Table,
   TableHeader,
@@ -170,8 +171,8 @@ export function AdminAssignmentsTab({
                       </div>
                     </TableCell>
 
-                    <TableCell className="px-5 py-4 text-slate-500">
-                      {new Date(row.createdAt).toLocaleDateString()}
+                    <TableCell suppressHydrationWarning className="px-5 py-4 text-slate-500">
+                      {formatDate(row.createdAt)}
                     </TableCell>
 
                     <TableCell className="px-5 py-4 text-right">
