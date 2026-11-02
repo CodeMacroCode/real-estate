@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Database,
   Layers,
-  Sparkles,
   User,
 } from 'lucide-react';
 import { getServerAuthContext } from '@/lib/auth/session';
@@ -82,44 +81,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Role-Aware Welcome Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>
-              {isSuperAdmin
-                ? 'Super Admin Executive Portal'
-                : isAdmin
-                ? 'Admin Management Portal'
-                : `${currentUser?.role?.name || 'Staff Member'} Workspace`}
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Welcome back, {currentUser?.name || 'User'}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {isSuperAdmin
-              ? 'Complete executive view: Oversee all Admins, delegated sub-roles, permission matrices, and organization-wide audit logs.'
-              : isAdmin
-              ? 'Admin control center: Manage your delegated sub-roles, team members, staff permissions, and activity logs.'
-              : 'Welcome to your staff workspace. Below are your assigned role details and granted CRM permissions.'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xs text-slate-400 uppercase font-semibold">Assigned Role</div>
-            <div className="text-sm font-bold text-slate-900 capitalize">
-              {currentUser?.role?.name || roleSlug?.replace(/_/g, ' ') || 'Staff'}
-            </div>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-md">
-            {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
-          </div>
-        </div>
-      </div>
-
       {/* VIEW A: Super Admin and Admin Dashboard Metrics & Management Cards */}
       {(isSuperAdmin || isAdmin) && (
         <>
