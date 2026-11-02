@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, ChevronRight, Home, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
@@ -27,6 +27,47 @@ export function Header({ user }: HeaderProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isExitingImpersonation, setIsExitingImpersonation] = useState(false);
+  const [dynamicBreadcrumbLabels, setDynamicBreadcrumbLabels] = useState<Record<string, string>>({});
+
+  // Listen to breadcrumb updates from child pages or fetch client name when on client-information/[id]
+  useEffect(() => {
+    const handleUpdate = (e: CustomEvent) => {
+      if (e.detail?.segment && e.detail?.label) {
+        setDynamicBreadcrumbLabels((prev) => ({
+          ...prev,
+          [e.detail.segment]: e.detail.label,
+        }));
+      }
+    };
+
+    window.addEventListener('updateBreadcrumbLabel' as any, handleUpdate);
+
+    // Auto-resolve MongoDB ObjectId when on client-information/[id]
+    const segments = pathname.split('/').filter(Boolean);
+    const lastSeg = segments[segments.length - 1];
+    if (
+      segments.includes('client-information') &&
+      lastSeg &&
+      /^[0-9a-fA-F]{24}$/.test(lastSeg) &&
+      !dynamicBreadcrumbLabels[lastSeg]
+    ) {
+      fetch(`/api/clients/${lastSeg}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data?.clientName) {
+            setDynamicBreadcrumbLabels((prev) => ({
+              ...prev,
+              [lastSeg]: json.data.clientName,
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      window.removeEventListener('updateBreadcrumbLabel' as any, handleUpdate);
+    };
+  }, [pathname, dynamicBreadcrumbLabels]);
 
   const handleExitImpersonation = async () => {
     setIsExitingImpersonation(true);
@@ -66,6 +107,9 @@ export function Header({ user }: HeaderProps) {
   const segments = pathname.split('/').filter(Boolean);
 
   const getSegmentLabel = (seg: string) => {
+    if (dynamicBreadcrumbLabels[seg]) {
+      return dynamicBreadcrumbLabels[seg];
+    }
     switch (seg) {
       case 'dashboard':
         return 'Dashboard';

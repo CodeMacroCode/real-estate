@@ -15,7 +15,7 @@ export interface IClientConfirmationDocument extends Document {
   clientConfirmation: ConfirmationOutcome;
   clientFeedback?: string;
 
-  // Deal Won (YES): Final agreement / delivery date
+  // YES: Final agreement / delivery date
   agreedDeliveryDate?: Date;
 
   // Decision Pending (MAYBE): Follow-up

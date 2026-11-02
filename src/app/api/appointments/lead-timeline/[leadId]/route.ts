@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { Lead } from "@/models/Lead";
+import { User } from "@/models/User";
 import { Appointment } from "@/models/Appointment";
 import { ClientConfirmation } from "@/models/ClientConfirmation";
 import { Client } from "@/models/Client";
@@ -30,8 +31,8 @@ export async function GET(
     // 1. Fetch Lead with populated references
     const lead = await Lead.findById(leadId)
       .populate("clientId")
-      .populate("assignedSubRoleId", "name email designation role")
-      .populate("adminId", "name email")
+      .populate("assignedSubRoleId", "name email designation role branch")
+      .populate("adminId", "name email designation branch")
       .lean();
 
     if (!lead) {
@@ -41,7 +42,7 @@ export async function GET(
     // 2. Fetch all appointments in chronological meeting sequence
     const appointments = await Appointment.find({ leadId: lead._id })
       .sort({ meetingSequence: 1, meetingDate: 1, createdAt: 1 })
-      .populate("assignedSubRoleId", "name email role")
+      .populate("assignedSubRoleId", "name email role designation branch")
       .populate("confirmationId")
       .lean();
 

@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import {
   Users,
   Search,
@@ -26,13 +27,13 @@ import {
   Eye,
   Download,
   Copy,
-} from 'lucide-react';
-import { Spinner } from '@/components/ui/Spinner';
-import { SafeUser } from '@/types';
-import Lead360Modal from '@/components/Lead360Modal';
-import ClientQuickMessageModal from './ClientQuickMessageModal';
-import ClientFormModal from './ClientFormModal';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
+import { SafeUser } from "@/types";
+import Lead360Modal from "@/components/Lead360Modal";
+import ClientQuickMessageModal from "./ClientQuickMessageModal";
+import ClientFormModal from "./ClientFormModal";
+import { toast } from "sonner";
 import {
   Table,
   TableHeader,
@@ -40,7 +41,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 
 interface ClientItem {
   _id: string;
@@ -52,7 +53,7 @@ interface ClientItem {
   totalDealsWon: number;
   totalRevenue?: number;
   lastAgreedDeliveryDate?: string;
-  status: 'Active' | 'Inactive' | 'VIP';
+  status: "Active" | "Inactive" | "VIP";
   notes?: string;
   adminId?: { name: string; email: string; designation?: string };
   leadId?: { _id: string; leadTitle: string; source: string };
@@ -62,44 +63,51 @@ interface ClientItem {
 
 export default function ClientsPage() {
   const [currentUser, setCurrentUser] = useState<SafeUser | null>(null);
-  const [roleSlug, setRoleSlug] = useState<string>('');
+  const [roleSlug, setRoleSlug] = useState<string>("");
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filters & Pagination
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [totalVerifiedClients, setTotalVerifiedClients] = useState(0);
 
   // 1. 360 Degree View Modal
-  const [selectedLeadIdFor360, setSelectedLeadIdFor360] = useState<string | null>(null);
+  const [selectedLeadIdFor360, setSelectedLeadIdFor360] = useState<
+    string | null
+  >(null);
   const [is360Open, setIs360Open] = useState(false);
 
   // 2. Quick Messaging Dialog (WhatsApp / SMS / Email)
-  const [selectedClientForMsg, setSelectedClientForMsg] = useState<ClientItem | null>(null);
-  const [msgChannel, setMsgChannel] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [selectedClientForMsg, setSelectedClientForMsg] =
+    useState<ClientItem | null>(null);
+  const [msgChannel, setMsgChannel] = useState<"whatsapp" | "email">(
+    "whatsapp",
+  );
   const [isMsgModalOpen, setIsMsgModalOpen] = useState(false);
 
   // 3. Client Add / Edit Form Modal
-  const [selectedClientForEdit, setSelectedClientForEdit] = useState<ClientItem | null>(null);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [selectedClientForEdit, setSelectedClientForEdit] =
+    useState<ClientItem | null>(null);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   // Fetch current user
   useEffect(() => {
     async function fetchMe() {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch("/api/auth/me");
         const json = await res.json();
         if (json.success && json.data) {
           setCurrentUser(json.data.user);
-          setRoleSlug(json.data.role?.slug || '');
+          setRoleSlug(json.data.role?.slug || "");
         }
       } catch (err) {
-        console.error('Failed to load user', err);
+        console.error("Failed to load user", err);
       }
     }
     fetchMe();
@@ -112,23 +120,30 @@ export default function ClientsPage() {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10',
+        limit: "10",
       });
-      if (search) params.append('search', search);
-      if (statusFilter) params.append('status', statusFilter);
+      if (search) params.append("search", search);
+      if (statusFilter) params.append("status", statusFilter);
 
       const res = await fetch(`/api/clients?${params.toString()}`);
       const json = await res.json();
 
       if (json.success) {
-        setClients(json.data || []);
-        setTotalPages(json.pagination?.totalPages || 1);
-        setTotalCount(json.pagination?.total || 0);
+        const clientList = json.data || [];
+        setClients(clientList);
+        const meta = json.meta || json.pagination || {};
+        const total = typeof meta.total === 'number' ? meta.total : clientList.length;
+        const totalPages = typeof meta.totalPages === 'number' ? meta.totalPages : 1;
+        const verifiedCount = typeof meta.totalVerified === 'number' ? meta.totalVerified : total;
+
+        setTotalPages(totalPages);
+        setTotalCount(total);
+        setTotalVerifiedClients(verifiedCount);
       } else {
-        setError(json.error || 'Failed to fetch clients');
+        setError(json.error || "Failed to fetch clients");
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to server');
+      setError(err.message || "Error connecting to server");
     } finally {
       setLoading(false);
     }
@@ -145,17 +160,22 @@ export default function ClientsPage() {
   };
 
   const handleDeleteClient = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to permanently delete client profile for ${name}?`)) return;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete client profile for ${name}?`,
+      )
+    )
+      return;
     try {
-      const res = await fetch(`/api/clients/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
       if (res.ok) {
-        toast.success('Client profile deleted');
+        toast.success("Client profile deleted");
         fetchClients();
       } else {
-        toast.error('Failed to delete client');
+        toast.error("Failed to delete client");
       }
     } catch {
-      toast.error('Error deleting client');
+      toast.error("Error deleting client");
     }
   };
 
@@ -167,43 +187,48 @@ export default function ClientsPage() {
   // Export CSV
   const handleExportCSV = () => {
     if (clients.length === 0) {
-      toast.error('No clients to export');
+      toast.error("No clients to export");
       return;
     }
 
     const headers = [
-      'Client Name',
-      'Phone',
-      'Email',
-      'Company Name',
-      'Address',
-      'Deals Won',
-      'Total Revenue',
-      'Status',
-      'Registration Date',
+      "Client Name",
+      "Phone",
+      "Email",
+      "Company Name",
+      "Address",
+      "Deals Won",
+      "Total Revenue",
+      "Status",
+      "Registration Date",
     ];
 
     const rows = clients.map((c) => [
-      `"${c.clientName || ''}"`,
-      `"${c.phone || ''}"`,
-      `"${c.email || ''}"`,
-      `"${c.companyName || ''}"`,
-      `"${c.address || ''}"`,
+      `"${c.clientName || ""}"`,
+      `"${c.phone || ""}"`,
+      `"${c.email || ""}"`,
+      `"${c.companyName || ""}"`,
+      `"${c.address || ""}"`,
       c.totalDealsWon || 1,
       c.totalRevenue || 0,
       c.status,
       new Date(c.createdAt).toLocaleDateString(),
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `crm-client-directory-${new Date().toISOString().slice(0, 10)}.csv`);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `crm-client-directory-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Exported CRM Directory CSV!');
+    toast.success("Exported CRM Directory CSV!");
   };
 
   return (
@@ -216,7 +241,8 @@ export default function ClientsPage() {
             <span>Client Information (CRM Directory)</span>
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Permanent accounts of graduated clients with won deals, contracts, and lifetime value tracking.
+            Permanent accounts of graduated clients with won deals, contracts,
+            and lifetime value tracking.
           </p>
         </div>
 
@@ -233,14 +259,16 @@ export default function ClientsPage() {
             onClick={() => fetchClients()}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+            />
             <span>Refresh</span>
           </button>
 
           <button
             onClick={() => {
               setSelectedClientForEdit(null);
-              setFormMode('create');
+              setFormMode("create");
               setIsFormModalOpen(true);
             }}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs"
@@ -255,31 +283,46 @@ export default function ClientsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Total Verified Clients</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">
+              Total Verified Clients
+            </span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
               <Users className="size-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">{totalCount}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Graduated from successful deal meetings</div>
+          <div className="text-2xl font-bold text-slate-900 mt-2">
+            {totalVerifiedClients || totalCount || clients.length}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            Graduated from successful deal meetings
+          </div>
         </div>
 
         <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Active Engagements</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">
+              Active Engagements
+            </span>
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
               <Award className="size-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-emerald-600 mt-2">
-            {clients.filter((c) => c.status === 'Active' || c.status === 'VIP').length}
+            {
+              clients.filter((c) => c.status === "Active" || c.status === "VIP")
+                .length
+            }
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Active agreements & handovers pending</div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            Active agreements & handovers pending
+          </div>
         </div>
 
         <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Tracked Deal Volume</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">
+              Tracked Deal Volume
+            </span>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
               <DollarSign className="size-4" />
             </div>
@@ -290,7 +333,9 @@ export default function ClientsPage() {
               .reduce((sum, c) => sum + (c.totalRevenue || 0), 0)
               .toLocaleString()}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Cumulative quotation revenue recorded</div>
+          <div className="text-[11px] text-slate-400 mt-1">
+            Cumulative quotation revenue recorded
+          </div>
         </div>
       </div>
 
@@ -340,9 +385,13 @@ export default function ClientsPage() {
         ) : clients.length === 0 ? (
           <div className="text-center py-16 px-4">
             <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800">No client profiles yet</h3>
+            <h3 className="text-base font-semibold text-slate-800">
+              No client profiles yet
+            </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-              When an appointment is confirmed with outcome <strong>YES (Deal Won)</strong>, the prospect is automatically graduated into this permanent directory.
+              When an appointment is confirmed with outcome <strong>YES</strong>
+              , the prospect is automatically graduated into this permanent
+              directory.
             </p>
           </div>
         ) : (
@@ -351,18 +400,22 @@ export default function ClientsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[240px]">Client Profile</TableHead>
-                  <TableHead className="w-[260px]">Contact &amp; In-Cell Outreach</TableHead>
+                  <TableHead className="w-[260px]">
+                    Contact &amp; In-Cell Outreach
+                  </TableHead>
                   <TableHead className="w-[160px]">Deals / Revenue</TableHead>
                   <TableHead className="w-[160px]">Handover Date</TableHead>
                   <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="text-right">Row Actions</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {clients.map((c) => (
                   <TableRow key={c._id}>
                     <TableCell>
-                      <div className="font-bold text-slate-900">{c.clientName}</div>
+                      <div className="font-bold text-slate-900">
+                        {c.clientName}
+                      </div>
                       {c.companyName && (
                         <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                           <Building2 className="w-3 h-3 text-slate-400" />
@@ -383,7 +436,7 @@ export default function ClientsPage() {
                         <Phone className="w-3 h-3 text-slate-400" />
                         <span>{c.phone}</span>
                         <a
-                          href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`}
+                          href={`https://wa.me/${c.phone.replace(/[^0-9]/g, "")}`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"
@@ -393,7 +446,7 @@ export default function ClientsPage() {
                         </a>
                         <button
                           type="button"
-                          onClick={() => handleCopy(c.phone, 'phone number')}
+                          onClick={() => handleCopy(c.phone, "phone number")}
                           className="p-0.5 text-slate-400 hover:text-slate-600 rounded"
                           title="Copy phone"
                         >
@@ -417,7 +470,9 @@ export default function ClientsPage() {
                           </a>
                           <button
                             type="button"
-                            onClick={() => handleCopy(c.email!, 'email address')}
+                            onClick={() =>
+                              handleCopy(c.email!, "email address")
+                            }
                             className="p-0.5 text-slate-400 hover:text-slate-600 rounded"
                             title="Copy email"
                           >
@@ -436,7 +491,8 @@ export default function ClientsPage() {
 
                     <TableCell>
                       <div className="text-xs font-bold text-slate-900">
-                        {c.totalDealsWon} Deal{c.totalDealsWon > 1 ? 's' : ''} Won
+                        {c.totalDealsWon} Deal{c.totalDealsWon > 1 ? "s" : ""}{" "}
+                        Won
                       </div>
                       {c.totalRevenue ? (
                         <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
@@ -450,26 +506,30 @@ export default function ClientsPage() {
                         <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                           <Calendar className="w-3 h-3 text-emerald-600" />
                           <span>
-                            {new Date(c.lastAgreedDeliveryDate).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
+                            {new Date(
+                              c.lastAgreedDeliveryDate,
+                            ).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
                             })}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400">Handover Complete</span>
+                        <span className="text-xs text-slate-400">
+                          Handover Complete
+                        </span>
                       )}
                     </TableCell>
 
                     <TableCell>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
-                          c.status === 'VIP'
-                            ? 'bg-purple-100 text-purple-800'
-                            : c.status === 'Active'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-600'
+                          c.status === "VIP"
+                            ? "bg-purple-100 text-purple-800"
+                            : c.status === "Active"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {c.status}
@@ -477,14 +537,14 @@ export default function ClientsPage() {
                     </TableCell>
 
                     {/* ROW ACTIONS (MessageSquare, Mail, EyeIcon, Pencil, Trash2) */}
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
                         {/* 1. Quick Messaging Dialog (<MessageSquare />) */}
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedClientForMsg(c);
-                            setMsgChannel('whatsapp');
+                            setMsgChannel("whatsapp");
                             setIsMsgModalOpen(true);
                           }}
                           className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition"
@@ -498,7 +558,7 @@ export default function ClientsPage() {
                           type="button"
                           onClick={() => {
                             setSelectedClientForMsg(c);
-                            setMsgChannel('email');
+                            setMsgChannel("email");
                             setIsMsgModalOpen(true);
                           }}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition"
@@ -507,27 +567,22 @@ export default function ClientsPage() {
                           <Mail className="size-4" />
                         </button>
 
-                        {/* 3. View Client Leads Dossier / 360 (<Eye />) */}
-                        {c.leadId?._id && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedLeadIdFor360(c.leadId!._id);
-                              setIs360Open(true);
-                            }}
-                            className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-md transition"
-                            title="View Client 360° Dossier & History"
-                          >
-                            <Eye className="size-4" />
-                          </button>
-                        )}
+                                                {/* 3. View Client Leads Dossier / 360 (<Eye />) */}
+                        <Link
+                          href={`/client-information/${encodeURIComponent(c.clientName ? c.clientName.trim().toLowerCase().replace(/\s+/g, "-") : c._id)}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/90 rounded-lg shadow-2xs hover:shadow-xs transition-all"
+                          title="View Client Dossier & Leads History"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-purple-600" />
+                          <span>View</span>
+                        </Link>
 
                         {/* 4. Edit Client Profile (<Pencil />) */}
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedClientForEdit(c);
-                            setFormMode('edit');
+                            setFormMode("edit");
                             setIsFormModalOpen(true);
                           }}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition"
@@ -539,7 +594,9 @@ export default function ClientsPage() {
                         {/* 5. Delete Client Profile (<Trash2 />) */}
                         <button
                           type="button"
-                          onClick={() => handleDeleteClient(c._id, c.clientName)}
+                          onClick={() =>
+                            handleDeleteClient(c._id, c.clientName)
+                          }
                           className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition"
                           title="Delete Client Profile"
                         >

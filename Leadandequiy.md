@@ -270,7 +270,7 @@ interface IClientConfirmation {
   clientConfirmation: "YES" | "NO" | "MAYBE";
   clientFeedback?: string;
 
-  // Deal Won (YES): Final agreement / delivery date
+  // YES: Final agreement / delivery date
   agreedDeliveryDate?: Date;
 
   // Decision Pending (MAYBE): Follow-up
@@ -331,7 +331,7 @@ interface IClientConfirmation {
                         │
                         ▼
          Sub-Role Logs Client Confirmation Outcome:
-            ├──► YES: Deal Won ──► Binds Quotation / Invoice ──► Marks Lead Completed
+            ├──► YES: Confirm ──► Binds Quotation / Invoice ──► Marks Lead Completed
             ├──► MAYBE: Sets Follow-Up Date ───────────────────► Auto-Syncs Call to Sales Exec Calendar
             └──► NO: Sets Rejection Reason & Closes Lead
                         │
@@ -482,7 +482,7 @@ This test suite guarantees bullet-proof multi-tenancy, data boundary isolation, 
 
 | ID             | Test Scenario                      | Steps                                                                                                                              | Expected Outcome                                                                                                                                                                                      |
 | :------------- | :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **TC-CONF-01** | Outcome = "YES" (Deal Won)         | 1. Sub-role completes meeting and marks outcome `YES`.<br>2. Enters agreed delivery date, attaches quotation, and uploads invoice. | 1. Lead status updates to `Completed`.<br>2. Appointment status updates to `Completed`.<br>3. Client record created/updated in `Client Information`.<br>4. Invoice stored securely.                   |
+| **TC-CONF-01** | Outcome = "YES"                    | 1. Sub-role completes meeting and marks outcome `YES`.<br>2. Enters agreed delivery date, attaches quotation, and uploads invoice. | 1. Lead status updates to `Completed`.<br>2. Appointment status updates to `Completed`.<br>3. Client record created/updated in `Client Information`.<br>4. Invoice stored securely.                   |
 | **TC-CONF-02** | Outcome = "MAYBE" (Follow-Up Call) | 1. Sub-role selects `MAYBE` and sets `followUpDate: 2026-11-05 10:00`.                                                             | 1. Lead status updates to `In-Progress`.<br>2. System creates a follow-up reminder event on Sales Executive's Google Calendar.<br>3. `followUpGoogleCalendarEventId` recorded on confirmation record. |
 | **TC-CONF-03** | Outcome = "NO" (Lost Deal)         | 1. Sub-role selects `NO` with reason "Budget mismatch".                                                                            | 1. Lead status updates to `Rejected`.<br>2. Reason logged in historical timeline for conversion analytics.                                                                                            |
 

@@ -87,7 +87,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const [leads, total] = await Promise.all([
+    // Base query for counting stats (without status filter constraints)
+    const baseQuery = { ...query };
+    delete baseQuery.status;
+
+    const [leads, total, stats] = await Promise.all([
       Lead.find(query)
         .populate('adminId', 'name email')
         .populate({
@@ -105,6 +109,19 @@ export async function GET(req: NextRequest) {
         .limit(limit)
         .lean(),
       Lead.countDocuments(query),
+      Promise.all([
+        Lead.countDocuments(baseQuery),
+        Lead.countDocuments({ ...baseQuery, status: { $in: ['Pending', 'New'] } }),
+        Lead.countDocuments({ ...baseQuery, status: 'In-Progress' }),
+        Lead.countDocuments({ ...baseQuery, status: 'Completed' }),
+        Lead.countDocuments({ ...baseQuery, status: 'Rejected' }),
+      ]).then(([allCount, newCount, inProgressCount, completedCount, rejectedCount]) => ({
+        allCount,
+        newCount,
+        inProgressCount,
+        completedCount,
+        rejectedCount,
+      })),
     ]);
 
     return jsonResponse(leads, 200, {
@@ -112,6 +129,7 @@ export async function GET(req: NextRequest) {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+      stats,
     });
   } catch (error: any) {
     return errorResponse(error.message || 'Failed to fetch leads', 500);

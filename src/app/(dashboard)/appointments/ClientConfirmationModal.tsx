@@ -3,6 +3,10 @@
 import React, { useState } from "react";
 import {
   X,
+  Upload,
+  Loader2,
+  File,
+  Image as ImageIcon,
   CheckCircle,
   XCircle,
   HelpCircle,
@@ -47,6 +51,36 @@ export default function ClientConfirmationModal({
   const [quotationAmount, setQuotationAmount] = useState("");
   const [quotationNumber, setQuotationNumber] = useState("");
   const [invoiceUrl, setInvoiceUrl] = useState("");
+  const [isInvoiceUploading, setIsInvoiceUploading] = useState(false);
+  const invoiceFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleInvoiceFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsInvoiceUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || json.message || "Failed to upload file");
+      }
+
+      setInvoiceUrl(json.data.fileUrl);
+      toast.success("Invoice uploaded to server!");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setIsInvoiceUploading(false);
+    }
+  };
   const [siteAddress, setSiteAddress] = useState(
     appointment?.meetingLocation || appointment?.leadId?.clientAddress || "",
   );
@@ -111,7 +145,7 @@ export default function ClientConfirmationModal({
 
       toast.success(
         outcome === "YES"
-          ? "Deal WON! Client graduated to CRM Directory."
+          ? "Deal! Client graduated to CRM Directory."
           : outcome === "MAYBE"
             ? "Follow-up appointment chained successfully!"
             : "Appointment marked as Closed (Lost).",
@@ -206,7 +240,7 @@ export default function ClientConfirmationModal({
                       outcome === "YES" ? "text-emerald-600" : "text-slate-400"
                     }`}
                   />
-                  <span className="text-xs font-bold">YES (Deal Won)</span>
+                  <span className="text-xs font-bold">YES</span>
                 </button>
 
                 <button
@@ -250,7 +284,7 @@ export default function ClientConfirmationModal({
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/30 p-4 space-y-3 animate-in fade-in-50">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
                   <Sparkles className="size-4 text-emerald-600" />
-                  <span>Deal Won: Agreement & Financial Details</span>
+                  <span>Deal: Agreement & Financial Details</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -297,15 +331,54 @@ export default function ClientConfirmationModal({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Invoice / Doc URL (Optional)
+                      Invoice / Agreement File (PDF, Images, DOC)
                     </label>
                     <input
-                      type="url"
-                      placeholder="https://..."
-                      value={invoiceUrl}
-                      onChange={(e) => setInvoiceUrl(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                      type="file"
+                      ref={invoiceFileInputRef}
+                      onChange={handleInvoiceFileUpload}
+                      accept=".jpg,.jpeg,.png,.webp,.svg,.gif,.pdf,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="hidden"
                     />
+                    <div
+                      onClick={() => invoiceFileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-lg p-2.5 text-center cursor-pointer transition ${
+                        invoiceUrl
+                          ? "border-emerald-300 bg-emerald-50/50"
+                          : "border-slate-200 hover:border-emerald-400 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      {isInvoiceUploading ? (
+                        <div className="flex items-center justify-center gap-2 py-1">
+                          <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
+                          <span className="text-xs text-slate-600">Uploading to server...</span>
+                        </div>
+                      ) : invoiceUrl ? (
+                        <div className="flex items-center justify-between gap-2 text-left">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span className="text-xs text-emerald-700 font-medium truncate">
+                              ✓ File uploaded on server
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              invoiceFileInputRef.current?.click();
+                            }}
+                            className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 bg-white border border-slate-200 rounded"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1.5 py-1 text-slate-500 hover:text-emerald-700">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">Click to upload file (Max 25MB)</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

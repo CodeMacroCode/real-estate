@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { Client } from "@/models/Client";
+import { Lead } from "@/models/Lead";
+import { Appointment } from "@/models/Appointment";
+import { ClientConfirmation } from "@/models/ClientConfirmation";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import mongoose from "mongoose";
@@ -21,7 +24,20 @@ export async function GET(
     await connectToDatabase();
     const { id } = await params;
 
-    const client = await Client.findById(id)
+    let clientQuery: any;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      clientQuery = { _id: id };
+    } else {
+      const decoded = decodeURIComponent(id).trim();
+      clientQuery = {
+        $or: [
+          { clientName: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+          { clientName: decoded },
+        ],
+      };
+    }
+
+    const client = await Client.findOne(clientQuery)
       .populate("adminId", "name email designation")
       .populate("leadId")
       .populate("confirmationId")
@@ -31,7 +47,31 @@ export async function GET(
       return errorResponse("Client not found", 404);
     }
 
-    return jsonResponse(client);
+    // Fetch all leads associated with this client
+    const leadsQuery: any = {
+      $or: [
+        { clientId: client._id },
+        { clientPhone: client.phone },
+      ],
+    };
+    if (client.leadId?._id) {
+      leadsQuery.$or.push({ _id: client.leadId._id });
+    }
+
+    const leads = await Lead.find(leadsQuery)
+      .populate("adminId", "name email designation")
+      .populate({
+        path: "assignedSubRoleId",
+        select: "name email designation roleId",
+        populate: { path: "roleId", select: "name slug" },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return jsonResponse({
+      ...client,
+      leads: leads || [],
+    });
   } catch (error: any) {
     return errorResponse(error.message || "Failed to fetch client", 500);
   }
@@ -50,7 +90,20 @@ export async function PUT(
     await connectToDatabase();
     const { id } = await params;
 
-    const client = await Client.findById(id);
+    let clientQuery: any;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      clientQuery = { _id: id };
+    } else {
+      const decoded = decodeURIComponent(id).trim();
+      clientQuery = {
+        $or: [
+          { clientName: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+          { clientName: decoded },
+        ],
+      };
+    }
+
+    const client = await Client.findOne(clientQuery);
     if (!client) {
       return errorResponse("Client not found", 404);
     }
@@ -79,7 +132,7 @@ export async function PUT(
       },
       action: "update",
       entity: "clients",
-      entityId: id,
+      entityId: client._id.toString(),
       newValues: body,
     });
 
@@ -102,12 +155,26 @@ export async function DELETE(
     await connectToDatabase();
     const { id } = await params;
 
-    const client = await Client.findById(id);
+    let clientQuery: any;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      clientQuery = { _id: id };
+    } else {
+      const decoded = decodeURIComponent(id).trim();
+      clientQuery = {
+        $or: [
+          { clientName: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+          { clientName: decoded },
+        ],
+      };
+    }
+
+    const client = await Client.findOne(clientQuery);
     if (!client) {
       return errorResponse("Client not found", 404);
     }
 
-    await Client.findByIdAndDelete(id);
+    const clientIdStr = client._id.toString();
+    await Client.findByIdAndDelete(client._id);
 
     await recordAuditEvent({
       actor: {
@@ -119,7 +186,7 @@ export async function DELETE(
       },
       action: "delete",
       entity: "clients",
-      entityId: id,
+      entityId: clientIdStr,
     });
 
     return jsonResponse({ message: "Client deleted successfully" });

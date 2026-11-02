@@ -285,10 +285,11 @@ export default function AppointmentsPage() {
 
       if (json.success) {
         setAppointments(json.data || []);
-        setTotalPages(json.pagination?.totalPages || 1);
-        setTotalCount(json.pagination?.total || 0);
-        if (json.pagination?.stats) {
-          setKpiStats(json.pagination.stats);
+        const meta = json.meta || json.pagination || {};
+        setTotalPages(meta.totalPages || 1);
+        setTotalCount(meta.total || 0);
+        if (meta.stats) {
+          setKpiStats(meta.stats);
         }
       } else {
         setError(json.error || 'Failed to fetch appointments');

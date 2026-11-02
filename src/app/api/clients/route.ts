@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
           limit,
           total: 0,
           totalPages: 0,
+          totalVerified: 0,
         });
       }
       query.adminId = parentAdminId;
@@ -69,7 +70,13 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [clients, total] = await Promise.all([
+    // Base scope query for counting total verified clients in scope (without search/status filter constraints)
+    const baseScopeQuery: any = {};
+    if (query.adminId) {
+      baseScopeQuery.adminId = query.adminId;
+    }
+
+    const [clients, total, totalVerified] = await Promise.all([
       Client.find(query)
         .populate("adminId", "name email designation")
         .populate("leadId", "leadTitle source")
@@ -79,14 +86,22 @@ export async function GET(req: NextRequest) {
         .limit(limit)
         .lean(),
       Client.countDocuments(query),
+      Client.countDocuments(baseScopeQuery),
     ]);
 
-    return jsonResponse(clients, 200, {
+    const pagination = {
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-    });
+      totalVerified,
+    };
+
+    return jsonResponse(
+      clients,
+      200,
+      pagination
+    );
   } catch (error: any) {
     return errorResponse(error.message || "Failed to fetch clients", 500);
   }
