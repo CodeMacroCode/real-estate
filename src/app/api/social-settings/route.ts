@@ -60,6 +60,67 @@ export async function GET(req: NextRequest) {
       settings = created.toObject();
     }
 
+    // Also check dedicated integration collections to ensure two-way sync
+    const [GoogleCalendarConfigModule, MetaConnectionModule, GoogleAdsConfigModule] =
+      await Promise.all([
+        import("@/models/GoogleCalendarConfig.model"),
+        import("@/models/MetaConnection.model"),
+        import("@/models/GoogleAdsConfig.model"),
+      ]);
+
+    const GoogleCalendarConfig = GoogleCalendarConfigModule.default;
+    const MetaConnection = MetaConnectionModule.default;
+    const GoogleAdsConfig = GoogleAdsConfigModule.default;
+
+    const [gcalConfig, metaConn, gadsConfig]: [any, any, any] = await Promise.all([
+      GoogleCalendarConfig.findOne({ adminId: targetAdminId }).lean(),
+      MetaConnection.findOne({ adminId: targetAdminId }).lean(),
+      GoogleAdsConfig.findOne({ adminId: targetAdminId }).lean(),
+    ]);
+
+    const isCalendarConnected = Boolean(
+      settings?.googleCalendar?.isConnected || gcalConfig?.isConnected,
+    );
+    const calendarEmail =
+      settings?.googleCalendar?.connectedEmail ||
+      settings?.googleCalendar?.calendarEmail ||
+      gcalConfig?.accountEmail ||
+      "";
+
+    const isMetaActive = Boolean(
+      settings?.meta?.isActive || metaConn?.isConnected,
+    );
+
+    const isGoogleAdsActive = Boolean(
+      settings?.googleAds?.isActive || gadsConfig?.isConnected,
+    );
+
+    if (settings) {
+      settings.googleCalendar = {
+        ...settings.googleCalendar,
+        isConnected: isCalendarConnected,
+        connectedEmail: calendarEmail,
+        calendarEmail: calendarEmail,
+        clientId: settings?.googleCalendar?.clientId || gcalConfig?.clientId || "",
+      };
+
+      settings.meta = {
+        ...settings.meta,
+        isActive: isMetaActive,
+        pageId: settings?.meta?.pageId || metaConn?.pageId || "",
+        pageName: settings?.meta?.pageName || metaConn?.pageName || "",
+        pageAccessToken: settings?.meta?.pageAccessToken || metaConn?.pageToken || "",
+      };
+
+      settings.googleAds = {
+        ...settings.googleAds,
+        isActive: isGoogleAdsActive,
+        webhookSecretKey:
+          settings?.googleAds?.webhookSecretKey || gadsConfig?.webhookKey || "",
+        customerId: settings?.googleAds?.customerId || gadsConfig?.customerId || "",
+      };
+    }
+
     // Count leads by channel for this admin
     const [metaLeads, googleLeads, linkedInLeads] = await Promise.all([
       Lead.countDocuments({ adminId: targetAdminId, source: "Meta" }),
@@ -73,7 +134,7 @@ export async function GET(req: NextRequest) {
         meta: metaLeads,
         googleAds: googleLeads,
         linkedIn: linkedInLeads,
-        calendar: 0,
+        calendar: isCalendarConnected ? 1 : 0,
       },
       adminId: targetAdminId.toString(),
     });

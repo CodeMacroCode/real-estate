@@ -79,40 +79,44 @@ export default function ConnectSocialMediaPage() {
       }
 
       const res = await fetch("/api/social-settings");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to fetch settings");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || "Failed to fetch settings");
 
-      const currentAdminId = data.adminId || resolvedAdminId;
+      // Handle both direct and enveloped ApiResponse { success, data: { settings, ... } }
+      const payload = json.data || json;
+      const settings = payload.settings || {};
+
+      const currentAdminId = payload.adminId || resolvedAdminId;
       if (currentAdminId) setAdminId(currentAdminId);
 
-      if (data.leadCounts) setLeadCounts(data.leadCounts);
+      if (payload.leadCounts) setLeadCounts(payload.leadCounts);
 
       // Meta
-      if (data.settings?.meta) {
+      if (settings?.meta) {
         setMetaConfig({
-          isActive: Boolean(data.settings.meta.isActive),
-          pageId: data.settings.meta.pageId || "",
-          pageName: data.settings.meta.pageName || "",
-          pageToken: data.settings.meta.pageAccessToken || "",
+          isActive: Boolean(settings.meta.isActive),
+          pageId: settings.meta.pageId || "",
+          pageName: settings.meta.pageName || "",
+          pageToken: settings.meta.pageAccessToken || "",
         });
       }
 
       // LinkedIn
-      if (data.settings?.linkedIn) {
+      if (settings?.linkedIn) {
         setLinkedInConfig({
-          isActive: Boolean(data.settings.linkedIn.isActive),
-          adAccountId: data.settings.linkedIn.adAccountId || "",
-          formId: data.settings.linkedIn.formId || "",
+          isActive: Boolean(settings.linkedIn.isActive),
+          adAccountId: settings.linkedIn.adAccountId || "",
+          formId: settings.linkedIn.formId || "",
         });
       }
 
       // Google Calendar
-      if (data.settings?.googleCalendar) {
+      if (settings?.googleCalendar) {
         setCalendarConfig({
-          isConnected: Boolean(data.settings.googleCalendar.isConnected),
+          isConnected: Boolean(settings.googleCalendar.isConnected),
           accountEmail:
-            data.settings.googleCalendar.connectedEmail ||
-            data.settings.googleCalendar.calendarEmail ||
+            settings.googleCalendar.connectedEmail ||
+            settings.googleCalendar.calendarEmail ||
             "",
         });
       }
@@ -129,8 +133,8 @@ export default function ConnectSocialMediaPage() {
         const gadsData = await gadsRes.json();
         if (gadsData.success && gadsData.data) {
           const isGoogleAdsActive =
-            data.settings?.googleAds?.isActive !== undefined
-              ? Boolean(data.settings.googleAds.isActive)
+            settings?.googleAds?.isActive !== undefined
+              ? Boolean(settings.googleAds.isActive)
               : Boolean(gadsData.data.isConnected);
 
           setGoogleAdsConfig({
