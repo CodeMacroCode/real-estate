@@ -7,6 +7,7 @@ import { User } from '@/models/User';
 import '@/models/ClientConfirmation';
 import { jsonResponse, errorResponse } from '@/lib/apiResponse';
 import { recordAuditEvent } from '@/services/auditService';
+import { createGoogleCalendarEvent } from '@/services/googleCalendar.service';
 import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
@@ -181,8 +182,67 @@ export async function POST(req: NextRequest) {
       resolvedSubRoleId = new mongoose.Types.ObjectId(authContext.user._id);
     }
 
+    // Resolve assigned staff user to invite them as attendee
+    const assignedUser = await User.findById(resolvedSubRoleId).lean();
+
+    // Prepare attendees: client email + assigned staff / host email + creator email (if distinct)
+    const attendeesMap = new Map<string, { email: string; displayName?: string }>();
+
+    if (lead.clientEmail && lead.clientEmail.includes('@')) {
+      attendeesMap.set(lead.clientEmail.toLowerCase(), {
+        email: lead.clientEmail,
+        displayName: lead.clientName || 'Client',
+      });
+    }
+
+    if (assignedUser?.email && assignedUser.email.includes('@')) {
+      attendeesMap.set(assignedUser.email.toLowerCase(), {
+        email: assignedUser.email,
+        displayName: assignedUser.name || 'Assigned Staff',
+      });
+    }
+
+    if (authContext.user.email && authContext.user.email.includes('@')) {
+      attendeesMap.set(authContext.user.email.toLowerCase(), {
+        email: authContext.user.email,
+        displayName: authContext.user.name || 'Meeting Host',
+      });
+    }
+
+    const attendees = Array.from(attendeesMap.values());
+
+    const startDate = new Date(meetingDate);
+    const durationNum = Number(durationMinutes) || 30;
+    const endDate = new Date(startDate.getTime() + durationNum * 60 * 1000);
+
+    // Call Google Calendar Integration
     let googleCalendarLink = '';
-    if (meetingType === 'Virtual') {
+    let googleCalendarEventId: string | undefined = undefined;
+
+    try {
+      const gcalResult = await createGoogleCalendarEvent({
+        adminId: lead.adminId.toString(),
+        summary: `${agenda} - ${lead.clientName}`,
+        description: `Appointment with ${lead.clientName} (${lead.clientPhone}).\nAgenda: ${agenda}\nMeeting Type: ${meetingType}${meetingLocation ? `\nLocation: ${meetingLocation}` : ''}`,
+        location: meetingLocation || (meetingType === 'Virtual' ? 'Google Meet' : ''),
+        startDateTime: startDate,
+        endDateTime: endDate,
+        attendees,
+        isVirtual: meetingType === 'Virtual',
+      });
+
+      if (gcalResult.success) {
+        googleCalendarEventId = gcalResult.eventId || undefined;
+        if (gcalResult.hangoutLink) {
+          googleCalendarLink = gcalResult.hangoutLink;
+        }
+      }
+    } catch (gcalErr) {
+      console.error('[Google Calendar creation failed]:', gcalErr);
+    }
+
+    // Fallback for virtual meeting link if Google Calendar is not yet linked or didn't return one
+    if (meetingType === 'Virtual' && !googleCalendarLink) {
       const meetCode =
         Math.random().toString(36).substring(2, 5) +
         '-' +
@@ -200,9 +260,10 @@ export async function POST(req: NextRequest) {
       agenda,
       meetingType,
       meetingLocation: meetingLocation || '',
-      meetingDate: new Date(meetingDate),
-      durationMinutes: Number(durationMinutes) || 30,
+      meetingDate: startDate,
+      durationMinutes: durationNum,
       status: 'Scheduled',
+      googleCalendarEventId,
       googleCalendarLink: googleCalendarLink || undefined,
       adminId: lead.adminId,
       assignedSubRoleId: resolvedSubRoleId,

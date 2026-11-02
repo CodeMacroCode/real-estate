@@ -174,6 +174,7 @@ export const createGoogleCalendarEvent = async (
       calendarId: "primary",
       requestBody: eventPayload,
       conferenceDataVersion: args.isVirtual ? 1 : 0,
+      sendUpdates: "all",
     });
 
     const googleMeetLink =

@@ -219,7 +219,7 @@ export default function AppointmentsPage() {
   // Fetch Leads for dropdown
   const fetchLeadOptions = useCallback(async (query: string = '') => {
     try {
-      const res = await fetch(`/api/leads?search=${encodeURIComponent(query)}&limit=25`);
+      const res = await fetch(`/api/leads?status=Pending&search=${encodeURIComponent(query)}&limit=25`);
       const json = await res.json();
       if (json.success && json.data) {
         setLeadOptions(

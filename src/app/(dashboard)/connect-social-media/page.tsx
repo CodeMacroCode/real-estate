@@ -51,6 +51,7 @@ export default function ConnectSocialMediaPage() {
   const [calendarConfig, setCalendarConfig] = useState({
     isConnected: false,
     accountEmail: "",
+    clientId: "",
   });
 
   // Dialog open states
@@ -118,6 +119,7 @@ export default function ConnectSocialMediaPage() {
             settings.googleCalendar.connectedEmail ||
             settings.googleCalendar.calendarEmail ||
             "",
+          clientId: settings.googleCalendar.clientId || "",
         });
       }
 
@@ -520,6 +522,7 @@ export default function ConnectSocialMediaPage() {
         adminId={adminId}
         isConnected={calendarConfig.isConnected}
         connectedEmail={calendarConfig.accountEmail}
+        initialClientId={calendarConfig.clientId}
         onConnectOAuth={handleCalendarOAuth}
         onSave={async ({ clientId, clientSecret }) => {
           const res = await fetch("/api/social-settings", {
