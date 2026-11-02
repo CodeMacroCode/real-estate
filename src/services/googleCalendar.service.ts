@@ -1,9 +1,13 @@
 import { google } from "googleapis";
-import GoogleCalendarConfig, { IGoogleCalendarConfig } from "../models/GoogleCalendarConfig.model";
+import GoogleCalendarConfig, {
+  IGoogleCalendarConfig,
+} from "../models/GoogleCalendarConfig.model";
 
 const DEFAULT_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || "";
 const DEFAULT_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || "";
-const REDIRECT_URI = process.env.GOOGLE_CALENDAR_REDIRECT_URI || "http://localhost:9090/api/google-calendar/oauth2callback";
+const REDIRECT_URI =
+  process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
+  "http://localhost:3000/api/google-calendar/oauth2callback";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
@@ -11,16 +15,27 @@ const SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
 ];
 
-export const createOAuth2Client = (customClientId?: string, customClientSecret?: string) => {
+export const createOAuth2Client = (
+  customClientId?: string,
+  customClientSecret?: string,
+) => {
   return new google.auth.OAuth2(
     customClientId || DEFAULT_CLIENT_ID,
     customClientSecret || DEFAULT_CLIENT_SECRET,
-    REDIRECT_URI
+    REDIRECT_URI,
   );
 };
 
-export const getGoogleCalendarAuthUrl = (statePayload: { adminId: string; userId?: string; clientId?: string; clientSecret?: string }) => {
-  const oauth2Client = createOAuth2Client(statePayload.clientId, statePayload.clientSecret);
+export const getGoogleCalendarAuthUrl = (statePayload: {
+  adminId: string;
+  userId?: string;
+  clientId?: string;
+  clientSecret?: string;
+}) => {
+  const oauth2Client = createOAuth2Client(
+    statePayload.clientId,
+    statePayload.clientSecret,
+  );
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64");
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
@@ -30,16 +45,26 @@ export const getGoogleCalendarAuthUrl = (statePayload: { adminId: string; userId
   });
 };
 
-export const exchangeCodeForTokens = async (code: string, stateString?: string) => {
+export const exchangeCodeForTokens = async (
+  code: string,
+  stateString?: string,
+) => {
   if (!stateString) throw new Error("Missing state in OAuth callback");
-  const decodedState = JSON.parse(Buffer.from(stateString, "base64").toString("utf8"));
+  const decodedState = JSON.parse(
+    Buffer.from(stateString, "base64").toString("utf8"),
+  );
   const { adminId, userId, clientId, clientSecret } = decodedState;
 
   const existingConfig = await GoogleCalendarConfig.findOne({ adminId });
-  const effectiveClientId = clientId || existingConfig?.clientId || DEFAULT_CLIENT_ID;
-  const effectiveClientSecret = clientSecret || existingConfig?.clientSecret || DEFAULT_CLIENT_SECRET;
+  const effectiveClientId =
+    clientId || existingConfig?.clientId || DEFAULT_CLIENT_ID;
+  const effectiveClientSecret =
+    clientSecret || existingConfig?.clientSecret || DEFAULT_CLIENT_SECRET;
 
-  const oauth2Client = createOAuth2Client(effectiveClientId, effectiveClientSecret);
+  const oauth2Client = createOAuth2Client(
+    effectiveClientId,
+    effectiveClientSecret,
+  );
   const { tokens } = await oauth2Client.getToken(code);
   oauth2Client.setCredentials(tokens);
 
@@ -61,14 +86,17 @@ export const exchangeCodeForTokens = async (code: string, stateString?: string) 
       isConnected: true,
       connectedBy: userId,
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 
   return { config, accountEmail };
 };
 
 export const getCalendarClientForAdmin = async (adminId: string) => {
-  const config = await GoogleCalendarConfig.findOne({ adminId, isConnected: true });
+  const config = await GoogleCalendarConfig.findOne({
+    adminId,
+    isConnected: true,
+  });
   if (!config || (!config.refreshToken && !config.accessToken)) return null;
 
   const oauth2Client = createOAuth2Client(config.clientId, config.clientSecret);
@@ -87,7 +115,10 @@ export const getCalendarClientForAdmin = async (adminId: string) => {
       if (tokens.refresh_token) updateData.refreshToken = tokens.refresh_token;
       await GoogleCalendarConfig.findByIdAndUpdate(config._id, updateData);
     } catch (err) {
-      console.error("[GoogleCalendarService] Failed to auto-save refreshed token:", err);
+      console.error(
+        "[GoogleCalendarService] Failed to auto-save refreshed token:",
+        err,
+      );
     }
   });
 
@@ -105,13 +136,17 @@ export interface CreateCalendarEventArgs {
   isVirtual?: boolean;
 }
 
-export const createGoogleCalendarEvent = async (args: CreateCalendarEventArgs) => {
+export const createGoogleCalendarEvent = async (
+  args: CreateCalendarEventArgs,
+) => {
   try {
     const calendar = await getCalendarClientForAdmin(args.adminId);
     if (!calendar) return { success: false, message: "Calendar not connected" };
 
     const startDate = new Date(args.startDateTime);
-    const endDate = args.endDateTime ? new Date(args.endDateTime) : new Date(startDate.getTime() + 45 * 60 * 1000);
+    const endDate = args.endDateTime
+      ? new Date(args.endDateTime)
+      : new Date(startDate.getTime() + 45 * 60 * 1000);
 
     const eventPayload: any = {
       summary: args.summary,
@@ -137,7 +172,12 @@ export const createGoogleCalendarEvent = async (args: CreateCalendarEventArgs) =
       conferenceDataVersion: args.isVirtual ? 1 : 0,
     });
 
-    const googleMeetLink = response.data.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === "video")?.uri || response.data.htmlLink || "";
+    const googleMeetLink =
+      response.data.conferenceData?.entryPoints?.find(
+        (e: any) => e.entryPointType === "video",
+      )?.uri ||
+      response.data.htmlLink ||
+      "";
 
     return {
       success: true,
@@ -149,4 +189,3 @@ export const createGoogleCalendarEvent = async (args: CreateCalendarEventArgs) =
     return { success: false, message: error.message };
   }
 };
-

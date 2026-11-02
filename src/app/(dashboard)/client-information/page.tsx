@@ -284,7 +284,7 @@ export default function ClientsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase">
@@ -322,25 +322,7 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">
-              Tracked Deal Volume
-            </span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-              <DollarSign className="size-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">
-            ₹
-            {clients
-              .reduce((sum, c) => sum + (c.totalRevenue || 0), 0)
-              .toLocaleString()}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Cumulative quotation revenue recorded
-          </div>
-        </div>
+
       </div>
 
       {/* Filters & Actions Bar */}

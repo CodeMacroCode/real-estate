@@ -620,6 +620,7 @@ export default function ClientConfirmationsPage() {
           </div>
         )}
       </div>
+    </div>
 
       {/* RECORD OUTCOME MODAL */}
       {isOpen && (
