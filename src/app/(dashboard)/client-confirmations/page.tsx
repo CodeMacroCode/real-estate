@@ -92,7 +92,6 @@ export default function ClientConfirmationsPage() {
   >(null);
   const [is360Open, setIs360Open] = useState(false);
 
-
   // Log Form State
   const [formData, setFormData] = useState({
     appointmentId: "",
@@ -326,13 +325,14 @@ export default function ClientConfirmationsPage() {
             <span>Refresh</span>
           </button>
 
-        <button
-          onClick={() => setIsOpen(true)}
-          className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-xs whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Log Outcome</span>
-        </button>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-xs whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Log Outcome</span>
+          </button>
+        </div>
       </div>
 
       {/* Outcome Filter Pills */}
@@ -459,7 +459,7 @@ export default function ClientConfirmationsPage() {
                     Next Step / Handover
                   </TableHead>
                   <TableHead className="w-[200px]">Notes</TableHead>
-                  <TableHead> Actions</TableHead>
+                  <TableHead className="text-center"> Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -609,8 +609,6 @@ export default function ClientConfirmationsPage() {
                               <Receipt className="size-4" />
                             </a>
                           )}
-
-
                       </div>
                     </TableCell>
                   </TableRow>
@@ -620,7 +618,6 @@ export default function ClientConfirmationsPage() {
           </div>
         )}
       </div>
-    </div>
 
       {/* RECORD OUTCOME MODAL */}
       {isOpen && (

@@ -3,6 +3,9 @@ import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { Client } from "@/models/Client";
 import { User } from "@/models/User";
+import { Lead } from "@/models/Lead";
+import { Appointment } from "@/models/Appointment";
+import { ClientConfirmation } from "@/models/ClientConfirmation";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import mongoose from "mongoose";
 
