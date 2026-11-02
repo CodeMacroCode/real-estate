@@ -5,9 +5,13 @@ import GoogleCalendarConfig, {
 
 const DEFAULT_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || "";
 const DEFAULT_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || "";
-const REDIRECT_URI =
-  process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
-  "http://localhost:3000/api/google-calendar/oauth2callback";
+const getRedirectUri = () => {
+  if (process.env.GOOGLE_CALENDAR_REDIRECT_URI) {
+    return process.env.GOOGLE_CALENDAR_REDIRECT_URI;
+  }
+  const base = process.env.APP_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+  return `${base.replace(/\/$/, "")}/api/google-calendar/oauth2callback`;
+};
 
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
@@ -22,7 +26,7 @@ export const createOAuth2Client = (
   return new google.auth.OAuth2(
     customClientId || DEFAULT_CLIENT_ID,
     customClientSecret || DEFAULT_CLIENT_SECRET,
-    REDIRECT_URI,
+    getRedirectUri(),
   );
 };
 

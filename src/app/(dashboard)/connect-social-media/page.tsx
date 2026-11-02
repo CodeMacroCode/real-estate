@@ -110,7 +110,10 @@ export default function ConnectSocialMediaPage() {
       if (data.settings?.googleCalendar) {
         setCalendarConfig({
           isConnected: Boolean(data.settings.googleCalendar.isConnected),
-          accountEmail: data.settings.googleCalendar.calendarEmail || "",
+          accountEmail:
+            data.settings.googleCalendar.connectedEmail ||
+            data.settings.googleCalendar.calendarEmail ||
+            "",
         });
       }
 
@@ -154,6 +157,26 @@ export default function ConnectSocialMediaPage() {
 
   useEffect(() => {
     fetchData();
+
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const gcalSuccess = urlParams.get("gcal_success");
+      const gcalError = urlParams.get("gcal_error");
+      const gcalEmail = urlParams.get("email");
+
+      if (gcalSuccess === "true") {
+        toast.success(
+          gcalEmail
+            ? `Google Calendar successfully connected with ${decodeURIComponent(gcalEmail)}!`
+            : "Google Calendar successfully connected!"
+        );
+        window.history.replaceState({}, "", window.location.pathname);
+        fetchData();
+      } else if (gcalError) {
+        toast.error(`Google Calendar connection error: ${decodeURIComponent(gcalError)}`);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
   }, []);
 
   // Save Meta
