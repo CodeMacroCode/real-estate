@@ -354,22 +354,12 @@ export default function ConnectSocialMediaPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Social Media & Calendar Ingestion Hub
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage your webhook configurations, OAuth channels, and live inbound
-            data streams.
-          </p>
-        </div>
-
+      {/* Top Action Toolbar */}
+      <div className="flex items-center justify-end">
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm transition"
+          className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg shadow-xs transition"
         >
           <FaSync className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
           <span>Refresh</span>

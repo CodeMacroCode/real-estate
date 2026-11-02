@@ -414,26 +414,6 @@ export function StaffClient({
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Staff Directory & Sub-Roles
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Manage authorized staff sub-roles: Property Managers, Sales
-            Executives, Sales Managers, and Website Managers.
-          </p>
-        </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Add New Staff</span>
-        </button>
-      </div>
-
       {/* Notifications */}
       {successMsg && (
         <Alert
@@ -453,63 +433,80 @@ export function StaffClient({
       )}
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or mobile..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            className="w-full h-10 pl-9 pr-9 text-sm rounded-lg border border-slate-300 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-          />
-          {loading && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-              <Spinner size="sm" className="text-blue-600" />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
+        <div
+          className={`grid grid-cols-1 gap-3 flex-1 min-w-0 ${
+            currentUserRoleSlug === "super_admin"
+              ? "sm:grid-cols-3"
+              : "sm:grid-cols-2"
+          }`}
+        >
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or mobile..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              className="w-full h-10 pl-9 pr-9 text-sm rounded-lg border border-slate-300 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+            />
+            {loading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                <Spinner size="sm" className="text-blue-600" />
+              </div>
+            )}
+          </div>
+
+          {/* SuperAdmin filter by Admin */}
+          {currentUserRoleSlug === "super_admin" && (
+            <div className="relative">
+              <select
+                value={selectedAdminId}
+                onChange={(e) => {
+                  setSelectedAdminId(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full h-10 appearance-none rounded-lg border border-slate-300 bg-white pl-3.5 pr-10 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors cursor-pointer"
+              >
+                <option value="">All Admins&apos; Staff</option>
+                {admins.map((admin) => (
+                  <option key={admin._id} value={admin._id}>
+                    Managed by: {admin.name} ({admin.email})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             </div>
           )}
-        </div>
 
-        {/* SuperAdmin filter by Admin */}
-        {currentUserRoleSlug === "super_admin" && (
           <div className="relative">
             <select
-              value={selectedAdminId}
+              value={statusFilter}
               onChange={(e) => {
-                setSelectedAdminId(e.target.value);
+                setStatusFilter(e.target.value);
                 setPage(1);
               }}
               className="w-full h-10 appearance-none rounded-lg border border-slate-300 bg-white pl-3.5 pr-10 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors cursor-pointer"
             >
-              <option value="">All Admins&apos; Staff</option>
-              {admins.map((admin) => (
-                <option key={admin._id} value={admin._id}>
-                  Managed by: {admin.name} ({admin.email})
-                </option>
-              ))}
+              <option value="">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           </div>
-        )}
-
-        <div className="relative">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="w-full h-10 appearance-none rounded-lg border border-slate-300 bg-white pl-3.5 pr-10 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors cursor-pointer"
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         </div>
+
+        <button
+          type="button"
+          onClick={handleOpenAddModal}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 transition shrink-0 whitespace-nowrap"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>Add New Staff</span>
+        </button>
       </div>
 
       {/* Staff Table */}

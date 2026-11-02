@@ -326,14 +326,13 @@ export default function ClientConfirmationsPage() {
             <span>Refresh</span>
           </button>
 
-          <button
-            onClick={() => setIsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Log Outcome</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition shadow-xs whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Log Outcome</span>
+        </button>
       </div>
 
       {/* Outcome Filter Pills */}
