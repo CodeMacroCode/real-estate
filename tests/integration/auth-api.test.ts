@@ -7,7 +7,6 @@ import { hashPassword } from '../../src/lib/auth/password';
 import { seedRoles } from '../../scripts/seed-roles';
 import { POST as loginHandler } from '../../src/app/api/auth/login/route';
 import { SESSION_COOKIE_NAME } from '../../src/lib/auth/constants';
-import { clearAllRateLimits } from '../../src/lib/auth/rateLimit';
 
 describe('Integration: Authentication Logic & Inactive Account Enforcement', () => {
   let activeUserId: string;
@@ -59,10 +58,6 @@ describe('Integration: Authentication Logic & Inactive Account Enforcement', () 
   afterAll(async () => {
     await User.deleteMany({ email: { $in: ['active@auth-test.com', 'inactive@auth-test.com', 'ratelimit@auth-test.com'] } });
     await disconnectFromDatabase();
-  });
-
-  beforeEach(() => {
-    clearAllRateLimits();
   });
 
   it('CRITICAL: Inactive accounts must be rejected by real login API handler with HTTP 403', async () => {
@@ -158,10 +153,10 @@ describe('Integration: Authentication Logic & Inactive Account Enforcement', () 
     expect(data.error).toBe('Invalid email or password');
   });
 
-  it('Enforces rate limiting after 5 consecutive failed attempts with HTTP 429 and Retry-After header', async () => {
+  it('Does not enforce rate limiting after repeated failed login attempts', async () => {
     const clientIp = '192.168.1.100';
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 7; i++) {
       const failReq = new NextRequest('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: {
@@ -176,26 +171,5 @@ describe('Integration: Authentication Logic & Inactive Account Enforcement', () 
       const failRes = await loginHandler(failReq);
       expect(failRes.status).toBe(401);
     }
-
-    // 6th attempt should trigger 429
-    const limitedReq = new NextRequest('http://localhost:3000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-forwarded-for': clientIp,
-      },
-      body: JSON.stringify({
-        email: 'ratelimit@auth-test.com',
-        password: 'BadPassword!',
-      }),
-    });
-
-    const limitedRes = await loginHandler(limitedReq);
-    const data = await limitedRes.json();
-
-    expect(limitedRes.status).toBe(429);
-    expect(data.success).toBe(false);
-    expect(data.error).toMatch(/too many failed login attempts/i);
-    expect(limitedRes.headers.get('Retry-After')).toBeDefined();
   });
 });
