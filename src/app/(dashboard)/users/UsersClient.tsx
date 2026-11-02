@@ -381,7 +381,9 @@ export function UsersClient({
     const nextStatus = selectedUser.status === "active" ? "inactive" : "active";
 
     if (nextStatus === "inactive" && !superAdminPassword.trim()) {
-      setError("Please enter your Super Admin password to authorize deactivation.");
+      setError(
+        "Please enter your Super Admin password to authorize deactivation.",
+      );
       return;
     }
 
@@ -395,7 +397,8 @@ export function UsersClient({
         body: JSON.stringify({
           status: nextStatus,
           reason: `Super Admin authorized account ${nextStatus}`,
-          superAdminPassword: nextStatus === "inactive" ? superAdminPassword : undefined,
+          superAdminPassword:
+            nextStatus === "inactive" ? superAdminPassword : undefined,
         }),
       });
       const data = await res.json();
@@ -576,7 +579,10 @@ export function UsersClient({
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user._id} className="group transition-colors hover:bg-slate-50/60">
+                <TableRow
+                  key={user._id}
+                  className="group transition-colors hover:bg-slate-50/60"
+                >
                   <TableCell className="px-4 py-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-700 font-semibold text-xs shrink-0 border border-blue-100">
@@ -678,24 +684,21 @@ export function UsersClient({
                                   .split("_")
                                   .map(
                                     (w: string) =>
-                                      w.charAt(0).toUpperCase() + w.slice(1)
+                                      w.charAt(0).toUpperCase() + w.slice(1),
                                   )
                                   .join(" ")}
                           </option>
-                          {(user as any).allowedSubRoles.map(
-                            (sub: string) => (
-                              <option key={sub} value={sub}>
-                                {sub
-                                  .split("_")
-                                  .map(
-                                    (w: string) =>
-                                      w.charAt(0).toUpperCase() +
-                                      w.slice(1)
-                                  )
-                                  .join(" ")}
-                              </option>
-                            )
-                          )}
+                          {(user as any).allowedSubRoles.map((sub: string) => (
+                            <option key={sub} value={sub}>
+                              {sub
+                                .split("_")
+                                .map(
+                                  (w: string) =>
+                                    w.charAt(0).toUpperCase() + w.slice(1),
+                                )
+                                .join(" ")}
+                            </option>
+                          ))}
                         </select>
                         <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                       </div>
@@ -800,8 +803,10 @@ export function UsersClient({
         {/* Pagination Footer */}
         <div className="flex items-center justify-between border-t border-slate-200/80 px-5 py-3 bg-slate-50/50 text-xs text-slate-500">
           <div>
-            Showing <span className="font-medium text-slate-700">{users.length}</span> of{" "}
-            <span className="font-medium text-slate-700">{totalCount}</span> total admin accounts
+            Showing{" "}
+            <span className="font-medium text-slate-700">{users.length}</span>{" "}
+            of <span className="font-medium text-slate-700">{totalCount}</span>{" "}
+            total admin accounts
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -1461,7 +1466,8 @@ export function UsersClient({
                     Super Admin Authorization Required
                   </h4>
                   <p className="text-xs text-rose-700/90 mt-0.5">
-                    Enter your Super Admin account password to authorize the deactivation of this administrator.
+                    Enter your Super Admin account password to authorize the
+                    deactivation of this administrator.
                   </p>
                 </div>
               </div>
@@ -1489,9 +1495,7 @@ export function UsersClient({
                     }
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                     title={
-                      showSuperAdminPassword
-                        ? "Hide password"
-                        : "Show password"
+                      showSuperAdminPassword ? "Hide password" : "Show password"
                     }
                   >
                     {showSuperAdminPassword ? (

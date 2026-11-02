@@ -12,12 +12,21 @@ import {
   User as UserIcon,
   Globe,
   Layers,
+  Search,
+  RotateCcw,
+  Copy,
+  Check,
+  FileText,
+  Activity,
+  ArrowRight,
+  Key,
+  ShieldAlert,
 } from 'lucide-react';
 import { IAuditLog, AuditAction, SafeUser } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
-import { LoadingOverlay } from '@/components/ui/Spinner';
+import { LoadingOverlay, Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import {
@@ -39,6 +48,11 @@ interface AuditLogsClientProps {
   currentUser: SafeUser | null;
 }
 
+function formatRoleSlug(slug: string | undefined): string {
+  if (!slug) return 'User';
+  return slug.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function AuditLogsClient({
   initialLogs = [],
   initialTotalPages = 1,
@@ -57,13 +71,10 @@ export function AuditLogsClient({
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [actionFilter, setActionFilter] = useState<string>('');
   const [entityFilter, setEntityFilter] = useState<string>('');
-  const [currentUserRoleSlug, setCurrentUserRoleSlug] = useState<string>(initialRoleSlug);
-  const [currentUser, setCurrentUser] = useState<SafeUser | null>(initialUser);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentUserRoleSlug] = useState<string>(initialRoleSlug);
 
-  // Hierarchical Filter State
-  // View mode / scope:
-  // Super Admin: 'all' | 'own' | 'admin' | 'subrole'
-  // Admin: 'all' | 'own' | 'subrole'
+  // Hierarchical Filter State: 'all' | 'own' | 'admin' | 'subrole'
   const [logScope, setLogScope] = useState<string>('all');
 
   // Admin Selection (for Super Admin)
@@ -74,15 +85,9 @@ export function AuditLogsClient({
   // Sub-Role Category & Staff User Selection
   const initialSubRoles = useMemo(() => {
     if (initialRoleSlug === 'admin' && initialUser?.allowedSubRoles) {
-      const categoryLabels: Record<string, string> = {
-        property_manager: 'Property Manager',
-        sales_executive: 'Sales Executive',
-        sales_manager: 'Sales Manager',
-        website_manager: 'Website Manager',
-      };
       return initialUser.allowedSubRoles.map((s) => ({
         slug: s,
-        name: categoryLabels[s] || s.replace(/_/g, ' '),
+        name: formatRoleSlug(s),
       }));
     }
     return [];
@@ -96,9 +101,11 @@ export function AuditLogsClient({
   const [selectedStaffUserId, setSelectedStaffUserId] = useState<string>('');
   const [isStaffSearching, setIsStaffSearching] = useState(false);
 
-  // Diff Modal
+  // Detail / Diff Modal State
   const [selectedLog, setSelectedLog] = useState<IAuditLog | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<'diff' | 'raw'>('diff');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Server-side debounced search for Admins (Super Admin)
   const handleAdminServerSearch = useCallback(async (query: string) => {
@@ -122,20 +129,14 @@ export function AuditLogsClient({
     }
   }, []);
 
-  // When Super Admin selects an Admin, update their permitted sub-roles
+  // When Super Admin selects an Admin, update their permitted sub-roles dynamically
   useEffect(() => {
     if (currentUserRoleSlug === 'super_admin' && selectedAdminId) {
       const adminObj = admins.find((a) => a._id === selectedAdminId);
       const allowedSlugs: string[] = adminObj?.allowedSubRoles || [];
-      const categoryLabels: Record<string, string> = {
-        property_manager: 'Property Manager',
-        sales_executive: 'Sales Executive',
-        sales_manager: 'Sales Manager',
-        website_manager: 'Website Manager',
-      };
       const categories = allowedSlugs.map((s) => ({
         slug: s,
-        name: categoryLabels[s] || s.replace(/_/g, ' '),
+        name: formatRoleSlug(s),
       }));
       setSubRoleCategories(categories);
       if (categories.length > 0) {
@@ -185,7 +186,7 @@ export function AuditLogsClient({
     }
   }, [logScope, selectedSubRoleCategory, handleStaffServerSearch]);
 
-  // Fetch Audit Logs according to hierarchy
+  // Fetch Audit Logs according to hierarchy & filters
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -282,52 +283,189 @@ export function AuditLogsClient({
     fetchLogs,
   ]);
 
+  // Client-side quick filter for text matching
+  const filteredLogs = useMemo(() => {
+    if (!searchQuery.trim()) return logs;
+    const q = searchQuery.toLowerCase().trim();
+    return logs.filter((log) => {
+      const actorName = log.actor?.name?.toLowerCase() || '';
+      const actorEmail = log.actor?.email?.toLowerCase() || '';
+      const entity = log.entity?.toLowerCase() || '';
+      const entityId = log.entityId?.toLowerCase() || '';
+      const action = log.action?.toLowerCase() || '';
+      return (
+        actorName.includes(q) ||
+        actorEmail.includes(q) ||
+        entity.includes(q) ||
+        entityId.includes(q) ||
+        action.includes(q)
+      );
+    });
+  }, [logs, searchQuery]);
+
+  const hasActiveFilters = Boolean(
+    actionFilter || entityFilter || selectedAdminId || selectedStaffUserId || searchQuery || logScope !== 'all'
+  );
+
+  const handleResetFilters = () => {
+    setActionFilter('');
+    setEntityFilter('');
+    setSearchQuery('');
+    setSelectedAdminId('');
+    setSelectedStaffUserId('');
+    setLogScope('all');
+    setPage(1);
+  };
+
   const handleOpenDetail = (log: IAuditLog) => {
     setSelectedLog(log);
+    setModalTab('diff');
     setIsDetailModalOpen(true);
+  };
+
+  const handleCopyText = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(id);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const getActionBadge = (action: AuditAction) => {
     switch (action) {
       case 'create':
-        return <Badge variant="success">Create</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+            Create
+          </span>
+        );
       case 'update':
-        return <Badge variant="info">Update</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200">
+            Update
+          </span>
+        );
       case 'delete':
-        return <Badge variant="danger">Delete</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 border border-rose-200">
+            Delete
+          </span>
+        );
       case 'login':
-        return <Badge variant="purple">Login</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 border border-purple-200">
+            Login
+          </span>
+        );
       case 'logout':
-        return <Badge variant="default">Logout</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
+            Logout
+          </span>
+        );
       case 'status_change':
-        return <Badge variant="warning">Status Change</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+            Status
+          </span>
+        );
+      case 'publish':
+        return (
+          <span className="inline-flex items-center rounded-md bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 border border-teal-200">
+            Publish
+          </span>
+        );
+      case 'unpublish':
+        return (
+          <span className="inline-flex items-center rounded-md bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 border border-orange-200">
+            Unpublish
+          </span>
+        );
+      case 'assign':
+        return (
+          <span className="inline-flex items-center rounded-md bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 border border-sky-200">
+            Assign
+          </span>
+        );
+      case 'export':
+        return (
+          <span className="inline-flex items-center rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200">
+            Export
+          </span>
+        );
+      case 'import':
+        return (
+          <span className="inline-flex items-center rounded-md bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 border border-violet-200">
+            Import
+          </span>
+        );
       default:
-        return <Badge variant="default">{action}</Badge>;
+        return (
+          <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-200 capitalize">
+            {action}
+          </span>
+        );
     }
   };
 
+  // Compute key-value differences for structured diff display
+  const structuredDiff = useMemo(() => {
+    if (!selectedLog) return [];
+    const oldVals = (selectedLog.oldValues || {}) as Record<string, any>;
+    const newVals = (selectedLog.newValues || {}) as Record<string, any>;
+
+    const allKeys = Array.from(new Set([...Object.keys(oldVals), ...Object.keys(newVals)]));
+
+    return allKeys.map((key) => {
+      const oldVal = oldVals[key];
+      const newVal = newVals[key];
+      const isChanged = JSON.stringify(oldVal) !== JSON.stringify(newVal);
+
+      return {
+        key,
+        oldVal: oldVal !== undefined ? JSON.stringify(oldVal) : '—',
+        newVal: newVal !== undefined ? JSON.stringify(newVal) : '—',
+        isChanged,
+      };
+    });
+  }, [selectedLog]);
+
   return (
     <div className="space-y-6">
-      {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
+      {error && <Alert type="error" title="Notice" message={error} onClose={() => setError(null)} />}
 
-      {/* Filter Matrix Card */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        {/* Layer 1: Scope Switcher Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            <Filter className="w-3.5 h-3.5 text-blue-600" />
-            Audit Scope &amp; Hierarchy
+      {/* Header & Hierarchy Controls */}
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        {/* Scope Navigation Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <History className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm font-semibold text-slate-900">
+                  Audit Trail &amp; Activity Log
+                </h1>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                  {totalCount} events
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Immutable records of system actions, authentication events, and data changes.
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+
+          {/* Scope Segmented Control */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
             <button
               type="button"
               onClick={() => {
                 setLogScope('all');
                 setPage(1);
               }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
                 logScope === 'all'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -339,13 +477,13 @@ export function AuditLogsClient({
                 setLogScope('own');
                 setPage(1);
               }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
                 logScope === 'own'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              My Own Logs
+              My Actions
             </button>
 
             {currentUserRoleSlug === 'super_admin' && (
@@ -355,13 +493,13 @@ export function AuditLogsClient({
                   setLogScope('admin');
                   setPage(1);
                 }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
                   logScope === 'admin'
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-blue-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Specific Admin Logs
+                Admin Activity
               </button>
             )}
 
@@ -374,31 +512,49 @@ export function AuditLogsClient({
                   handleStaffServerSearch('');
                 }
               }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
                 logScope === 'subrole'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Sub-Role Staff Logs
+              Staff Activity
             </button>
           </div>
         </div>
 
-        {/* Layer 2: Hierarchical Target Pickers */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+        {/* Refinement Filter Controls Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 pt-1">
+          {/* Quick Search */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">
+              Search Actor / ID
+            </label>
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Name, email, entity ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
           {/* Super Admin Admin Selector */}
           {currentUserRoleSlug === 'super_admin' && (logScope === 'all' || logScope === 'admin' || logScope === 'subrole') && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                Select Admin {logScope === 'admin' ? '*' : '(Optional)'}
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Admin Organization {logScope === 'admin' ? '*' : '(Optional)'}
               </label>
               <SearchableSelect
                 options={[
-                  { value: '', label: 'All Admins or System Super' },
+                  { value: '', label: 'All Admin Accounts' },
                   ...admins.map((a) => ({
                     value: a._id,
-                    label: `${a.name} (${a.email})`,
+                    label: a.name,
+                    subLabel: a.email,
                   })),
                 ]}
                 value={selectedAdminId}
@@ -417,7 +573,7 @@ export function AuditLogsClient({
           {/* Sub-role Category Picker */}
           {logScope === 'subrole' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              <label className="block text-xs font-medium text-slate-600 mb-1">
                 Sub-Role Category
               </label>
               <select
@@ -427,7 +583,7 @@ export function AuditLogsClient({
                   setSelectedStaffUserId('');
                   setPage(1);
                 }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
               >
                 {subRoleCategories.length === 0 ? (
                   <option value="">No categories available</option>
@@ -445,15 +601,16 @@ export function AuditLogsClient({
           {/* Sub-role Staff User Picker */}
           {logScope === 'subrole' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                Staff User (Optional)
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Staff Member (Optional)
               </label>
               <SearchableSelect
                 options={[
                   { value: '', label: 'All Staff in Category' },
                   ...staffUsers.map((u) => ({
                     value: u._id,
-                    label: `${u.name} (${u.email})`,
+                    label: u.name,
+                    subLabel: u.email,
                   })),
                 ]}
                 value={selectedStaffUserId}
@@ -470,7 +627,7 @@ export function AuditLogsClient({
 
           {/* Action Type Filter */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-medium text-slate-600 mb-1">
               Action Type
             </label>
             <select
@@ -479,22 +636,26 @@ export function AuditLogsClient({
                 setActionFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             >
-              <option value="">All Actions</option>
+              <option value="">All Action Types</option>
               <option value="create">Create</option>
               <option value="update">Update</option>
               <option value="delete">Delete</option>
               <option value="login">Login</option>
               <option value="logout">Logout</option>
               <option value="status_change">Status Change</option>
-              <option value="permission_change">Permissions</option>
+              <option value="assign">Assign</option>
+              <option value="publish">Publish</option>
+              <option value="unpublish">Unpublish</option>
+              <option value="export">Export</option>
+              <option value="import">Import</option>
             </select>
           </div>
 
           {/* Entity Type Filter */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+            <label className="block text-xs font-medium text-slate-600 mb-1">
               Entity Type
             </label>
             <select
@@ -503,7 +664,7 @@ export function AuditLogsClient({
                 setEntityFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
             >
               <option value="">All Entities</option>
               <option value="user">User</option>
@@ -511,105 +672,175 @@ export function AuditLogsClient({
               <option value="permission">Permission</option>
               <option value="lead">Lead</option>
               <option value="property">Property</option>
+              <option value="client">Client</option>
             </select>
           </div>
         </div>
+
+        {/* Active Filters Summary & Reset */}
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <span className="text-xs text-slate-500">
+              Filtering applied • {filteredLogs.length} matching events
+            </span>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset All Filters</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[350px]">
-        {loading && <LoadingOverlay message="Filtering audit database..." />}
+      {/* Audit Log Table Card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden relative min-h-[380px]">
+        {loading && <LoadingOverlay message="Loading audit events..." />}
 
-        {logs.length === 0 && !loading ? (
+        {filteredLogs.length === 0 && !loading ? (
           <EmptyState
-            title="No audit trails match your query"
-            description="Try switching the scope tabs above or clearing the action/entity filters."
-            icon={<History className="w-6 h-6" />}
+            title="No audit records match your query"
+            description="Try switching the scope filter or resetting action and entity filters."
+            icon={<History className="w-6 h-6 text-slate-400" />}
+            actionLabel="Reset Filters"
+            onAction={handleResetFilters}
           />
         ) : (
-          <div>
-            <Table>
+          <div className="overflow-x-auto">
+            <Table className="table-fixed w-full">
+              <colgroup>
+                <col className="w-[190px]" />
+                <col className="w-[240px]" />
+                <col className="w-[120px]" />
+                <col />
+                <col className="w-[130px]" />
+                <col className="w-[120px]" />
+              </colgroup>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[190px]">Timestamp</TableHead>
-                  <TableHead className="w-[220px]">Actor</TableHead>
-                  <TableHead className="w-[120px]">Action</TableHead>
-                  <TableHead className="w-[180px]">Entity &amp; ID</TableHead>
-                  <TableHead className="w-[120px]">Source</TableHead>
-                  <TableHead className="text-right">Details</TableHead>
+                <TableRow className="bg-slate-50 border-b border-slate-200">
+                  <TableHead className="w-[190px] text-xs font-semibold text-slate-700">Timestamp</TableHead>
+                  <TableHead className="w-[240px] text-xs font-semibold text-slate-700">Actor</TableHead>
+                  <TableHead className="w-[120px] text-xs font-semibold text-slate-700 text-center">Action</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-700">Entity &amp; Target</TableHead>
+                  <TableHead className="w-[130px] text-xs font-semibold text-slate-700 text-center">Source IP</TableHead>
+                  <TableHead className="w-[120px] text-right text-xs font-semibold text-slate-700">Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log._id}>
-                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span suppressHydrationWarning>{formatDateTime(log.timestamp)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-semibold text-slate-900">{log.actor.name}</div>
-                      <div className="text-xs text-slate-500">{log.actor.email}</div>
-                      <div className="text-[11px] font-mono text-purple-600 capitalize">
-                        {log.actor.roleSlug?.replace(/_/g, ' ')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getActionBadge(log.action)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-mono text-xs font-semibold text-slate-800 uppercase">
-                        {log.entity}
-                      </div>
-                      <div className="font-mono text-[11px] text-slate-400 truncate max-w-[120px]">
-                        {log.entityId}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">
-                      <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                        {log.ipAddress || '127.0.0.1'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDetail(log)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Inspect</span>
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredLogs.map((log) => {
+                  const hasPayload = Boolean(log.oldValues || log.newValues);
+                  return (
+                    <TableRow key={log._id} className="hover:bg-slate-50/75 transition border-b border-slate-100">
+                      {/* Timestamp */}
+                      <TableCell className="w-[190px] whitespace-nowrap text-xs text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span suppressHydrationWarning>{formatDateTime(log.timestamp)}</span>
+                        </div>
+                      </TableCell>
+
+                      {/* Actor Profile */}
+                      <TableCell className="w-[240px]">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-semibold flex items-center justify-center text-xs shrink-0">
+                            {log.actor?.name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-xs text-slate-900 truncate">{log.actor?.name || 'System'}</div>
+                            <div className="text-[11px] text-slate-500 truncate">{log.actor?.email}</div>
+                            <div className="text-[10px] text-slate-400 capitalize">
+                              {formatRoleSlug(log.actor?.roleSlug)}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Action */}
+                      <TableCell className="w-[120px] text-center">{getActionBadge(log.action)}</TableCell>
+
+                      {/* Entity & ID */}
+                      <TableCell className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 uppercase shrink-0">
+                            {log.entity}
+                          </span>
+                          {log.entityId && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(log.entityId || '', `entity-${log._id}`)}
+                              className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 hover:text-slate-800 transition truncate max-w-[260px]"
+                              title="Click to copy entity ID"
+                            >
+                              <span className="truncate">{log.entityId}</span>
+                              {copiedField === `entity-${log._id}` ? (
+                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-slate-400 shrink-0" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Client IP */}
+                      <TableCell className="w-[130px] text-center text-xs text-slate-600">
+                        <span className="font-mono bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-600">
+                          {log.ipAddress || '127.0.0.1'}
+                        </span>
+                      </TableCell>
+
+                      {/* Inspect Button */}
+                      <TableCell className="w-[120px] text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetail(log)}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition border ${
+                            hasPayload
+                              ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Inspect</span>
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
 
             {/* Pagination footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50/50">
               <span className="text-xs text-slate-500">
-                Showing {logs.length} of {totalCount} total audit records
+                Showing {filteredLogs.length} of {totalCount} total audit records
               </span>
+
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={page <= 1 || loading}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Previous</span>
                 </button>
-                <span className="text-xs font-medium text-slate-700">
+
+                <span className="text-xs font-semibold text-slate-700 px-2">
                   Page {page} of {totalPages}
                 </span>
+
                 <button
                   type="button"
                   disabled={page >= totalPages || loading}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -621,54 +852,171 @@ export function AuditLogsClient({
       <Modal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        title="Audit Event Inspection &amp; Mutation Diff"
+        title="Audit Event Details"
         description="Inspect actor payload, client user-agent metadata, and state change delta."
         maxWidth="lg"
       >
         {selectedLog && (
-          <div className="space-y-4 font-mono text-xs">
-            <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <div>
-                <span className="text-slate-400 font-sans block text-[10px] uppercase font-semibold">Actor</span>
-                <span className="text-slate-800 font-semibold">{selectedLog.actor.name} ({selectedLog.actor.roleSlug})</span>
+          <div className="space-y-4">
+            {/* Event Header Banner */}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-xs">
+                  {selectedLog.actor?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-slate-900">
+                    {selectedLog.actor?.name || 'System Actor'}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {selectedLog.actor?.email} • {formatRoleSlug(selectedLog.actor?.roleSlug)}
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 font-sans block text-[10px] uppercase font-semibold">Timestamp</span>
-                <span className="text-slate-800">{new Date(selectedLog.timestamp).toISOString()}</span>
+
+              <div className="flex items-center gap-2">
+                {getActionBadge(selectedLog.action)}
+                <span className="text-xs font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  {selectedLog.ipAddress || '127.0.0.1'}
+                </span>
               </div>
             </div>
 
-            {selectedLog.oldValues && (
-              <div>
-                <div className="font-sans font-semibold text-slate-700 uppercase text-[11px] mb-1">
-                  Previous Values (Pre-mutation)
-                </div>
-                <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-[11px]">
-                  {JSON.stringify(selectedLog.oldValues, null, 2)}
-                </pre>
+            {/* Modal Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+              <button
+                type="button"
+                onClick={() => setModalTab('diff')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  modalTab === 'diff'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Structured Changes ({structuredDiff.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalTab('raw')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  modalTab === 'raw'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Raw JSON Payload
+              </button>
+            </div>
+
+            {/* Tab 1: Structured Diff Table */}
+            {modalTab === 'diff' && (
+              <div className="max-h-80 overflow-y-auto space-y-2">
+                {structuredDiff.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic text-center py-6">
+                    No state mutation payload recorded for this event.
+                  </p>
+                ) : (
+                  <div className="rounded-lg border border-slate-200 overflow-hidden text-xs">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-3 py-2 font-semibold text-slate-700 w-1/3">Field</th>
+                          <th className="px-3 py-2 font-semibold text-rose-700 w-1/3">Before</th>
+                          <th className="px-3 py-2 font-semibold text-emerald-700 w-1/3">After</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                        {structuredDiff.map((row) => (
+                          <tr
+                            key={row.key}
+                            className={row.isChanged ? 'bg-amber-50/40' : 'bg-white'}
+                          >
+                            <td className="px-3 py-2 font-sans font-medium text-slate-800">
+                              {row.key}
+                            </td>
+                            <td className="px-3 py-2 text-rose-700 bg-rose-50/30 break-all">
+                              {row.oldVal}
+                            </td>
+                            <td className="px-3 py-2 text-emerald-700 bg-emerald-50/30 break-all">
+                              {row.newVal}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
-            {selectedLog.newValues && (
-              <div>
-                <div className="font-sans font-semibold text-slate-700 uppercase text-[11px] mb-1">
-                  Mutated Values (Post-mutation)
-                </div>
-                <pre className="bg-slate-900 text-emerald-300 p-3 rounded-lg overflow-x-auto text-[11px]">
-                  {JSON.stringify(selectedLog.newValues, null, 2)}
-                </pre>
+            {/* Tab 2: Raw JSON Payloads */}
+            {modalTab === 'raw' && (
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {selectedLog.oldValues && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                      <span>Previous Values (Pre-mutation)</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopyText(
+                            JSON.stringify(selectedLog.oldValues, null, 2),
+                            'raw-old'
+                          )
+                        }
+                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                      >
+                        {copiedField === 'raw-old' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedField === 'raw-old' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <pre className="rounded-lg bg-slate-900 p-3 text-[11px] font-mono text-slate-100 overflow-x-auto">
+                      {JSON.stringify(selectedLog.oldValues, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {selectedLog.newValues && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                      <span>Mutated Values (Post-mutation)</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCopyText(
+                            JSON.stringify(selectedLog.newValues, null, 2),
+                            'raw-new'
+                          )
+                        }
+                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                      >
+                        {copiedField === 'raw-new' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedField === 'raw-new' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <pre className="rounded-lg bg-slate-900 p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto">
+                      {JSON.stringify(selectedLog.newValues, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {!selectedLog.oldValues && !selectedLog.newValues && (
+                  <p className="text-xs text-slate-500 italic text-center py-6">
+                    No payload metadata recorded for this event.
+                  </p>
+                )}
               </div>
             )}
 
-            {!selectedLog.oldValues && !selectedLog.newValues && (
-              <p className="text-slate-500 italic font-sans">No additional payload recorded for this event.</p>
-            )}
-
-            <div className="flex justify-end pt-3 border-t border-slate-200">
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-[11px] text-slate-400">
+                Timestamp: {new Date(selectedLog.timestamp).toISOString()}
+              </span>
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="font-sans rounded-lg bg-slate-100 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200 transition"
               >
                 Close
               </button>
