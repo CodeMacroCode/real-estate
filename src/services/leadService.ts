@@ -12,6 +12,8 @@ export interface GetLeadsParams {
   status?: string;
   source?: string;
   adminId?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }
@@ -26,6 +28,8 @@ export async function getLeadsServerSide(
   const status = params.status?.trim() || "";
   const source = params.source?.trim() || "";
   const adminFilter = params.adminId?.trim() || "";
+  const startDateParam = params.startDate?.trim() || "";
+  const endDateParam = params.endDate?.trim() || "";
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(100, Math.max(1, params.limit || 10));
   const skip = (page - 1) * limit;
@@ -95,6 +99,25 @@ export async function getLeadsServerSide(
         { leadTitle: searchRegex },
       ],
     });
+  }
+
+  if (startDateParam || endDateParam) {
+    query.createdAt = {};
+    if (startDateParam) {
+      const s = new Date(startDateParam);
+      if (!isNaN(s.getTime())) {
+        query.createdAt.$gte = s;
+      }
+    }
+    if (endDateParam) {
+      const e = new Date(endDateParam);
+      if (!isNaN(e.getTime())) {
+        query.createdAt.$lte = e;
+      }
+    }
+    if (Object.keys(query.createdAt).length === 0) {
+      delete query.createdAt;
+    }
   }
 
   const baseQuery = { ...query };

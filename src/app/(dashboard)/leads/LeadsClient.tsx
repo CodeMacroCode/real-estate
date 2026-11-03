@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import ScheduleAppointmentModal from "./ScheduleAppointmentModal";
 import Lead360Modal from "@/components/Lead360Modal";
+import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
 import { Spinner } from "@/components/ui/Spinner";
 import {
   SearchableSelect,
@@ -134,6 +135,15 @@ export function LeadsClient({
   const [statusFilter, setStatusFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [selectedAdminId, setSelectedAdminId] = useState("");
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+    startStr?: string;
+    endStr?: string;
+  }>({
+    start: null,
+    end: null,
+  });
 
   // Dropdown options
   const [adminOptions, setAdminOptions] = useState<SearchableSelectOption[]>(
@@ -399,6 +409,18 @@ export function LeadsClient({
       if (statusFilter) params.append("status", statusFilter);
       if (sourceFilter) params.append("source", sourceFilter);
       if (selectedAdminId) params.append("adminId", selectedAdminId);
+      if (dateRange.startStr || (dateRange.start && !isNaN(dateRange.start.getTime()))) {
+        params.append(
+          "startDate",
+          dateRange.startStr || dateRange.start!.toISOString()
+        );
+      }
+      if (dateRange.endStr || (dateRange.end && !isNaN(dateRange.end.getTime()))) {
+        params.append(
+          "endDate",
+          dateRange.endStr || dateRange.end!.toISOString()
+        );
+      }
 
       const res = await fetch(`/api/leads?${params.toString()}`);
       const json = await res.json();
@@ -415,7 +437,7 @@ export function LeadsClient({
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, sourceFilter, selectedAdminId]);
+  }, [page, search, statusFilter, sourceFilter, selectedAdminId, dateRange]);
 
   useEffect(() => {
     fetchLeads();
@@ -760,7 +782,7 @@ export function LeadsClient({
 
       {/* Filter Toolbar */}
       <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
           {/* Search Input */}
           <div className="relative">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
@@ -803,6 +825,18 @@ export function LeadsClient({
               <option value="DynamicForm">Dynamic Form Builder</option>
               <option value="Manual">Manual Entry</option>
             </select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div>
+            <DateRangeFilter
+              placeholder="Filter by created date..."
+              className="w-full"
+              onDateRangeChange={(start, end, startStr, endStr) => {
+                setDateRange({ start, end, startStr, endStr });
+                setPage(1);
+              }}
+            />
           </div>
 
           {/* Admin Selector for Super Admin */}
@@ -848,6 +882,9 @@ export function LeadsClient({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[120px] whitespace-nowrap">
+                    Date
+                  </TableHead>
                   <TableHead className="w-[220px]">
                     Lead Title / Inquiry
                   </TableHead>
@@ -868,6 +905,27 @@ export function LeadsClient({
               <TableBody>
                 {leads.map((lead) => (
                   <TableRow key={lead._id}>
+                    {/* Date Column */}
+                    <TableCell className="whitespace-nowrap">
+                      <div className="text-xs font-semibold text-slate-800">
+                        {lead.createdAt
+                          ? new Date(lead.createdAt).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </div>
+                      {lead.createdAt && (
+                        <div className="text-[11px] text-slate-400">
+                          {new Date(lead.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      )}
+                    </TableCell>
+
                     {/* Column 1: Lead Title */}
                     <TableCell>
                       <div

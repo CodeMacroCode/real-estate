@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')?.trim() || '';
     const source = searchParams.get('source')?.trim() || '';
     const adminFilter = searchParams.get('adminId')?.trim() || '';
+    const startDateParam = searchParams.get('startDate')?.trim() || '';
+    const endDateParam = searchParams.get('endDate')?.trim() || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const skip = (page - 1) * limit;
@@ -85,6 +87,25 @@ export async function GET(req: NextRequest) {
           { leadTitle: searchRegex },
         ],
       });
+    }
+
+    if (startDateParam || endDateParam) {
+      query.createdAt = {};
+      if (startDateParam) {
+        const s = new Date(startDateParam);
+        if (!isNaN(s.getTime())) {
+          query.createdAt.$gte = s;
+        }
+      }
+      if (endDateParam) {
+        const e = new Date(endDateParam);
+        if (!isNaN(e.getTime())) {
+          query.createdAt.$lte = e;
+        }
+      }
+      if (Object.keys(query.createdAt).length === 0) {
+        delete query.createdAt;
+      }
     }
 
     // Base query for counting stats (without status filter constraints)

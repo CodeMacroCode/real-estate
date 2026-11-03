@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')?.trim() || '';
     const outcome = searchParams.get('outcome')?.trim() || '';
     const dateFilter = searchParams.get('dateFilter')?.trim() || ''; // 'today' | 'upcoming'
+    const startDateParam = searchParams.get('startDate')?.trim() || '';
+    const endDateParam = searchParams.get('endDate')?.trim() || '';
     const adminFilter = searchParams.get('adminId')?.trim() || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
@@ -70,7 +72,24 @@ export async function GET(req: NextRequest) {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    if (dateFilter === 'today') {
+    if (startDateParam || endDateParam) {
+      query.meetingDate = {};
+      if (startDateParam) {
+        const s = new Date(startDateParam);
+        if (!isNaN(s.getTime())) {
+          query.meetingDate.$gte = s;
+        }
+      }
+      if (endDateParam) {
+        const e = new Date(endDateParam);
+        if (!isNaN(e.getTime())) {
+          query.meetingDate.$lte = e;
+        }
+      }
+      if (Object.keys(query.meetingDate).length === 0) {
+        delete query.meetingDate;
+      }
+    } else if (dateFilter === 'today') {
       query.meetingDate = { $gte: todayStart, $lte: todayEnd };
     } else if (dateFilter === 'upcoming') {
       const tomorrow = new Date();

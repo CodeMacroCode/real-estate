@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Calendar as CalendarIcon,
   Search,
@@ -33,15 +33,19 @@ import {
   Copy,
   Target,
   Globe,
-} from 'lucide-react';
-import { Spinner } from '@/components/ui/Spinner';
-import { SearchableSelect, SearchableSelectOption } from '@/components/ui/SearchableSelect';
-import { SafeUser } from '@/types';
-import ClientConfirmationModal from './ClientConfirmationModal';
-import QuotationModal from './QuotationModal';
-import InvoiceModal from './InvoiceModal';
-import EditAppointmentModal from './EditAppointmentModal';
-import Lead360Modal from '@/components/Lead360Modal';
+} from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
+import {
+  SearchableSelect,
+  SearchableSelectOption,
+} from "@/components/ui/SearchableSelect";
+import { SafeUser } from "@/types";
+import ClientConfirmationModal from "./ClientConfirmationModal";
+import QuotationModal from "./QuotationModal";
+import InvoiceModal from "./InvoiceModal";
+import EditAppointmentModal from "./EditAppointmentModal";
+import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
+import Lead360Modal from "@/components/Lead360Modal";
 import {
   Table,
   TableHeader,
@@ -49,8 +53,8 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '@/components/ui/table';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { toast } from "sonner";
 
 interface AppointmentItem {
   _id: string;
@@ -66,12 +70,12 @@ interface AppointmentItem {
   clientPhone: string;
   clientEmail?: string;
   agenda: string;
-  meetingType: 'In-Person' | 'Virtual' | 'Call';
+  meetingType: "In-Person" | "Virtual" | "Call";
   meetingLocation?: string;
   meetingDate: string;
   durationMinutes: number;
-  status: 'Scheduled' | 'Rescheduled' | 'Cancelled' | 'Completed';
-  outcome?: 'YES' | 'NO' | 'MAYBE';
+  status: "Scheduled" | "Rescheduled" | "Cancelled" | "Completed";
+  outcome?: "YES" | "NO" | "MAYBE";
   meetingSequence?: number;
   previousAppointmentId?: string;
   nextAppointmentId?: string;
@@ -84,10 +88,22 @@ interface AppointmentItem {
   invoiceName?: string;
   invoiceUploadedAt?: string;
   adminId?: { _id: string; name: string; email: string };
-  assignedSubRoleId?: { _id: string; name: string; email: string; role?: any; roleId?: any };
-  createdById?: { _id: string; name: string; email: string; role?: { name: string; slug: string }; roleId?: { name: string; slug: string } };
+  assignedSubRoleId?: {
+    _id: string;
+    name: string;
+    email: string;
+    role?: any;
+    roleId?: any;
+  };
+  createdById?: {
+    _id: string;
+    name: string;
+    email: string;
+    role?: { name: string; slug: string };
+    roleId?: { name: string; slug: string };
+  };
   confirmationId?: {
-    clientConfirmation: 'YES' | 'NO' | 'MAYBE';
+    clientConfirmation: "YES" | "NO" | "MAYBE";
     clientFeedback?: string;
     agreedDeliveryDate?: string;
     followUpDate?: string;
@@ -98,16 +114,27 @@ interface AppointmentItem {
 
 export default function AppointmentsPage() {
   const [currentUser, setCurrentUser] = useState<SafeUser | null>(null);
-  const [roleSlug, setRoleSlug] = useState<string>('');
+  const [roleSlug, setRoleSlug] = useState<string>("");
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [kpiFilter, setKpiFilter] = useState<'all' | 'today' | 'upcoming' | 'pending' | 'yes' | 'maybe'>('all');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [kpiFilter, setKpiFilter] = useState<
+    "all" | "today" | "upcoming" | "pending" | "yes" | "maybe"
+  >("all");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [selectedAdminId, setSelectedAdminId] = useState("");
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+    startStr?: string;
+    endStr?: string;
+  }>({
+    start: null,
+    end: null,
+  });
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -128,85 +155,97 @@ export default function AppointmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 1. Client Confirmation Modal
-  const [selectedAppointmentForConfirm, setSelectedAppointmentForConfirm] = useState<AppointmentItem | null>(null);
+  const [selectedAppointmentForConfirm, setSelectedAppointmentForConfirm] =
+    useState<AppointmentItem | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   // 2. 360 Degree Timeline Drawer
-  const [selectedLeadIdFor360, setSelectedLeadIdFor360] = useState<string | null>(null);
+  const [selectedLeadIdFor360, setSelectedLeadIdFor360] = useState<
+    string | null
+  >(null);
   const [is360ModalOpen, setIs360ModalOpen] = useState(false);
 
   // 3. Quotation Modal
-  const [selectedAppointmentForQuotation, setSelectedAppointmentForQuotation] = useState<AppointmentItem | null>(null);
+  const [selectedAppointmentForQuotation, setSelectedAppointmentForQuotation] =
+    useState<AppointmentItem | null>(null);
   const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
 
   // 4. Invoice Modal
-  const [selectedAppointmentForInvoice, setSelectedAppointmentForInvoice] = useState<AppointmentItem | null>(null);
+  const [selectedAppointmentForInvoice, setSelectedAppointmentForInvoice] =
+    useState<AppointmentItem | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   // 5. Edit Appointment Modal
-  const [selectedAppointmentForEdit, setSelectedAppointmentForEdit] = useState<AppointmentItem | null>(null);
+  const [selectedAppointmentForEdit, setSelectedAppointmentForEdit] =
+    useState<AppointmentItem | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Leads options for scheduling
   const [leadOptions, setLeadOptions] = useState<SearchableSelectOption[]>([]);
-  const [staffOptions, setStaffOptions] = useState<SearchableSelectOption[]>([]);
-  const [adminOptions, setAdminOptions] = useState<SearchableSelectOption[]>([]);
+  const [staffOptions, setStaffOptions] = useState<SearchableSelectOption[]>(
+    [],
+  );
+  const [adminOptions, setAdminOptions] = useState<SearchableSelectOption[]>(
+    [],
+  );
 
   // Schedule Form State
   const [newAppointment, setNewAppointment] = useState<{
     leadId: string;
     agenda: string;
-    meetingType: 'Virtual' | 'In-Person' | 'Call';
+    meetingType: "Virtual" | "In-Person" | "Call";
     meetingLocation: string;
     meetingDate: string;
     durationMinutes: number;
     assignedSubRoleId: string;
   }>({
-    leadId: '',
-    agenda: '',
-    meetingType: 'Virtual',
-    meetingLocation: '',
-    meetingDate: '',
+    leadId: "",
+    agenda: "",
+    meetingType: "Virtual",
+    meetingLocation: "",
+    meetingDate: "",
     durationMinutes: 30,
-    assignedSubRoleId: '',
+    assignedSubRoleId: "",
   });
 
-  const isSuperAdmin = roleSlug === 'super_admin';
-  const isAdmin = roleSlug === 'admin';
+  const isSuperAdmin = roleSlug === "super_admin";
+  const isAdmin = roleSlug === "admin";
 
   // Fetch current user
   useEffect(() => {
     async function fetchMe() {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch("/api/auth/me");
         const json = await res.json();
         if (json.success && json.data) {
           setCurrentUser(json.data.user);
-          setRoleSlug(json.data.role?.slug || '');
+          setRoleSlug(json.data.role?.slug || "");
         }
       } catch (err) {
-        console.error('Failed to load user', err);
+        console.error("Failed to load user", err);
       }
     }
     fetchMe();
   }, []);
 
   // Fetch Admins
-  const fetchAdmins = useCallback(async (query: string = '') => {
+  const fetchAdmins = useCallback(async (query: string = "") => {
     try {
-      const res = await fetch(`/api/users?role=admin&search=${encodeURIComponent(query)}&limit=25`);
+      const res = await fetch(
+        `/api/users?role=admin&search=${encodeURIComponent(query)}&limit=25`,
+      );
       const json = await res.json();
       if (json.success && json.data) {
         setAdminOptions(
           json.data.map((u: any) => ({
             value: u._id,
             label: `${u.name} (${u.email})`,
-            subLabel: u.designation || 'Admin Organization',
-          }))
+            subLabel: u.designation || "Admin Organization",
+          })),
         );
       }
     } catch (err) {
-      console.error('Failed to fetch admins', err);
+      console.error("Failed to fetch admins", err);
     }
   }, []);
 
@@ -217,9 +256,11 @@ export default function AppointmentsPage() {
   }, [isSuperAdmin, fetchAdmins]);
 
   // Fetch Leads for dropdown
-  const fetchLeadOptions = useCallback(async (query: string = '') => {
+  const fetchLeadOptions = useCallback(async (query: string = "") => {
     try {
-      const res = await fetch(`/api/leads?status=Pending&search=${encodeURIComponent(query)}&limit=25`);
+      const res = await fetch(
+        `/api/leads?status=Pending&search=${encodeURIComponent(query)}&limit=25`,
+      );
       const json = await res.json();
       if (json.success && json.data) {
         setLeadOptions(
@@ -227,30 +268,32 @@ export default function AppointmentsPage() {
             value: lead._id,
             label: `${lead.clientName} - ${lead.leadTitle}`,
             subLabel: `${lead.clientPhone} • ${lead.status}`,
-          }))
+          })),
         );
       }
     } catch (err) {
-      console.error('Failed to fetch leads', err);
+      console.error("Failed to fetch leads", err);
     }
   }, []);
 
   // Fetch Staff options for assignment
-  const fetchStaffOptions = useCallback(async (query: string = '') => {
+  const fetchStaffOptions = useCallback(async (query: string = "") => {
     try {
-      const res = await fetch(`/api/staff?search=${encodeURIComponent(query)}&limit=25`);
+      const res = await fetch(
+        `/api/staff?search=${encodeURIComponent(query)}&limit=25`,
+      );
       const json = await res.json();
       if (json.success && json.data) {
         setStaffOptions(
           json.data.map((staff: any) => ({
             value: staff._id,
             label: `${staff.name} (${staff.email})`,
-            subLabel: staff.role?.name || staff.designation || 'Staff',
-          }))
+            subLabel: staff.role?.name || staff.designation || "Staff",
+          })),
         );
       }
     } catch (err) {
-      console.error('Failed to fetch staff', err);
+      console.error("Failed to fetch staff", err);
     }
   }, []);
 
@@ -270,15 +313,33 @@ export default function AppointmentsPage() {
         page: page.toString(),
         limit: limit.toString(),
       });
-      if (statusFilter) params.append('status', statusFilter);
-      if (selectedAdminId) params.append('adminId', selectedAdminId);
+      if (statusFilter) params.append("status", statusFilter);
+      if (selectedAdminId) params.append("adminId", selectedAdminId);
+      if (
+        dateRange.startStr ||
+        (dateRange.start && !isNaN(dateRange.start.getTime()))
+      ) {
+        params.append(
+          "startDate",
+          dateRange.startStr || dateRange.start!.toISOString(),
+        );
+      }
+      if (
+        dateRange.endStr ||
+        (dateRange.end && !isNaN(dateRange.end.getTime()))
+      ) {
+        params.append(
+          "endDate",
+          dateRange.endStr || dateRange.end!.toISOString(),
+        );
+      }
 
       // KPI filter mapping
-      if (kpiFilter === 'today') params.append('dateFilter', 'today');
-      if (kpiFilter === 'upcoming') params.append('dateFilter', 'upcoming');
-      if (kpiFilter === 'pending') params.append('outcome', 'PENDING');
-      if (kpiFilter === 'yes') params.append('outcome', 'YES');
-      if (kpiFilter === 'maybe') params.append('outcome', 'MAYBE');
+      if (kpiFilter === "today") params.append("dateFilter", "today");
+      if (kpiFilter === "upcoming") params.append("dateFilter", "upcoming");
+      if (kpiFilter === "pending") params.append("outcome", "PENDING");
+      if (kpiFilter === "yes") params.append("outcome", "YES");
+      if (kpiFilter === "maybe") params.append("outcome", "MAYBE");
 
       const res = await fetch(`/api/appointments?${params.toString()}`);
       const json = await res.json();
@@ -292,14 +353,14 @@ export default function AppointmentsPage() {
           setKpiStats(meta.stats);
         }
       } else {
-        setError(json.error || 'Failed to fetch appointments');
+        setError(json.error || "Failed to fetch appointments");
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to server');
+      setError(err.message || "Error connecting to server");
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, selectedAdminId, kpiFilter]);
+  }, [page, statusFilter, selectedAdminId, kpiFilter, dateRange]);
 
   useEffect(() => {
     fetchAppointments();
@@ -308,36 +369,41 @@ export default function AppointmentsPage() {
   // Create Appointment
   const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAppointment.leadId || !newAppointment.meetingDate || !newAppointment.agenda) {
-      toast.error('Lead, meeting date, and agenda are required');
+    if (
+      !newAppointment.leadId ||
+      !newAppointment.meetingDate ||
+      !newAppointment.agenda
+    ) {
+      toast.error("Lead, meeting date, and agenda are required");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newAppointment),
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || json.error || 'Failed to schedule');
+      if (!res.ok)
+        throw new Error(json.message || json.error || "Failed to schedule");
 
-      toast.success('Appointment scheduled successfully!');
+      toast.success("Appointment scheduled successfully!");
       setIsScheduleOpen(false);
       setNewAppointment({
-        leadId: '',
-        agenda: '',
-        meetingType: 'Virtual',
-        meetingLocation: '',
-        meetingDate: '',
+        leadId: "",
+        agenda: "",
+        meetingType: "Virtual",
+        meetingLocation: "",
+        meetingDate: "",
         durationMinutes: 30,
-        assignedSubRoleId: '',
+        assignedSubRoleId: "",
       });
       fetchAppointments();
     } catch (err: any) {
-      toast.error(err.message || 'Error scheduling');
+      toast.error(err.message || "Error scheduling");
     } finally {
       setIsSubmitting(false);
     }
@@ -345,72 +411,82 @@ export default function AppointmentsPage() {
 
   // Delete Appointment
   const handleDeleteAppointment = async (apt: AppointmentItem) => {
-    if (!confirm(`Are you sure you want to delete meeting with ${apt.clientName}? This will also sync with Google Calendar.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete meeting with ${apt.clientName}? This will also sync with Google Calendar.`,
+      )
+    ) {
       return;
     }
 
     try {
       const res = await fetch(`/api/appointments/${apt._id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || json.error || 'Failed to delete');
+      if (!res.ok)
+        throw new Error(json.message || json.error || "Failed to delete");
 
-      toast.success('Appointment deleted successfully');
+      toast.success("Appointment deleted successfully");
       fetchAppointments();
     } catch (err: any) {
-      toast.error(err.message || 'Error deleting appointment');
+      toast.error(err.message || "Error deleting appointment");
     }
   };
 
   // Export CSV
   const handleExportCSV = () => {
     if (appointments.length === 0) {
-      toast.error('No appointments to export');
+      toast.error("No appointments to export");
       return;
     }
 
     const headers = [
-      'Meeting Sequence',
-      'Client Name',
-      'Client Phone',
-      'Client Email',
-      'Meeting Date',
-      'Duration (Mins)',
-      'Meeting Type',
-      'Location / Link',
-      'Agenda',
-      'Status',
-      'Outcome',
-      'Quotation Amount',
-      'Host Executive',
+      "Meeting Sequence",
+      "Client Name",
+      "Client Phone",
+      "Client Email",
+      "Meeting Date",
+      "Duration (Mins)",
+      "Meeting Type",
+      "Location / Link",
+      "Agenda",
+      "Status",
+      "Outcome",
+      "Quotation Amount",
+      "Host Executive",
     ];
 
     const rows = appointments.map((a) => [
       a.meetingSequence || 1,
-      `"${a.clientName || ''}"`,
-      `"${a.clientPhone || ''}"`,
-      `"${a.clientEmail || ''}"`,
+      `"${a.clientName || ""}"`,
+      `"${a.clientPhone || ""}"`,
+      `"${a.clientEmail || ""}"`,
       `"${new Date(a.meetingDate).toLocaleString()}"`,
       a.durationMinutes || 30,
-      a.meetingType || 'Virtual',
-      `"${a.meetingLocation || a.googleCalendarLink || ''}"`,
-      `"${(a.agenda || '').replace(/"/g, '""')}"`,
+      a.meetingType || "Virtual",
+      `"${a.meetingLocation || a.googleCalendarLink || ""}"`,
+      `"${(a.agenda || "").replace(/"/g, '""')}"`,
       a.status,
-      a.outcome || 'Pending',
+      a.outcome || "Pending",
       a.quotationAmount || 0,
-      `"${a.assignedSubRoleId?.name || 'Staff'}"`,
+      `"${a.assignedSubRoleId?.name || "Staff"}"`,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `appointment-ledger-${new Date().toISOString().slice(0, 10)}.csv`);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `appointment-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Exported CSV successfully!');
+    toast.success("Exported CSV successfully!");
   };
 
   return (
@@ -430,7 +506,9 @@ export default function AppointmentsPage() {
           onClick={() => fetchAppointments()}
           className="flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+          />
           <span>Refresh</span>
         </button>
 
@@ -449,21 +527,25 @@ export default function AppointmentsPage() {
         <button
           type="button"
           onClick={() => {
-            setKpiFilter('all');
+            setKpiFilter("all");
             setPage(1);
           }}
           className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
-            kpiFilter === 'all'
-              ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+            kpiFilter === "all"
+              ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
             <Globe className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-600 font-medium leading-none">All Meetings</div>
-            <div className="text-lg font-bold text-slate-900 mt-1">{kpiStats.allCount}</div>
+            <div className="text-xs text-slate-600 font-medium leading-none">
+              All Meetings
+            </div>
+            <div className="text-lg font-bold text-slate-900 mt-1">
+              {kpiStats.allCount}
+            </div>
           </div>
         </button>
 
@@ -471,21 +553,25 @@ export default function AppointmentsPage() {
         <button
           type="button"
           onClick={() => {
-            setKpiFilter('today');
+            setKpiFilter("today");
             setPage(1);
           }}
           className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
-            kpiFilter === 'today'
-              ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+            kpiFilter === "today"
+              ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
             <CalendarIcon className="w-5 h-5 text-slate-500" />
           </div>
           <div>
-            <div className="text-xs text-slate-600 font-medium leading-none">Today's Meetings</div>
-            <div className="text-lg font-bold text-slate-900 mt-1">{kpiStats.todayCount}</div>
+            <div className="text-xs text-slate-600 font-medium leading-none">
+              Today's Meetings
+            </div>
+            <div className="text-lg font-bold text-slate-900 mt-1">
+              {kpiStats.todayCount}
+            </div>
           </div>
         </button>
 
@@ -493,21 +579,25 @@ export default function AppointmentsPage() {
         <button
           type="button"
           onClick={() => {
-            setKpiFilter('upcoming');
+            setKpiFilter("upcoming");
             setPage(1);
           }}
           className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
-            kpiFilter === 'upcoming'
-              ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+            kpiFilter === "upcoming"
+              ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
             <Clock className="w-5 h-5 text-slate-500" />
           </div>
           <div>
-            <div className="text-xs text-slate-600 font-medium leading-none">Upcoming</div>
-            <div className="text-lg font-bold text-slate-900 mt-1">{kpiStats.upcomingCount}</div>
+            <div className="text-xs text-slate-600 font-medium leading-none">
+              Upcoming
+            </div>
+            <div className="text-lg font-bold text-slate-900 mt-1">
+              {kpiStats.upcomingCount}
+            </div>
           </div>
         </button>
 
@@ -515,21 +605,25 @@ export default function AppointmentsPage() {
         <button
           type="button"
           onClick={() => {
-            setKpiFilter('pending');
+            setKpiFilter("pending");
             setPage(1);
           }}
           className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
-            kpiFilter === 'pending'
-              ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+            kpiFilter === "pending"
+              ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
             <HelpCircle className="w-5 h-5 text-slate-500" />
           </div>
           <div>
-            <div className="text-xs text-slate-600 font-medium leading-none">Pending Decision</div>
-            <div className="text-lg font-bold text-slate-900 mt-1">{kpiStats.pendingCount}</div>
+            <div className="text-xs text-slate-600 font-medium leading-none">
+              Pending Decision
+            </div>
+            <div className="text-lg font-bold text-slate-900 mt-1">
+              {kpiStats.pendingCount}
+            </div>
           </div>
         </button>
 
@@ -537,21 +631,25 @@ export default function AppointmentsPage() {
         <button
           type="button"
           onClick={() => {
-            setKpiFilter('yes');
+            setKpiFilter("yes");
             setPage(1);
           }}
           className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
-            kpiFilter === 'yes'
-              ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+            kpiFilter === "yes"
+              ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
             <CheckCircle2 className="w-5 h-5 text-slate-500" />
           </div>
           <div>
-            <div className="text-xs text-slate-600 font-medium leading-none">Confirmed Deals</div>
-            <div className="text-lg font-bold text-slate-900 mt-1">{kpiStats.yesCount}</div>
+            <div className="text-xs text-slate-600 font-medium leading-none">
+              Confirmed Deals
+            </div>
+            <div className="text-lg font-bold text-slate-900 mt-1">
+              {kpiStats.yesCount}
+            </div>
           </div>
         </button>
 
@@ -559,23 +657,86 @@ export default function AppointmentsPage() {
         <button
           type="button"
           onClick={() => {
-            setKpiFilter('maybe');
+            setKpiFilter("maybe");
             setPage(1);
           }}
           className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
-            kpiFilter === 'maybe'
-              ? 'border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs'
-              : 'border-slate-200 bg-white hover:border-slate-300'
+            kpiFilter === "maybe"
+              ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-slate-200 bg-white hover:border-slate-300"
           }`}
         >
           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
             <History className="w-5 h-5 text-slate-500" />
           </div>
           <div>
-            <div className="text-xs text-slate-600 font-medium leading-none">Follow-ups</div>
-            <div className="text-lg font-bold text-slate-900 mt-1">{kpiStats.maybeCount}</div>
+            <div className="text-xs text-slate-600 font-medium leading-none">
+              Follow-ups
+            </div>
+            <div className="text-lg font-bold text-slate-900 mt-1">
+              {kpiStats.maybeCount}
+            </div>
           </div>
         </button>
+      </div>
+
+      {/* Toolbar / Filters */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 border border-slate-200 rounded-xl shadow-xs">
+        <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-0">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search meetings by client name or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-10 pl-9 pr-4 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="w-full sm:w-auto min-w-[150px]">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Rescheduled">Rescheduled</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          <div className="w-full sm:w-auto min-w-[200px]">
+            <DateRangeFilter
+              placeholder="Filter by meeting date..."
+              className="w-full"
+              onDateRangeChange={(start, end, startStr, endStr) => {
+                setDateRange({ start, end, startStr, endStr });
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {roleSlug === "super_admin" && (
+            <div className="w-full sm:w-auto min-w-[180px]">
+              <SearchableSelect
+                placeholder="Filter by Admin Org..."
+                options={adminOptions}
+                value={selectedAdminId}
+                onChange={(val) => {
+                  setSelectedAdminId(val);
+                  setPage(1);
+                }}
+                onSearchChange={fetchAdmins}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Error Banner */}
@@ -595,9 +756,12 @@ export default function AppointmentsPage() {
         ) : appointments.length === 0 ? (
           <div className="text-center py-16 px-4">
             <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-800">No appointments found</h3>
+            <h3 className="text-base font-semibold text-slate-800">
+              No appointments found
+            </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-              Schedule your first client meeting or site visit directly from the Leads section or using the button above.
+              Schedule your first client meeting or site visit directly from the
+              Leads section or using the button above.
             </p>
           </div>
         ) : (
@@ -605,22 +769,38 @@ export default function AppointmentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px] whitespace-nowrap">SR.</TableHead>
-                  <TableHead className="whitespace-nowrap">MEETING DATE</TableHead>
+                  <TableHead className="w-[50px] whitespace-nowrap">
+                    SR.
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    MEETING DATE
+                  </TableHead>
                   <TableHead className="whitespace-nowrap">CLIENT</TableHead>
                   <TableHead className="whitespace-nowrap">LEAD</TableHead>
                   <TableHead className="whitespace-nowrap">AGENDA</TableHead>
-                  <TableHead className="whitespace-nowrap">MEETING MODE</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    MEETING MODE
+                  </TableHead>
                   <TableHead className="whitespace-nowrap">STATUS</TableHead>
-                  <TableHead className="whitespace-nowrap">CLIENT CONFIRMATION</TableHead>
-                  <TableHead className="whitespace-nowrap">CREATED BY ROLE</TableHead>
-                  <TableHead className="whitespace-nowrap">RESPONSIBLE ENTITY</TableHead>
-                  <TableHead className="whitespace-nowrap text-center">ACTIONS</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    CLIENT CONFIRMATION
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    CREATED BY ROLE
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    RESPONSIBLE ENTITY
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap text-center">
+                    ACTIONS
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {appointments.map((apt, index) => {
-                  const isHistoricalMaybe = !!apt.nextAppointmentId || (apt.outcome === 'MAYBE' && apt.status === 'Completed');
+                  const isHistoricalMaybe =
+                    !!apt.nextAppointmentId ||
+                    (apt.outcome === "MAYBE" && apt.status === "Completed");
                   const srNo = (page - 1) * limit + (index + 1);
 
                   return (
@@ -633,15 +813,22 @@ export default function AppointmentsPage() {
                       {/* 2. MEETING DATE */}
                       <TableCell>
                         <div className="text-xs font-semibold text-slate-800">
-                          {new Date(apt.meetingDate).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })}, {new Date(apt.meetingDate).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                          }).toLowerCase()}
+                          {new Date(apt.meetingDate).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            },
+                          )}
+                          ,{" "}
+                          {new Date(apt.meetingDate)
+                            .toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })
+                            .toLowerCase()}
                         </div>
                         <div className="flex items-center justify-center gap-1.5 mt-1.5">
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
@@ -670,15 +857,20 @@ export default function AppointmentsPage() {
                       {/* 3. CLIENT */}
                       <TableCell>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-xs text-slate-900 truncate max-w-[130px]" title={apt.clientName}>
+                          <span
+                            className="font-semibold text-xs text-slate-900 truncate max-w-[130px]"
+                            title={apt.clientName}
+                          >
                             {apt.clientName}
                           </span>
-                          <span className="text-slate-400 text-xs tracking-widest cursor-default">•••</span>
+                          <span className="text-slate-400 text-xs tracking-widest cursor-default">
+                            •••
+                          </span>
                         </div>
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-200/80 rounded-md text-slate-600 text-[11px]">
                           <span>{apt.clientPhone}</span>
                           <a
-                            href={`https://wa.me/${apt.clientPhone.replace(/[^0-9]/g, '')}`}
+                            href={`https://wa.me/${apt.clientPhone.replace(/[^0-9]/g, "")}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-emerald-500 hover:text-emerald-600"
@@ -697,7 +889,7 @@ export default function AppointmentsPage() {
                             type="button"
                             onClick={() => {
                               navigator.clipboard.writeText(apt.clientPhone);
-                              toast.success('Phone copied to clipboard');
+                              toast.success("Phone copied to clipboard");
                             }}
                             className="text-slate-400 hover:text-slate-600"
                             title="Copy phone"
@@ -709,8 +901,11 @@ export default function AppointmentsPage() {
 
                       {/* 4. LEAD */}
                       <TableCell>
-                        <div className="text-xs font-semibold text-slate-800 truncate max-w-[150px]" title={apt.leadId?.leadTitle || '—'}>
-                          {apt.leadId?.leadTitle || '—'}
+                        <div
+                          className="text-xs font-semibold text-slate-800 truncate max-w-[150px]"
+                          title={apt.leadId?.leadTitle || "—"}
+                        >
+                          {apt.leadId?.leadTitle || "—"}
                         </div>
                       </TableCell>
 
@@ -718,7 +913,12 @@ export default function AppointmentsPage() {
                       <TableCell>
                         <div className="inline-flex items-center gap-1.5 text-xs text-slate-800">
                           <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500 flex-shrink-0" />
-                          <span className="truncate max-w-[130px]" title={apt.agenda}>{apt.agenda}</span>
+                          <span
+                            className="truncate max-w-[130px]"
+                            title={apt.agenda}
+                          >
+                            {apt.agenda}
+                          </span>
                         </div>
                       </TableCell>
 
@@ -726,9 +926,9 @@ export default function AppointmentsPage() {
                       <TableCell>
                         <div className="flex flex-col items-center gap-1">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
-                            {apt.meetingType === 'In-Person' ? (
+                            {apt.meetingType === "In-Person" ? (
                               <MapPin className="size-3 text-amber-600" />
-                            ) : apt.meetingType === 'Virtual' ? (
+                            ) : apt.meetingType === "Virtual" ? (
                               <Video className="size-3 text-blue-600" />
                             ) : (
                               <Phone className="size-3 text-emerald-600" />
@@ -736,9 +936,14 @@ export default function AppointmentsPage() {
                             <span>{apt.meetingType}</span>
                           </span>
                           {apt.meetingLocation && (
-                            <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 truncate max-w-[120px]" title={apt.meetingLocation}>
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] text-slate-500 truncate max-w-[120px]"
+                              title={apt.meetingLocation}
+                            >
                               <MapPin className="size-2.5 text-red-500 flex-shrink-0" />
-                              <span className="truncate">{apt.meetingLocation}</span>
+                              <span className="truncate">
+                                {apt.meetingLocation}
+                              </span>
                               <ExternalLink className="size-2.5 text-slate-400" />
                             </span>
                           )}
@@ -747,22 +952,22 @@ export default function AppointmentsPage() {
 
                       {/* 7. STATUS */}
                       <TableCell>
-                        {apt.status === 'Completed' && (
+                        {apt.status === "Completed" && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
                             Completed
                           </span>
                         )}
-                        {apt.status === 'Rescheduled' && (
+                        {apt.status === "Rescheduled" && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 inline-block">
                             Rescheduled
                           </span>
                         )}
-                        {apt.status === 'Scheduled' && (
+                        {apt.status === "Scheduled" && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 inline-block">
                             Scheduled
                           </span>
                         )}
-                        {apt.status === 'Cancelled' && (
+                        {apt.status === "Cancelled" && (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200 inline-block">
                             Cancelled
                           </span>
@@ -784,12 +989,12 @@ export default function AppointmentsPage() {
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                             <span>Pending</span>
                           </button>
-                        ) : apt.outcome === 'YES' ? (
+                        ) : apt.outcome === "YES" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <CheckCircle2 className="size-3 text-emerald-600" />
                             <span>Confirmed</span>
                           </span>
-                        ) : apt.outcome === 'MAYBE' ? (
+                        ) : apt.outcome === "MAYBE" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
                             <HelpCircle className="size-3 text-amber-600" />
                             <span>Follow-up</span>
@@ -807,8 +1012,8 @@ export default function AppointmentsPage() {
                         <div className="text-xs text-slate-700 font-medium lowercase">
                           {apt.createdById?.roleId?.name?.toLowerCase() ||
                             apt.createdById?.role?.name?.toLowerCase() ||
-                            apt.createdById?.roleId?.slug?.replace(/_/g, ' ') ||
-                            'supervisor'}
+                            apt.createdById?.roleId?.slug?.replace(/_/g, " ") ||
+                            "supervisor"}
                         </div>
                       </TableCell>
 
@@ -817,10 +1022,16 @@ export default function AppointmentsPage() {
                         <div className="text-xs text-slate-700">
                           {apt.assignedSubRoleId ? (
                             <span>
-                              {apt.assignedSubRoleId.roleId?.name || apt.assignedSubRoleId.role?.name || 'Staff'}: {apt.assignedSubRoleId.name}
+                              {apt.assignedSubRoleId.roleId?.name ||
+                                apt.assignedSubRoleId.role?.name ||
+                                "Staff"}
+                              : {apt.assignedSubRoleId.name}
                             </span>
                           ) : (
-                            <span>Supervisor: {apt.adminId?.name || 'Assigned Supervisor'}</span>
+                            <span>
+                              Supervisor:{" "}
+                              {apt.adminId?.name || "Assigned Supervisor"}
+                            </span>
                           )}
                         </div>
                       </TableCell>
@@ -829,19 +1040,19 @@ export default function AppointmentsPage() {
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           {/* Outcome Status Pill (if outcome present) or Record Decision button */}
-                          {apt.outcome === 'NO' && (
+                          {apt.outcome === "NO" && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-600 border border-rose-200">
                               <XCircle className="size-3 text-rose-500" />
                               <span>Declined</span>
                             </span>
                           )}
-                          {apt.outcome === 'YES' && (
+                          {apt.outcome === "YES" && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
                               <CheckCircle2 className="size-3 text-emerald-500" />
                               <span>Confirmed</span>
                             </span>
                           )}
-                          {apt.outcome === 'MAYBE' && (
+                          {apt.outcome === "MAYBE" && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
                               <HelpCircle className="size-3 text-amber-500" />
                               <span>Follow-up</span>
@@ -877,7 +1088,7 @@ export default function AppointmentsPage() {
                           )}
 
                           {/* 2. Quotation / Proposal (<FileText />) */}
-                          {apt.outcome !== 'NO' && (
+                          {apt.outcome !== "NO" && (
                             <button
                               type="button"
                               onClick={() => {
@@ -885,14 +1096,18 @@ export default function AppointmentsPage() {
                                 setIsQuotationModalOpen(true);
                               }}
                               className="p-1 text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded transition"
-                              title={apt.quotationTitle ? `Quotation: ${apt.quotationTitle}` : 'Attach Proposal / Quotation'}
+                              title={
+                                apt.quotationTitle
+                                  ? `Quotation: ${apt.quotationTitle}`
+                                  : "Attach Proposal / Quotation"
+                              }
                             >
                               <FileText className="size-4" />
                             </button>
                           )}
 
                           {/* 3. Invoice Button (when YES outcome) */}
-                          {apt.outcome === 'YES' && (
+                          {apt.outcome === "YES" && (
                             <button
                               type="button"
                               onClick={() => {
@@ -900,7 +1115,11 @@ export default function AppointmentsPage() {
                                 setIsInvoiceModalOpen(true);
                               }}
                               className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition"
-                              title={apt.invoiceUrl ? 'Invoice Attached' : 'Upload Invoice'}
+                              title={
+                                apt.invoiceUrl
+                                  ? "Invoice Attached"
+                                  : "Upload Invoice"
+                              }
                             >
                               <Receipt className="size-4" />
                             </button>
@@ -1003,7 +1222,9 @@ export default function AppointmentsPage() {
                     placeholder="Search prospect by name or phone..."
                     options={leadOptions}
                     value={newAppointment.leadId}
-                    onChange={(val) => setNewAppointment({ ...newAppointment, leadId: val })}
+                    onChange={(val) =>
+                      setNewAppointment({ ...newAppointment, leadId: val })
+                    }
                     onSearchChange={fetchLeadOptions}
                   />
                 </div>
@@ -1016,7 +1237,10 @@ export default function AppointmentsPage() {
                     <select
                       value={newAppointment.meetingType}
                       onChange={(e) =>
-                        setNewAppointment({ ...newAppointment, meetingType: e.target.value as any })
+                        setNewAppointment({
+                          ...newAppointment,
+                          meetingType: e.target.value as any,
+                        })
                       }
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     >
@@ -1034,7 +1258,10 @@ export default function AppointmentsPage() {
                       type="datetime-local"
                       value={newAppointment.meetingDate}
                       onChange={(e) =>
-                        setNewAppointment({ ...newAppointment, meetingDate: e.target.value })
+                        setNewAppointment({
+                          ...newAppointment,
+                          meetingDate: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       required
@@ -1051,7 +1278,10 @@ export default function AppointmentsPage() {
                     placeholder="e.g. Property Walkthrough & Pricing"
                     value={newAppointment.agenda}
                     onChange={(e) =>
-                      setNewAppointment({ ...newAppointment, agenda: e.target.value })
+                      setNewAppointment({
+                        ...newAppointment,
+                        agenda: e.target.value,
+                      })
                     }
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     required
@@ -1071,7 +1301,7 @@ export default function AppointmentsPage() {
                     disabled={isSubmitting}
                     className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {isSubmitting ? 'Scheduling...' : 'Schedule Appointment'}
+                    {isSubmitting ? "Scheduling..." : "Schedule Appointment"}
                   </button>
                 </div>
               </form>
