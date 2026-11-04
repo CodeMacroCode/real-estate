@@ -4,7 +4,13 @@ import { SESSION_COOKIE_NAME } from "./lib/auth/constants";
 import { verifyAuthToken } from "./lib/auth/jwt";
 
 // Public paths that do not require authentication
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/auth/login",
+  "/portal-properties",
+  "/portal-projects",
+  "/api/public",
+];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
