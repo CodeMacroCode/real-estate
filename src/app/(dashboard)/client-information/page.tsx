@@ -520,7 +520,7 @@ export default function ClientsPage() {
                       </div>
                       {c.totalRevenue ? (
                         <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
-                          ₹{c.totalRevenue.toLocaleString()}
+                          ₹{c.totalRevenue.toLocaleString("en-IN")}
                         </div>
                       ) : null}
                     </TableCell>
@@ -637,27 +637,32 @@ export default function ClientsPage() {
 
         {/* Pagination Footer */}
         {totalCount > 0 && (
-          <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <span>
-              Showing {clients.length} of {totalCount} clients
-            </span>
+          <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold">{clients.length}</span> of{" "}
+              <span className="font-semibold">{totalCount}</span> total clients
+            </div>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Previous</span>
               </button>
-              <span>
-                Page {page} of {totalPages}
+              <span className="text-xs font-semibold text-slate-700 px-2">
+                Page {page} of {totalPages || 1}
               </span>
               <button
+                type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
               >
-                <ChevronRight className="w-4 h-4" />
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

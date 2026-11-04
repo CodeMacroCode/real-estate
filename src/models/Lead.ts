@@ -5,6 +5,7 @@ export type LeadSource =
   | "LinkedIn"
   | "GoogleAds"
   | "DynamicForm"
+  | "Website"
   | "Manual";
 export type LeadStatus =
   | "Pending"
@@ -12,6 +13,13 @@ export type LeadStatus =
   | "In-Progress"
   | "Completed"
   | "Rejected";
+
+export interface ILeadActivity {
+  action: string;
+  description: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+}
 
 export interface ILeadDocument extends Document {
   _id: Types.ObjectId;
@@ -41,6 +49,7 @@ export interface ILeadDocument extends Document {
   notes?: string;
   budget?: number;
   preferredProperty?: string;
+  activityTimeline?: ILeadActivity[];
 
   createdById: Types.ObjectId;
   createdAt: Date;
@@ -75,7 +84,7 @@ const LeadSchema = new Schema<ILeadDocument>(
     },
     source: {
       type: String,
-      enum: ["Meta", "LinkedIn", "GoogleAds", "DynamicForm", "Manual"],
+      enum: ["Meta", "LinkedIn", "GoogleAds", "DynamicForm", "Website", "Manual"],
       default: "Manual",
       required: true,
     },
@@ -139,6 +148,14 @@ const LeadSchema = new Schema<ILeadDocument>(
       type: String,
       trim: true,
     },
+    activityTimeline: [
+      {
+        action: { type: String, required: true },
+        description: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        metadata: { type: Schema.Types.Mixed },
+      },
+    ],
     createdById: {
       type: Schema.Types.ObjectId,
       ref: "User",

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -19,8 +19,8 @@ import {
   CheckCircle,
   FileSpreadsheet,
   Share2,
-} from 'lucide-react';
-import { SafeUser } from '@/types';
+} from "lucide-react";
+import { SafeUser } from "@/types";
 
 interface SidebarProps {
   user?: SafeUser | null;
@@ -29,9 +29,9 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
 
-  const roleSlug = user?.role?.slug || '';
-  const isSuperAdmin = roleSlug === 'super_admin';
-  const isAdmin = roleSlug === 'admin';
+  const roleSlug = user?.role?.slug || "";
+  const isSuperAdmin = roleSlug === "super_admin";
+  const isAdmin = roleSlug === "admin";
   const isSubRole = !isSuperAdmin && !isAdmin;
 
   // Role-wise navigation items:
@@ -40,97 +40,133 @@ export function Sidebar({ user }: SidebarProps) {
   // Sub-Role staff sees: Dashboard only in Management (plus assigned CRM modules below)
   const navItems = [
     {
-      name: 'Dashboard',
-      href: '/dashboard',
+      name: "Dashboard",
+      href: "/dashboard",
       icon: LayoutDashboard,
-      active: pathname === '/dashboard',
+      active: pathname === "/dashboard",
       visible: true,
     },
     {
-      name: 'Users (Admins)',
-      href: '/users',
+      name: "Users (Admins)",
+      href: "/users",
       icon: Users,
-      active: pathname === '/users',
+      active: pathname === "/users",
       visible: isSuperAdmin,
     },
     {
-      name: 'Staff Management',
-      href: '/staff',
+      name: "Staff Management",
+      href: "/staff",
       icon: Briefcase,
-      active: pathname.startsWith('/staff'),
+      active: pathname.startsWith("/staff"),
       visible: isSuperAdmin || isAdmin,
     },
     {
-      name: 'Roles & Permissions',
-      href: '/roles',
+      name: "Roles & Permissions",
+      href: "/roles",
       icon: ShieldCheck,
-      active: pathname.startsWith('/roles'),
+      active: pathname.startsWith("/roles"),
       visible: isSuperAdmin || isAdmin,
     },
     {
-      name: 'Audit Logs',
-      href: '/audit-logs',
+      name: "Audit Logs",
+      href: "/audit-logs",
       icon: History,
-      active: pathname.startsWith('/audit-logs'),
+      active: pathname.startsWith("/audit-logs"),
       visible: isSuperAdmin || isAdmin,
+    },
+    {
+      name: "Admin Website Management",
+      href: "/website-management",
+      icon: Globe,
+      active: pathname.startsWith("/website-management"),
+      visible: true, // Visible to SuperAdmin (all URLs), Admin (their URLs), and Sub-roles
     },
   ].filter((item) => item.visible);
 
-  // Active Phase 2 CRM Engine Modules
-  // SuperAdmin only sees Dynamic Forms (per blueprint: SuperAdmin creates & assigns form schemas)
-  // Admin and Sub-Roles handle day-to-day operational leads, appointments, and client confirmations
-  const phase2CrmItems = [
+  // Leads & CRM Modules
+  const leadCrmItems = [
     {
-      name: 'Dynamic Forms',
-      href: '/custom-forms',
+      name: "Dynamic Forms",
+      href: "/custom-forms",
       icon: FileSpreadsheet,
-      active: pathname.startsWith('/custom-forms'),
+      active: pathname.startsWith("/custom-forms"),
       visible: isSuperAdmin, // Form Builder owned exclusively by SuperAdmin
     },
     {
-      name: 'Leads & Enquiries',
-      href: '/leads',
+      name: "Leads & Enquiries",
+      href: "/leads",
       icon: PhoneIncoming,
-      active: pathname.startsWith('/leads'),
+      active: pathname.startsWith("/leads"),
       visible: !isSuperAdmin, // Admin & Sub-Roles
     },
     {
-      name: 'Appointments & Meetings',
-      href: '/appointments',
+      name: "Appointments & Meetings",
+      href: "/appointments",
       icon: Calendar,
-      active: pathname.startsWith('/appointments'),
+      active: pathname.startsWith("/appointments"),
       visible: !isSuperAdmin, // Admin & Sub-Roles
     },
     {
-      name: 'Client Confirmations',
-      href: '/client-confirmations',
+      name: "Client Confirmations",
+      href: "/client-confirmations",
       icon: CheckCircle,
-      active: pathname.startsWith('/client-confirmations'),
+      active: pathname.startsWith("/client-confirmations"),
       visible: !isSuperAdmin, // Admin & Sub-Roles
     },
     {
-      name: 'Client Information (CRM)',
-      href: '/client-information',
+      name: "Client Information (CRM)",
+      href: "/client-information",
       icon: Users,
-      active: pathname.startsWith('/client-information'),
+      active: pathname.startsWith("/client-information"),
       visible: !isSuperAdmin, // Admin & Sub-Roles
     },
     {
-      name: 'Connect Social Media',
-      href: '/connect-social-media',
+      name: "Connect Social Media",
+      href: "/connect-social-media",
       icon: Share2,
-      active: pathname.startsWith('/connect-social-media'),
+      active: pathname.startsWith("/connect-social-media"),
       visible: isAdmin, // Connected at Admin organization level
     },
   ].filter((item) => item.visible);
 
-  const laterPhaseModules = [
-    { name: 'Properties Inventory', icon: Building2 },
-    { name: 'Projects', icon: Layers },
-    { name: 'Clients & Owners', icon: Briefcase },
-    { name: 'Website CMS', icon: Globe },
-    { name: 'Master Settings', icon: Settings },
-  ];
+  // Properties & Real Estate Engine Modules
+  const propertiesCrmItems = [
+    {
+      name: "Properties Inventory",
+      href: "/properties",
+      icon: Building2,
+      active: pathname.startsWith("/properties"),
+      visible: true,
+    },
+    {
+      name: "Projects & Units",
+      href: "/projects",
+      icon: Layers,
+      active: pathname.startsWith("/projects"),
+      visible: true,
+    },
+    {
+      name: "Property Owners",
+      href: "/owners",
+      icon: Briefcase,
+      active: pathname.startsWith("/owners"),
+      visible: true,
+    },
+    {
+      name: "Website Inquiries",
+      href: "/inquiries",
+      icon: PhoneIncoming,
+      active: pathname.startsWith("/inquiries"),
+      visible: !isSuperAdmin,
+    },
+    {
+      name: "Master Settings",
+      href: "/master-settings",
+      icon: Settings,
+      active: pathname.startsWith("/master-settings"),
+      visible: isSuperAdmin || isAdmin,
+    },
+  ].filter((item) => item.visible);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white">
@@ -145,10 +181,10 @@ export function Sidebar({ user }: SidebarProps) {
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wider text-blue-600">
             {isSuperAdmin
-              ? 'Super Admin Portal'
+              ? "Super Admin Portal"
               : isAdmin
-              ? 'Admin Portal'
-              : `${user?.role?.name || 'Staff'} Workspace`}
+                ? "Admin Portal"
+                : `${user?.role?.name || "Staff"} Workspace`}
           </span>
         </div>
       </div>
@@ -157,7 +193,7 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
         <div>
           <div className="px-2 mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            {isSubRole ? 'Staff Workspace' : 'Management Modules'}
+            {isSubRole ? "Staff Workspace" : "Management Modules"}
           </div>
           <nav className="space-y-1">
             {navItems.map((item) => {
@@ -168,11 +204,13 @@ export function Sidebar({ user }: SidebarProps) {
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                     item.active
-                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${item.active ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <Icon
+                    className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
+                  />
                   <span>{item.name}</span>
                 </Link>
               );
@@ -180,16 +218,16 @@ export function Sidebar({ user }: SidebarProps) {
           </nav>
         </div>
 
-        {/* Active Phase 2 CRM Engine Navigation */}
+        {/* Leads & CRM Navigation */}
         <div>
           <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             <span>Leads & CRM</span>
             <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">
-              Phase 2 Active
+              Leads
             </span>
           </div>
           <nav className="space-y-1">
-            {phase2CrmItems.map((item) => {
+            {leadCrmItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -197,11 +235,13 @@ export function Sidebar({ user }: SidebarProps) {
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                     item.active
-                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${item.active ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <Icon
+                    className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
+                  />
                   <span>{item.name}</span>
                 </Link>
               );
@@ -209,32 +249,35 @@ export function Sidebar({ user }: SidebarProps) {
           </nav>
         </div>
 
-        {/* Future Modules */}
+        {/* Properties & Real Estate Engine Navigation */}
         <div>
           <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            <span>Upcoming Modules</span>
-            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-normal">
-              Phase 3+
+            <span>Properties & Inventory</span>
+            <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
+              Properties
             </span>
           </div>
-          <div className="space-y-1">
-            {laterPhaseModules.map((module) => {
-              const Icon = module.icon;
+          <nav className="space-y-1">
+            {propertiesCrmItems.map((item) => {
+              const Icon = item.icon;
               return (
-                <div
-                  key={module.name}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-400 cursor-not-allowed opacity-75 hover:bg-slate-50/50"
-                  title="Scheduled for implementation in later phases per specification"
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    item.active
+                      ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 text-slate-300" />
-                    <span>{module.name}</span>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                </div>
+                  <Icon
+                    className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
+                  />
+                  <span>{item.name}</span>
+                </Link>
               );
             })}
-          </div>
+          </nav>
         </div>
       </div>
 
@@ -246,9 +289,13 @@ export function Sidebar({ user }: SidebarProps) {
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-xs font-semibold text-slate-900 truncate">{user.name}</span>
+              <span className="text-xs font-semibold text-slate-900 truncate">
+                {user.name}
+              </span>
               <span className="text-[11px] text-slate-500 truncate capitalize">
-                {user.role?.name || user.role?.slug?.replace(/_/g, ' ') || 'Staff Member'}
+                {user.role?.name ||
+                  user.role?.slug?.replace(/_/g, " ") ||
+                  "Staff Member"}
               </span>
             </div>
           </div>

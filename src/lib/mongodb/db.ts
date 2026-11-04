@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/real_estate_crm';
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/real_estate_crm';
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
@@ -40,6 +40,13 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
+      // Ensure all critical Mongoose models are registered in memory across HMR
+      require("@/models/Owner");
+      require("@/models/Property");
+      require("@/models/Project");
+      require("@/models/ProjectUnit");
+      require("@/models/User");
+      require("@/models/Role");
       return mongooseInstance;
     });
   }

@@ -1,17 +1,24 @@
 import * as React from "react";
 
-export const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className = "", ...props }, ref) => (
-  <div className="relative w-full overflow-x-auto">
-    <table
-      ref={ref}
-      className={`w-full caption-bottom text-sm border-collapse ${className}`}
-      {...props}
-    />
-  </div>
-));
+interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
+  maxHeight?: string;
+  containerClassName?: string;
+}
+
+export const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className = "", maxHeight = "calc(100vh - 280px)", containerClassName = "", ...props }, ref) => (
+    <div
+      className={`relative w-full overflow-x-auto overflow-y-auto custom-table-scroll ${containerClassName}`}
+      style={maxHeight ? { maxHeight } : undefined}
+    >
+      <table
+        ref={ref}
+        className={`w-full caption-bottom text-sm border-collapse ${className}`}
+        {...props}
+      />
+    </div>
+  )
+);
 Table.displayName = "Table";
 
 export const TableHeader = React.forwardRef<
@@ -20,7 +27,7 @@ export const TableHeader = React.forwardRef<
 >(({ className = "", ...props }, ref) => (
   <thead
     ref={ref}
-    className={`bg-slate-900 border-b border-slate-700 text-xs font-semibold text-white ${className}`}
+    className={`sticky top-0 z-10 bg-slate-900 border-b border-slate-700 text-xs font-semibold text-white ${className}`}
     {...props}
   />
 ));

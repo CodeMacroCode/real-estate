@@ -172,8 +172,8 @@ export function LeadsClient({
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(initialTotalPages || 1);
+  const [totalCount, setTotalCount] = useState(initialTotalCount || (initialLeads ? initialLeads.length : 0));
 
   // Assigned Dynamic Form Schema state
   const [assignedFormInfo, setAssignedFormInfo] =
@@ -907,7 +907,7 @@ export function LeadsClient({
                   <TableRow key={lead._id}>
                     {/* Date Column */}
                     <TableCell className="whitespace-nowrap">
-                      <div className="text-xs font-semibold text-slate-800">
+                      <div className="text-xs font-semibold text-slate-800" suppressHydrationWarning>
                         {lead.createdAt
                           ? new Date(lead.createdAt).toLocaleDateString("en-GB", {
                               day: "2-digit",
@@ -917,7 +917,7 @@ export function LeadsClient({
                           : "-"}
                       </div>
                       {lead.createdAt && (
-                        <div className="text-[11px] text-slate-400">
+                        <div className="text-[11px] text-slate-400" suppressHydrationWarning>
                           {new Date(lead.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -937,7 +937,7 @@ export function LeadsClient({
                       {lead.budget ? (
                         <div className="mt-1">
                           <span className="text-emerald-700 text-xs font-semibold bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full inline-block">
-                            Budget: ₹{lead.budget.toLocaleString()}
+                            Budget: ₹{lead.budget.toLocaleString("en-IN")}
                           </span>
                         </div>
                       ) : null}
@@ -1181,28 +1181,33 @@ export function LeadsClient({
         )}
 
         {/* Pagination Footer */}
-        {totalCount > 0 && (
-          <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <span>
-              Showing {leads.length} of {totalCount} inquiries
-            </span>
+        {leads.length > 0 && (
+          <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold">{leads.length}</span> of{" "}
+              <span className="font-semibold">{totalCount || leads.length}</span> total leads
+            </div>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Previous</span>
               </button>
-              <span>
-                Page {page} of {totalPages}
+              <span className="text-xs font-semibold text-slate-700 px-2">
+                Page {page} of {totalPages || 1}
               </span>
               <button
+                type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="p-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
               >
-                <ChevronRight className="w-4 h-4" />
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -1267,52 +1272,6 @@ export function LeadsClient({
                   </div>
                 )}
 
-                {/* Search and Select Existing Client (Fast-Fill) */}
-                {modalMode === "create" && (!isSuperAdmin || formAdminId) && (
-                  <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Existing Client Fast-Fill (Optional)</span>
-                      </label>
-                      <span className="text-[10px] text-blue-600 bg-blue-100/70 px-2 py-0.5 rounded-full font-medium">
-                        Search CRM
-                      </span>
-                    </div>
-                    <SearchableSelect
-                      placeholder="Search client by name, phone or email..."
-                      options={clientOptions}
-                      value={selectedExistingClientId}
-                      onChange={(clientId) => {
-                        setSelectedExistingClientId(clientId);
-                        const foundClient = rawClientsList.find(
-                          (c) => c._id === clientId,
-                        );
-                        if (foundClient && assignedFormInfo?.form?.fields) {
-                          const updated = { ...dynamicAnswers };
-                          for (const f of assignedFormInfo.form.fields) {
-                            if (f.mapping === "client_name")
-                              updated[f.id] = foundClient.clientName;
-                            if (f.mapping === "client_phone")
-                              updated[f.id] = foundClient.phone;
-                            if (f.mapping === "client_email")
-                              updated[f.id] = foundClient.email || "";
-                            if (f.mapping === "client_address")
-                              updated[f.id] = foundClient.address || "";
-                          }
-                          setDynamicAnswers(updated);
-                        }
-                      }}
-                      onSearchChange={fetchClientsForSearch}
-                      isLoading={isClientSearchLoading}
-                    />
-                    <p className="text-[11px] text-blue-700/80">
-                      Selecting an existing client will automatically populate
-                      their name, phone, email, and address into the form.
-                    </p>
-                  </div>
-                )}
-
                 {/* Dynamic Form Schema Rendering */}
                 {isFormSchemaLoading ? (
                   <div className="py-12 flex flex-col items-center justify-center gap-2">
@@ -1341,23 +1300,6 @@ export function LeadsClient({
                 ) : (
                   /* Dynamic Form Fields Rendered from SuperAdmin's Assigned Schema */
                   <div className="space-y-4 pt-2">
-                    <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-purple-900">
-                          Template: {assignedFormInfo.form.name} (v
-                          {assignedFormInfo.form.version})
-                        </span>
-                        {assignedFormInfo.form.description && (
-                          <p className="text-[11px] text-purple-700 mt-0.5">
-                            {assignedFormInfo.form.description}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[10px] uppercase font-bold bg-purple-200 text-purple-800 px-2 py-0.5 rounded">
-                        Assigned Schema
-                      </span>
-                    </div>
-
                     {assignedFormInfo.form.fields.map((field) => (
                       <div key={field.id} className="space-y-1">
                         <label className="block text-xs font-semibold text-slate-700">

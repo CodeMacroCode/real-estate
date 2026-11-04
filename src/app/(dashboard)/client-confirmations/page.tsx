@@ -78,6 +78,8 @@ export default function ClientConfirmationsPage() {
   // Filter & Search
   const [outcomeFilter, setOutcomeFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   // Modals
   const [isOpen, setIsOpen] = useState(false);
@@ -264,6 +266,12 @@ export default function ClientConfirmationsPage() {
       return matchesOutcome && matchesSearch;
     });
   }, [confirmations, outcomeFilter, search]);
+
+  const totalPages = Math.ceil(filteredConfirmations.length / pageSize) || 1;
+  const paginatedConfirmations = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredConfirmations.slice(start, start + pageSize);
+  }, [filteredConfirmations, page, pageSize]);
 
   const getOutcomeBadge = (outcome: "YES" | "NO" | "MAYBE") => {
     switch (outcome) {
@@ -463,7 +471,7 @@ export default function ClientConfirmationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredConfirmations.map((item) => (
+                {paginatedConfirmations.map((item) => (
                   <TableRow key={item._id}>
                     {/* Client & In-cell Outreach */}
                     <TableCell>
@@ -531,7 +539,7 @@ export default function ClientConfirmationsPage() {
                     <TableCell>
                       {item.quotationAmount ? (
                         <div className="text-xs font-bold text-slate-900">
-                          ₹{item.quotationAmount.toLocaleString()}
+                          ₹{item.quotationAmount.toLocaleString("en-IN")}
                           {item.quotationNumber && (
                             <span className="block text-[10px] font-normal text-slate-400">
                               Ref #{item.quotationNumber}
@@ -615,6 +623,39 @@ export default function ClientConfirmationsPage() {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination Footer */}
+            {filteredConfirmations.length > 0 && (
+              <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+                <div className="text-xs text-slate-500">
+                  Showing <span className="font-semibold">{paginatedConfirmations.length}</span> of{" "}
+                  <span className="font-semibold">{filteredConfirmations.length}</span> total confirmations
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Previous</span>
+                  </button>
+                  <span className="text-xs font-semibold text-slate-700 px-2">
+                    Page {page} of {totalPages || 1}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

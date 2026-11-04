@@ -6,7 +6,7 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-// Allowed mime types & extensions: images (jpg, jpeg, png, webp, svg, gif), pdf, doc, docx
+// Allowed mime types & extensions: images (jpg, jpeg, png, webp, svg, gif, avif, bmp, tiff, heic, heif), pdf, doc, docx
 const ALLOWED_EXTENSIONS = new Set([
   ".jpg",
   ".jpeg",
@@ -14,6 +14,12 @@ const ALLOWED_EXTENSIONS = new Set([
   ".webp",
   ".svg",
   ".gif",
+  ".avif",
+  ".bmp",
+  ".tiff",
+  ".tif",
+  ".heic",
+  ".heif",
   ".pdf",
   ".doc",
   ".docx",

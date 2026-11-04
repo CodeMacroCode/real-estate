@@ -154,6 +154,9 @@ export interface IUser {
   designation: string;
   branch: string;
   profilePhoto?: string;
+  agencySlug?: string;
+  customDomain?: string;
+  agencyName?: string;
   joiningDate: string | Date;
   status: UserStatus;
   loginStatus: LoginStatus;

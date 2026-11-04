@@ -77,6 +77,27 @@ const UserSchema = new Schema<IUserDocument>(
       type: String,
       default: '',
     },
+    agencySlug: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
+    customDomain: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
+    agencyName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     joiningDate: {
       type: Date,
       required: [true, 'Joining date is required'],
