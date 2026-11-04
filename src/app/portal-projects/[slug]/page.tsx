@@ -2,6 +2,7 @@ import React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublicProjectBySlug } from "@/services/publicPortalService";
+import { ProjectDetailInquiryForm } from "@/components/project/ProjectDetailInquiryForm";
 
 interface PublicProjectDetailPageProps {
   params: Promise<{
@@ -116,50 +117,11 @@ export default async function PublicProjectDetailPage({
                 Receive official price sheets, floor plans, and site visit schedules.
               </p>
 
-              <form action="/api/public/inquiries" method="POST" className="space-y-3">
-                <input type="hidden" name="projectId" value={project.id} />
-                <input type="hidden" name="inquiryType" value="Project" />
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Your Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    placeholder="e.g. Priya Nair"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Mobile Number (10 digits)</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    required
-                    pattern="[0-9]{10}"
-                    placeholder="9876543210"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="priya@example.com"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm"
-                >
-                  Request Project Brochure
-                </button>
-              </form>
+              <ProjectDetailInquiryForm
+                projectId={project.id}
+                projectName={project.name}
+                projectCode={project.projectId}
+              />
             </div>
           </div>
         </div>

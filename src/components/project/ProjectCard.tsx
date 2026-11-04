@@ -9,15 +9,18 @@ import {
   ShieldCheck,
   ChevronRight,
   Layers,
+  PhoneCall,
+  Eye,
 } from "lucide-react";
 import { SanitizedPublicProject } from "@/services/publicPortalService";
 
 interface ProjectCardProps {
   project: SanitizedPublicProject;
   agencySlug?: string;
+  onEnquireClick?: (project: SanitizedPublicProject) => void;
 }
 
-export function ProjectCard({ project, agencySlug }: ProjectCardProps) {
+export function ProjectCard({ project, agencySlug, onEnquireClick }: ProjectCardProps) {
   const activeAgencySlug = agencySlug || project.agency?.agencySlug;
   const projectUrl = activeAgencySlug
     ? `/portal-projects/${project.slug || project.id}?agency=${activeAgencySlug}`
@@ -134,18 +137,30 @@ export function ProjectCard({ project, agencySlug }: ProjectCardProps) {
           </div>
         </div>
 
-        {/* Footer CTA */}
-        <div className="mt-4 pt-1 flex items-center justify-between">
-          <span className="text-xs font-mono text-slate-400">
-            {project.projectId}
-          </span>
+        {/* Footer CTAs */}
+        <div className="mt-4 pt-1 flex items-center gap-2">
           <Link
             href={projectUrl}
-            className="premium-property-card__cta inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer"
+            className="premium-property-card__cta flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition cursor-pointer"
           >
-            <span>Explore Project</span>
-            <ChevronRight className="size-3.5" />
+            <Eye className="size-3.5 text-slate-500" />
+            View Details
           </Link>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onEnquireClick) {
+                onEnquireClick(project);
+              } else {
+                window.location.href = `${projectUrl}#enquire`;
+              }
+            }}
+            className="premium-property-card__cta flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer"
+          >
+            <PhoneCall className="size-3.5" />
+            Enquire Now
+          </button>
         </div>
       </div>
     </div>
