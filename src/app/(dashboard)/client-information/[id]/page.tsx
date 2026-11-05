@@ -18,9 +18,13 @@ import {
   AlertCircle,
   Clock,
   Sparkles,
+  FileText,
+  Receipt,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import Lead360Modal from "@/components/Lead360Modal";
+import QuotationModal from "@/app/(dashboard)/appointments/QuotationModal";
+import InvoiceModal from "@/app/(dashboard)/appointments/InvoiceModal";
 import {
   Table,
   TableHeader,
@@ -43,6 +47,16 @@ interface LeadItem {
   notes?: string;
   assignedSubRoleName?: string;
   rawSubmissionData?: Record<string, any>;
+  latestAppointment?: {
+    _id: string;
+    clientName: string;
+    quotationTitle?: string;
+    quotationAmount?: number;
+    quotationUrl?: string;
+    invoiceUrl?: string;
+    invoiceName?: string;
+    outcome?: "YES" | "NO" | "MAYBE";
+  } | null;
   adminId?: {
     _id: string;
     name: string;
@@ -103,33 +117,42 @@ export default function ClientProfileDetailPage() {
   >(null);
   const [is360Open, setIs360Open] = useState(false);
 
-  useEffect(() => {
-    async function fetchClientData() {
-      if (!clientId) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/clients/${clientId}`);
-        const json = await res.json();
-        if (json.success && json.data) {
-          setClient(json.data);
-          if (typeof window !== "undefined" && json.data.clientName) {
-            window.dispatchEvent(
-              new CustomEvent("updateBreadcrumbLabel", {
-                detail: { segment: clientId, label: json.data.clientName },
-              })
-            );
-          }
-        } else {
-          setError(json.error || "Failed to load client details");
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to load client profile");
-      } finally {
-        setLoading(false);
-      }
-    }
+  // Quotation & Invoice modals state
+  const [selectedAppointmentForQuotation, setSelectedAppointmentForQuotation] =
+    useState<any>(null);
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
 
+  const [selectedAppointmentForInvoice, setSelectedAppointmentForInvoice] =
+    useState<any>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  const fetchClientData = async () => {
+    if (!clientId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/clients/${clientId}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setClient(json.data);
+        if (typeof window !== "undefined" && json.data.clientName) {
+          window.dispatchEvent(
+            new CustomEvent("updateBreadcrumbLabel", {
+              detail: { segment: clientId, label: json.data.clientName },
+            })
+          );
+        }
+      } else {
+        setError(json.error || "Failed to load client details");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load client profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchClientData();
   }, [clientId]);
 
@@ -407,7 +430,7 @@ export default function ClientProfileDetailPage() {
               <TableHead className="text-white text-xs font-bold uppercase tracking-wider py-3.5 text-center">
                 Status
               </TableHead>
-              <TableHead className="text-white text-xs font-bold uppercase tracking-wider py-3.5 text-center w-24">
+              <TableHead className="text-white text-xs font-bold uppercase tracking-wider py-3.5 text-center w-36">
                 Actions
               </TableHead>
             </TableRow>
@@ -507,18 +530,65 @@ export default function ClientProfileDetailPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-center py-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedLeadIdFor360(lead._id);
-                          setIs360Open(true);
-                        }}
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/90 shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
-                        title="View Lead 360 Timeline"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
-                        <span>View</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {/* 1. Lead 360 View */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedLeadIdFor360(lead._id);
+                            setIs360Open(true);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-200 transition"
+                          title="View Lead 360 Timeline"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        {/* 2. Quotation / Proposal Button */}
+                        {lead.latestAppointment &&
+                          lead.latestAppointment.outcome !== "NO" &&
+                          lead.latestAppointment.outcome !== "MAYBE" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedAppointmentForQuotation(
+                                  lead.latestAppointment
+                                );
+                                setIsQuotationModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-violet-600 hover:bg-violet-50 border border-transparent hover:border-violet-200 transition"
+                              title={
+                                lead.latestAppointment.quotationTitle
+                                  ? `Quotation: ${lead.latestAppointment.quotationTitle}`
+                                  : "Attach Proposal / Quotation"
+                              }
+                            >
+                              <FileText className="w-4 h-4" />
+                            </button>
+                          )}
+
+                        {/* 3. Invoice Button (only when outcome is YES) */}
+                        {lead.latestAppointment &&
+                          lead.latestAppointment.outcome === "YES" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedAppointmentForInvoice(
+                                  lead.latestAppointment
+                                );
+                                setIsInvoiceModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition"
+                              title={
+                                lead.latestAppointment.invoiceUrl
+                                  ? "Invoice Attached"
+                                  : "Upload Invoice"
+                              }
+                            >
+                              <Receipt className="w-4 h-4" />
+                            </button>
+                          )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -537,6 +607,32 @@ export default function ClientProfileDetailPage() {
         }}
         leadId={selectedLeadIdFor360}
       />
+
+      {/* Quotation / Proposal Modal */}
+      {isQuotationModalOpen && selectedAppointmentForQuotation && (
+        <QuotationModal
+          isOpen={isQuotationModalOpen}
+          onClose={() => {
+            setIsQuotationModalOpen(false);
+            setSelectedAppointmentForQuotation(null);
+          }}
+          appointment={selectedAppointmentForQuotation}
+          onSuccess={fetchClientData}
+        />
+      )}
+
+      {/* Invoice Modal */}
+      {isInvoiceModalOpen && selectedAppointmentForInvoice && (
+        <InvoiceModal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => {
+            setIsInvoiceModalOpen(false);
+            setSelectedAppointmentForInvoice(null);
+          }}
+          appointment={selectedAppointmentForInvoice}
+          onSuccess={fetchClientData}
+        />
+      )}
     </div>
   );
 }

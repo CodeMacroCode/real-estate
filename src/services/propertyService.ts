@@ -74,6 +74,8 @@ export interface GetSsrPropertiesParams {
   transactionType?: string;
   status?: string;
   city?: string;
+  startDate?: string;
+  endDate?: string;
   minPrice?: number;
   maxPrice?: number;
   bedrooms?: number;
@@ -124,6 +126,8 @@ export async function getSsrProperties({
   transactionType,
   status,
   city,
+  startDate,
+  endDate,
   minPrice,
   maxPrice,
   bedrooms,
@@ -166,6 +170,20 @@ export async function getSsrProperties({
   if (ownerId) query.ownerId = new mongoose.Types.ObjectId(ownerId);
   if (projectId) query.projectId = new mongoose.Types.ObjectId(projectId);
   if (bedrooms) query["residentialSpecs.bedrooms"] = bedrooms;
+
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) {
+      query.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      if (endDate.length <= 10) {
+        end.setHours(23, 59, 59, 999);
+      }
+      query.createdAt.$lte = end;
+    }
+  }
 
   if (minPrice || maxPrice) {
     const priceQuery: any = {};

@@ -27,9 +27,6 @@ export async function GET(
     }
 
     const { id } = await params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return errorResponse("Invalid project ID", 400);
-    }
 
     const { searchParams } = new URL(req.url);
     const isStructure = searchParams.get("view") === "structure";
@@ -46,7 +43,19 @@ export async function GET(
     }
 
     await connectToDatabase();
-    const query: any = { _id: new mongoose.Types.ObjectId(id) };
+    let query: any;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      query = { _id: new mongoose.Types.ObjectId(id) };
+    } else {
+      const decoded = decodeURIComponent(id).trim();
+      query = {
+        $or: [
+          { "seo.slug": decoded.toLowerCase() },
+          { projectId: { $regex: new RegExp(`^${decoded}$`, "i") } },
+          { name: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+        ],
+      };
+    }
     if (!isSuperAdmin) {
       query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
     }

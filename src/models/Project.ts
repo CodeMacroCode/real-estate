@@ -35,6 +35,7 @@ export interface IProjectDocument extends Document {
   soldUnits: number;
   isPublishedOnWebsite: boolean;
   featuredOnWebsite: boolean;
+  towers?: string[];
   seo?: {
     metaTitle?: string;
     metaDescription?: string;
@@ -108,6 +109,7 @@ const ProjectSchema = new Schema<IProjectDocument>(
     soldUnits: { type: Number, default: 0 },
     isPublishedOnWebsite: { type: Boolean, default: false, index: true },
     featuredOnWebsite: { type: Boolean, default: false },
+    towers: [{ type: String, trim: true }],
     seo: {
       metaTitle: { type: String },
       metaDescription: { type: String },

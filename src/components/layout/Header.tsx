@@ -42,7 +42,7 @@ export function Header({ user }: HeaderProps) {
 
     window.addEventListener('updateBreadcrumbLabel' as any, handleUpdate);
 
-    // Auto-resolve MongoDB ObjectId when on client-information/[id]
+    // Auto-resolve MongoDB ObjectId when on client-information/[id] or projects/[id]
     const segments = pathname.split('/').filter(Boolean);
     const lastSeg = segments[segments.length - 1];
     if (
@@ -58,6 +58,26 @@ export function Header({ user }: HeaderProps) {
             setDynamicBreadcrumbLabels((prev) => ({
               ...prev,
               [lastSeg]: json.data.clientName,
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+
+    if (
+      segments.includes('projects') &&
+      lastSeg &&
+      lastSeg !== 'projects' &&
+      !dynamicBreadcrumbLabels[lastSeg]
+    ) {
+      fetch(`/api/projects/${lastSeg}`)
+        .then((res) => res.json())
+        .then((json) => {
+          const projectName = json.data?.name || json.data?.project?.name;
+          if (json.success && projectName) {
+            setDynamicBreadcrumbLabels((prev) => ({
+              ...prev,
+              [lastSeg]: projectName,
             }));
           }
         })
@@ -127,7 +147,7 @@ export function Header({ user }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/75 backdrop-blur-md shadow-xs transition-all duration-200 supports-[backdrop-filter]:bg-white/60">
       {user?.isImpersonating && (
         <div className="bg-amber-400 border-b border-amber-500 text-slate-950 px-6 py-2 flex items-center justify-between text-xs font-semibold shadow-sm">
           <div className="flex items-center gap-2">

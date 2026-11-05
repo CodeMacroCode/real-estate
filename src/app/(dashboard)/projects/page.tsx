@@ -24,6 +24,8 @@ export default async function ProjectsPage({
   const projectType = params.projectType;
   const constructionStatus = params.constructionStatus;
   const city = params.city;
+  const startDate = params.startDate;
+  const endDate = params.endDate;
   const page = parseInt(params.page || "1", 10);
   const limit = parseInt(params.limit || "20", 10);
 
@@ -36,6 +38,8 @@ export default async function ProjectsPage({
       projectType,
       constructionStatus,
       city,
+      startDate,
+      endDate,
       page,
       limit,
     }),

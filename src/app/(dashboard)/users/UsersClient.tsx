@@ -73,6 +73,7 @@ export function UsersClient({
 
   // Filters & Pagination
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [searchTerm, setSearchTerm] = useState("");
@@ -173,7 +174,7 @@ export function UsersClient({
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "10",
+        limit: limit.toString(),
         userType: "admin",
       });
       if (searchTerm) params.append("search", searchTerm);
@@ -195,7 +196,7 @@ export function UsersClient({
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, departmentFilter, statusFilter]);
+  }, [page, limit, searchTerm, departmentFilter, statusFilter]);
 
   const fetchRoles = useCallback(async () => {
     try {

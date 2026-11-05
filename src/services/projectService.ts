@@ -44,6 +44,8 @@ export interface GetSsrProjectsParams {
   projectType?: string;
   constructionStatus?: string;
   city?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }
@@ -86,6 +88,8 @@ export async function getSsrProjects({
   projectType,
   constructionStatus,
   city,
+  startDate,
+  endDate,
   page = 1,
   limit = 20,
 }: GetSsrProjectsParams) {
@@ -113,6 +117,20 @@ export async function getSsrProjects({
       query.adminId = new mongoose.Types.ObjectId(String(parentId));
     } else {
       query.createdById = new mongoose.Types.ObjectId(userId);
+    }
+  }
+
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) {
+      query.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      if (endDate.length <= 10) {
+        end.setHours(23, 59, 59, 999);
+      }
+      query.createdAt.$lte = end;
     }
   }
 
@@ -190,10 +208,23 @@ export async function getSsrProjects({
  * Fetch full structural tree of a project:
  * Project -> Towers / Blocks -> Floors -> Units
  */
-export async function getProjectStructureTree(projectId: string, orgAdminId?: string) {
+export async function getProjectStructureTree(projectIdOrSlug: string, orgAdminId?: string) {
   await connectToDatabase();
 
-  const query: any = { _id: new mongoose.Types.ObjectId(projectId) };
+  let query: any;
+  if (mongoose.Types.ObjectId.isValid(projectIdOrSlug)) {
+    query = { _id: new mongoose.Types.ObjectId(projectIdOrSlug) };
+  } else {
+    const decoded = decodeURIComponent(projectIdOrSlug).trim();
+    query = {
+      $or: [
+        { "seo.slug": decoded.toLowerCase() },
+        { projectId: { $regex: new RegExp(`^${decoded}$`, "i") } },
+        { name: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+      ],
+    };
+  }
+
   if (orgAdminId) {
     query.adminId = new mongoose.Types.ObjectId(orgAdminId);
   }
@@ -218,6 +249,8 @@ export async function getProjectStructureTree(projectId: string, orgAdminId?: st
     }
     floorMap.get(u.floorNumber)!.push({
       _id: u._id.toString(),
+      towerName: u.towerName,
+      floorNumber: u.floorNumber,
       unitNumber: u.unitNumber,
       unitType: u.unitType,
       carpetArea: u.carpetArea,
@@ -228,11 +261,18 @@ export async function getProjectStructureTree(projectId: string, orgAdminId?: st
       status: u.status,
       bookedByClientId: u.bookedByClientId ? u.bookedByClientId.toString() : null,
       bookingDate: u.bookingDate ? u.bookingDate.toISOString() : null,
+      notes: u.notes,
     });
   }
 
   const structure: any[] = [];
-  for (const [towerName, floorMap] of towerMap.entries()) {
+  const knownTowers = new Set<string>(project.towers || []);
+  for (const tName of towerMap.keys()) {
+    knownTowers.add(tName);
+  }
+
+  for (const towerName of Array.from(knownTowers).sort()) {
+    const floorMap = towerMap.get(towerName) || new Map();
     const floors: any[] = [];
     // Sort floors numerically
     const sortedFloors = Array.from(floorMap.keys()).sort((a, b) => a - b);
@@ -255,6 +295,7 @@ export async function getProjectStructureTree(projectId: string, orgAdminId?: st
       name: project.name,
       developerName: project.developerName,
       constructionStatus: project.constructionStatus,
+      towers: project.towers || [],
       totalUnits: project.totalUnits,
       availableUnits: project.availableUnits,
       bookedUnits: project.bookedUnits,

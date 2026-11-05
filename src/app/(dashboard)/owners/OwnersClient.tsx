@@ -331,11 +331,38 @@ export function OwnersClient({
         </Table>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
-          <div className="text-xs text-slate-500">
-            Showing <span className="font-semibold">{owners.length}</span> of{" "}
-            <span className="font-semibold">{pagination.total}</span> total owners
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <div>
+              Showing <span className="font-semibold text-slate-800">{owners.length}</span> of{" "}
+              <span className="font-semibold text-slate-800">{pagination.total}</span> total owners
+            </div>
+
+            {/* Rows Per Page Limit Selector */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+              <span className="text-slate-600">Rows per page:</span>
+              <select
+                value={pagination.limit}
+                onChange={(e) => {
+                  const newLimit = e.target.value;
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("limit", newLimit);
+                  params.set("page", "1");
+                  startTransition(() => {
+                    router.push(`/owners?${params.toString()}`);
+                  });
+                }}
+                className="px-2 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
+
           <div className="flex items-center gap-2">
             <button
               type="button"

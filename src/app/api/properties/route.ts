@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     const city = searchParams.get("city") || undefined;
     const ownerId = searchParams.get("ownerId") || undefined;
     const projectId = searchParams.get("projectId") || undefined;
+    const startDate = searchParams.get("startDate") || undefined;
+    const endDate = searchParams.get("endDate") || undefined;
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
@@ -37,6 +39,8 @@ export async function GET(req: NextRequest) {
       transactionType,
       status,
       city,
+      startDate,
+      endDate,
       ownerId,
       projectId,
       page,

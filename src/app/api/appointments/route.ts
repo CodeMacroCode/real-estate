@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     const startDateParam = searchParams.get('startDate')?.trim() || '';
     const endDateParam = searchParams.get('endDate')?.trim() || '';
     const adminFilter = searchParams.get('adminId')?.trim() || '';
+    const leadIdParam = searchParams.get('leadId')?.trim() || '';
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)));
     const skip = (page - 1) * limit;
@@ -37,6 +38,10 @@ export async function GET(req: NextRequest) {
     const isAdmin = roleSlug === 'admin';
 
     const query: any = {};
+
+    if (leadIdParam && mongoose.Types.ObjectId.isValid(leadIdParam)) {
+      query.leadId = new mongoose.Types.ObjectId(leadIdParam);
+    }
 
     if (isSuperAdmin) {
       if (adminFilter) {

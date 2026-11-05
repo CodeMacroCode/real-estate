@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Building2,
@@ -36,6 +36,12 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import {
+  InfiniteScrollSelect,
+  SelectOption,
+} from "@/components/ui/InfiniteScrollSelect";
+import { SearchSelect } from "@/components/ui/SearchSelect";
+import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
 
 interface PropertiesClientProps {
   initialProperties: SsrPropertyItem[];
@@ -77,10 +83,96 @@ export function PropertiesClient({
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  // Owners list for linking dropdown
-  const [ownersList, setOwnersList] = useState<
-    Array<{ _id: string; name: string; mobile: string }>
-  >([]);
+  // Owners list for linking dropdown with Infinite Scroll & Search
+  const [ownerOptions, setOwnerOptions] = useState<SelectOption[]>([]);
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [ownerPage, setOwnerPage] = useState(1);
+  const [ownerHasNextPage, setOwnerHasNextPage] = useState(false);
+  const [ownerIsLoading, setOwnerIsLoading] = useState(false);
+  const [ownerIsFetchingNextPage, setOwnerIsFetchingNextPage] = useState(false);
+  const [selectedOwnerLabel, setSelectedOwnerLabel] = useState("");
+
+  // Live Master Options state (initially populated via SSR, refreshed from API on demand)
+  const [liveMasterOptions, setLiveMasterOptions] = useState<SsrMasterOption[]>(masterOptions);
+  const [isMastersLoading, setIsMastersLoading] = useState(false);
+
+  // Function to dynamically refresh all master settings from API in a single unified hit
+  const refreshMasterOptions = async () => {
+    try {
+      setIsMastersLoading(true);
+      const res = await fetch("/api/masters");
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data) && json.data.length > 0) {
+          setLiveMasterOptions(json.data);
+        }
+      }
+    } catch (err) {
+      console.error("Error refreshing master options:", err);
+    } finally {
+      setIsMastersLoading(false);
+    }
+  };
+
+  const ownersFetchedRef = useRef(false);
+
+  // Fetch owners with pagination & search
+  const fetchOwners = async (page: number, search: string, append = false) => {
+    if (page === 1) {
+      setOwnerIsLoading(true);
+    } else {
+      setOwnerIsFetchingNextPage(true);
+    }
+
+    try {
+      const q = new URLSearchParams({
+        page: String(page),
+        limit: "20",
+      });
+      if (search.trim()) q.set("search", search.trim());
+
+      const res = await fetch(`/api/owners?${q.toString()}`);
+      const json = await res.json();
+
+      if (json.data && Array.isArray(json.data)) {
+        const formatted: SelectOption[] = json.data.map((o: any) => ({
+          value: o._id,
+          label: `${o.name} (${o.mobile})`,
+        }));
+
+        setOwnerOptions((prev) => (append ? [...prev, ...formatted] : formatted));
+        const totalPages = json.meta?.totalPages || 1;
+        setOwnerHasNextPage(page < totalPages);
+        setOwnerPage(page);
+        ownersFetchedRef.current = true;
+      }
+    } catch (err) {
+      console.error("Failed to load owners:", err);
+    } finally {
+      setOwnerIsLoading(false);
+      setOwnerIsFetchingNextPage(false);
+    }
+  };
+
+  // Trigger search change
+  const handleOwnerSearchChange = useCallback((newSearch: string) => {
+    setOwnerSearch(newSearch);
+    fetchOwners(1, newSearch, false);
+  }, []);
+
+  // Trigger fetch next page
+  const handleOwnerFetchNextPage = () => {
+    if (!ownerIsFetchingNextPage && ownerHasNextPage) {
+      fetchOwners(ownerPage + 1, ownerSearch, true);
+    }
+  };
+
+  // Fetch owners on-demand when dropdown is opened (lazy load)
+  const handleOwnerOpen = () => {
+    if (!ownersFetchedRef.current && ownerOptions.length === 0) {
+      fetchOwners(1, ownerSearch, false);
+    }
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -118,21 +210,70 @@ export function PropertiesClient({
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Master Settings Options Extracted & Filtered
-  const propertyTypeOptions = masterOptions
-    .filter((o) => o.category === "property_types" && o.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  // Master Settings Options Extracted & Filtered from liveMasterOptions
+  const propertyTypeSelectOptions: SelectOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "property_types" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.value, label: o.label }));
+    }
+    return [
+      { value: "apartment", label: "Apartment" },
+      { value: "villa", label: "Villa" },
+      { value: "penthouse", label: "Penthouse" },
+      { value: "office_space", label: "Office Space" },
+      { value: "retail_shop", label: "Retail Shop" },
+      { value: "residential_plot", label: "Residential Plot" },
+    ];
+  }, [liveMasterOptions]);
 
-  const propertyStatusOptions = masterOptions
-    .filter((o) => o.category === "property_statuses" && o.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const transactionTypeSelectOptions: SelectOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "transaction_types" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.label, label: o.label }));
+    }
+    return [
+      { value: "Sale", label: "Sale" },
+      { value: "Rent", label: "Rent" },
+      { value: "Lease", label: "Lease" },
+    ];
+  }, [liveMasterOptions]);
 
-  const amenitiesOptions = masterOptions
+  const propertyStatusSelectOptions: SelectOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "property_statuses" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.label, label: o.label }));
+    }
+    return [
+      { value: "Available", label: "Available" },
+      { value: "Hold", label: "Hold" },
+      { value: "Sold", label: "Sold" },
+      { value: "Rented", label: "Rented" },
+      { value: "Archived", label: "Archived" },
+    ];
+  }, [liveMasterOptions]);
+
+  const furnishingSelectOptions: SelectOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "furnishing_options" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.label, label: o.label }));
+    }
+    return [
+      { value: "Unfurnished", label: "Unfurnished" },
+      { value: "Semi-Furnished", label: "Semi-Furnished" },
+      { value: "Fully-Furnished", label: "Fully-Furnished" },
+    ];
+  }, [liveMasterOptions]);
+
+  const amenitiesOptions = liveMasterOptions
     .filter((o) => o.category === "amenities" && o.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
-
-  const furnishingOptions = masterOptions
-    .filter((o) => o.category === "furnishing_options" && o.isActive)
     .sort((a, b) => a.displayOrder - b.displayOrder);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,32 +311,50 @@ export function PropertiesClient({
     setUploadedImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // Fetch owners for dropdown
+  // Fetch owners only on modal open / demand (not duplicated on page load)
   useEffect(() => {
-    fetch("/api/owners?limit=100")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.data) setOwnersList(json.data);
-      })
-      .catch(() => {});
-  }, []);
+    if (isCreateModalOpen || isEditModalOpen) {
+      if (!ownersFetchedRef.current) {
+        fetchOwners(1, "", false);
+      }
+    }
+  }, [isCreateModalOpen, isEditModalOpen]);
 
   const handleFilterChange = (
     newSearch?: string,
     newCat?: string,
     newTrans?: string,
     newStatus?: string,
+    startDate?: string | null,
+    endDate?: string | null
   ) => {
     const s = newSearch !== undefined ? newSearch : search;
     const c = newCat !== undefined ? newCat : categoryFilter;
     const t = newTrans !== undefined ? newTrans : transTypeFilter;
     const st = newStatus !== undefined ? newStatus : statusFilter;
 
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (s.trim()) params.set("search", s.trim());
+    else params.delete("search");
+
     if (c && c !== "ALL") params.set("category", c);
+    else params.delete("category");
+
     if (t && t !== "ALL") params.set("transactionType", t);
+    else params.delete("transactionType");
+
     if (st && st !== "ALL") params.set("status", st);
+    else params.delete("status");
+
+    if (startDate !== undefined) {
+      if (startDate) params.set("startDate", startDate);
+      else params.delete("startDate");
+    }
+    if (endDate !== undefined) {
+      if (endDate) params.set("endDate", endDate);
+      else params.delete("endDate");
+    }
+
     params.set("page", "1");
 
     startTransition(() => {
@@ -288,6 +447,8 @@ export function PropertiesClient({
 
   const handleOpenEdit = (p: SsrPropertyItem) => {
     setEditingPropertyId(p._id);
+    const ownerName = p.owner?.name ? `${p.owner.name} (${p.owner?.mobile || ""})` : "";
+    setSelectedOwnerLabel(ownerName);
     setFormData({
       title: p.title || "",
       propertyCategory: p.propertyCategory || "Residential",
@@ -308,6 +469,7 @@ export function PropertiesClient({
       publishOnWebsite: Boolean(p.publishing?.publishOnWebsite),
     });
     setUploadedImages([]);
+    refreshMasterOptions();
     setIsEditModalOpen(true);
   };
 
@@ -326,6 +488,7 @@ export function PropertiesClient({
           propertyType: formData.propertyType,
           transactionType: formData.transactionType,
           status: formData.status,
+          ownerId: formData.ownerId,
           location: { address: formData.address, city: formData.city },
           pricing: {
             price:
@@ -442,7 +605,11 @@ export function PropertiesClient({
 
         <button
           type="button"
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            setSelectedOwnerLabel("");
+            refreshMasterOptions();
+            setIsCreateModalOpen(true);
+          }}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
         >
           <Plus className="size-4" />
@@ -451,8 +618,8 @@ export function PropertiesClient({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
-        <div className="relative flex-1 w-full sm:max-w-md">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="relative flex-1 w-full lg:max-w-md">
           <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
           <input
             type="text"
@@ -466,7 +633,21 @@ export function PropertiesClient({
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          <div className="w-full sm:w-auto min-w-[200px]">
+            <DateRangeFilter
+              placeholder="Filter by listing date..."
+              className="w-full"
+              defaultStartDate={searchParams.get("startDate")}
+              defaultEndDate={searchParams.get("endDate")}
+              onDateRangeChange={(start, end, startStr, endStr) => {
+                const s = startStr || (start && !isNaN(start.getTime()) ? start.toISOString() : null);
+                const e = endStr || (end && !isNaN(end.getTime()) ? end.toISOString() : null);
+                handleFilterChange(undefined, undefined, undefined, undefined, s, e);
+              }}
+            />
+          </div>
+
           <select
             value={categoryFilter}
             onChange={(e) => {
@@ -790,11 +971,38 @@ export function PropertiesClient({
         </Table>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
-          <div className="text-xs text-slate-500">
-            Showing <span className="font-semibold">{initialProperties.length}</span> of{" "}
-            <span className="font-semibold">{pagination.total}</span> total properties
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <div>
+              Showing <span className="font-semibold text-slate-800">{initialProperties.length}</span> of{" "}
+              <span className="font-semibold text-slate-800">{pagination.total}</span> total properties
+            </div>
+
+            {/* Rows Per Page Limit Selector */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+              <span className="text-slate-600">Rows per page:</span>
+              <select
+                value={pagination.limit}
+                onChange={(e) => {
+                  const newLimit = e.target.value;
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("limit", newLimit);
+                  params.set("page", "1");
+                  startTransition(() => {
+                    router.push(`/properties?${params.toString()}`);
+                  });
+                }}
+                className="px-2 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -964,7 +1172,7 @@ export function PropertiesClient({
       {/* Add Property Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <Plus className="size-4 text-blue-600" />
@@ -983,20 +1191,64 @@ export function PropertiesClient({
               onSubmit={handleCreateProperty}
               className="p-5 overflow-y-auto space-y-3.5"
             >
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Property Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Spacious 3BHK Apartment with Balcony"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Property Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Spacious 3BHK Apartment with Balcony"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Property Images (Upload)
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                  />
+                  {isUploading && (
+                    <p className="text-[11px] text-blue-600 mt-0.5">
+                      Uploading image(s)...
+                    </p>
+                  )}
+                  {uploadedImages.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {uploadedImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="relative size-10 rounded-lg overflow-hidden border border-slate-200 group"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Upload ${idx + 1}`}
+                            className="size-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedImage(idx)}
+                            className="absolute inset-0 bg-red-600/75 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1004,56 +1256,36 @@ export function PropertiesClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Select Owner (Mandatory) *
                   </label>
-                  <select
-                    required
+                  <InfiniteScrollSelect
                     value={formData.ownerId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ownerId: e.target.value })
-                    }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="">-- Choose Landlord / Owner --</option>
-                    {ownersList.map((o) => (
-                      <option key={o._id} value={o._id}>
-                        {o.name} ({o.mobile})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val, label) => {
+                      setFormData({ ...formData, ownerId: val });
+                      if (label) setSelectedOwnerLabel(label);
+                    }}
+                    placeholder="-- Search / Choose Landlord or Owner --"
+                    options={ownerOptions}
+                    isLoading={ownerIsLoading}
+                    hasNextPage={ownerHasNextPage}
+                    isFetchingNextPage={ownerIsFetchingNextPage}
+                    fetchNextPage={handleOwnerFetchNextPage}
+                    onSearchChange={handleOwnerSearchChange}
+                    onOpen={handleOwnerOpen}
+                    selectedLabel={selectedOwnerLabel}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Property Type (from Master Settings) *
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.propertyType}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        propertyType: e.target.value,
-                      })
+                    onChange={(val) =>
+                      setFormData({ ...formData, propertyType: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {propertyTypeOptions.length > 0 ? (
-                      propertyTypeOptions.map((opt) => (
-                        <option key={opt._id} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="apartment">Apartment</option>
-                        <option value="villa">Villa</option>
-                        <option value="penthouse">Penthouse</option>
-                        <option value="office_space">Office Space</option>
-                        <option value="retail_shop">Retail Shop</option>
-                        <option value="residential_plot">
-                          Residential Plot
-                        </option>
-                      </>
-                    )}
-                  </select>
+                    placeholder="Search / Select Property Type..."
+                    options={propertyTypeSelectOptions}
+                  />
                 </div>
               </div>
 
@@ -1062,20 +1294,14 @@ export function PropertiesClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Transaction Type *
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.transactionType}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        transactionType: e.target.value,
-                      })
+                    onChange={(val) =>
+                      setFormData({ ...formData, transactionType: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="Sale">Sale</option>
-                    <option value="Rent">Rent</option>
-                    <option value="Lease">Lease</option>
-                  </select>
+                    placeholder="Search / Select Transaction..."
+                    options={transactionTypeSelectOptions}
+                  />
                 </div>
 
                 <div>
@@ -1097,28 +1323,14 @@ export function PropertiesClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Status*
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
+                    onChange={(val) =>
+                      setFormData({ ...formData, status: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {propertyStatusOptions.length > 0 ? (
-                      propertyStatusOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Available">Available</option>
-                        <option value="Hold">Hold</option>
-                        <option value="Sold">Sold</option>
-                        <option value="Rented">Rented</option>
-                      </>
-                    )}
-                  </select>
+                    placeholder="Search / Select Status..."
+                    options={propertyStatusSelectOptions}
+                  />
                 </div>
               </div>
 
@@ -1199,27 +1411,14 @@ export function PropertiesClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Furnishing (Master Settings)
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.furnishing}
-                    onChange={(e) =>
-                      setFormData({ ...formData, furnishing: e.target.value })
+                    onChange={(val) =>
+                      setFormData({ ...formData, furnishing: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {furnishingOptions.length > 0 ? (
-                      furnishingOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Unfurnished">Unfurnished</option>
-                        <option value="Semi-Furnished">Semi-Furnished</option>
-                        <option value="Fully-Furnished">Fully-Furnished</option>
-                      </>
-                    )}
-                  </select>
+                    placeholder="Search / Select Furnishing..."
+                    options={furnishingSelectOptions}
+                  />
                 </div>
 
                 <div>
@@ -1331,48 +1530,6 @@ export function PropertiesClient({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Property Images (Upload)
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png,image/jpeg,image/webp,image/jpg"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                />
-                {isUploading && (
-                  <p className="text-[11px] text-blue-600 mt-1">
-                    Uploading image(s)...
-                  </p>
-                )}
-                {uploadedImages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {uploadedImages.map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className="relative size-14 rounded-lg overflow-hidden border border-slate-200 group"
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`Upload ${idx + 1}`}
-                          className="size-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeUploadedImage(idx)}
-                          className="absolute inset-0 bg-red-600/75 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -1397,7 +1554,7 @@ export function PropertiesClient({
       {/* Edit Property Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <Edit className="size-4 text-indigo-600" />
@@ -1419,79 +1576,118 @@ export function PropertiesClient({
               onSubmit={handleUpdateProperty}
               className="p-5 overflow-y-auto space-y-3.5"
             >
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Property Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Property Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Add More Images (Upload)
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                  />
+                  {isUploading && (
+                    <p className="text-[11px] text-indigo-600 mt-0.5">
+                      Uploading image(s)...
+                    </p>
+                  )}
+                  {uploadedImages.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {uploadedImages.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="relative size-10 rounded-lg overflow-hidden border border-slate-200 group"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Upload ${idx + 1}`}
+                            className="size-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedImage(idx)}
+                            className="absolute inset-0 bg-red-600/75 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Select Owner (Mandatory) *
+                  </label>
+                  <InfiniteScrollSelect
+                    value={formData.ownerId}
+                    onChange={(val, label) => {
+                      setFormData({ ...formData, ownerId: val });
+                      if (label) setSelectedOwnerLabel(label);
+                    }}
+                    placeholder="-- Search / Choose Landlord or Owner --"
+                    options={ownerOptions}
+                    isLoading={ownerIsLoading}
+                    hasNextPage={ownerHasNextPage}
+                    isFetchingNextPage={ownerIsFetchingNextPage}
+                    fetchNextPage={handleOwnerFetchNextPage}
+                    onSearchChange={handleOwnerSearchChange}
+                    onOpen={handleOwnerOpen}
+                    selectedLabel={selectedOwnerLabel}
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Property Type (from Master Settings) *
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.propertyType}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        propertyType: e.target.value,
-                      })
+                    onChange={(val) =>
+                      setFormData({ ...formData, propertyType: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    {propertyTypeOptions.length > 0 ? (
-                      propertyTypeOptions.map((opt) => (
-                        <option key={opt._id} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="apartment">Apartment</option>
-                        <option value="villa">Villa</option>
-                        <option value="penthouse">Penthouse</option>
-                        <option value="office_space">Office Space</option>
-                        <option value="retail_shop">Retail Shop</option>
-                        <option value="residential_plot">
-                          Residential Plot
-                        </option>
-                      </>
-                    )}
-                  </select>
+                    placeholder="Search / Select Property Type..."
+                    options={propertyTypeSelectOptions}
+                  />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Transaction Type *
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.transactionType}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        transactionType: e.target.value,
-                      })
+                    onChange={(val) =>
+                      setFormData({ ...formData, transactionType: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    <option value="Sale">Sale</option>
-                    <option value="Rent">Rent</option>
-                    <option value="Lease">Lease</option>
-                  </select>
+                    placeholder="Search / Select Transaction..."
+                    options={transactionTypeSelectOptions}
+                  />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     City *
@@ -1511,29 +1707,14 @@ export function PropertiesClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Status*
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
+                    onChange={(val) =>
+                      setFormData({ ...formData, status: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    {propertyStatusOptions.length > 0 ? (
-                      propertyStatusOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Available">Available</option>
-                        <option value="Hold">Hold</option>
-                        <option value="Sold">Sold</option>
-                        <option value="Rented">Rented</option>
-                        <option value="Archived">Archived</option>
-                      </>
-                    )}
-                  </select>
+                    placeholder="Search / Select Status..."
+                    options={propertyStatusSelectOptions}
+                  />
                 </div>
               </div>
 
@@ -1613,27 +1794,14 @@ export function PropertiesClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Furnishing (Master Settings)
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.furnishing}
-                    onChange={(e) =>
-                      setFormData({ ...formData, furnishing: e.target.value })
+                    onChange={(val) =>
+                      setFormData({ ...formData, furnishing: val })
                     }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    {furnishingOptions.length > 0 ? (
-                      furnishingOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Unfurnished">Unfurnished</option>
-                        <option value="Semi-Furnished">Semi-Furnished</option>
-                        <option value="Fully-Furnished">Fully-Furnished</option>
-                      </>
-                    )}
-                  </select>
+                    placeholder="Search / Select Furnishing..."
+                    options={furnishingSelectOptions}
+                  />
                 </div>
 
                 <div>
@@ -1743,48 +1911,6 @@ export function PropertiesClient({
                         })}
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Add More Images (Upload)
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png,image/jpeg,image/webp,image/jpg"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  className="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                />
-                {isUploading && (
-                  <p className="text-[11px] text-indigo-600 mt-1">
-                    Uploading image(s)...
-                  </p>
-                )}
-                {uploadedImages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {uploadedImages.map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className="relative size-14 rounded-lg overflow-hidden border border-slate-200 group"
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`Upload ${idx + 1}`}
-                          className="size-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeUploadedImage(idx)}
-                          className="absolute inset-0 bg-red-600/75 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">

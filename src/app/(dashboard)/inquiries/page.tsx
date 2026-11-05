@@ -14,6 +14,10 @@ export const dynamic = "force-dynamic";
 interface InquiriesPageProps {
   searchParams: Promise<{
     page?: string;
+    limit?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
 }
 
@@ -26,11 +30,16 @@ export default async function PublicInquiriesPage({ searchParams }: InquiriesPag
 
   const resolvedParams = await searchParams;
   const page = Number(resolvedParams.page) || 1;
+  const limit = Number(resolvedParams.limit) || 10;
+  const type = resolvedParams.type || "";
+  const startDate = resolvedParams.startDate || "";
+  const endDate = resolvedParams.endDate || "";
+
   const adminId = authContext.user.parentAdminId
     ? (typeof authContext.user.parentAdminId === "object" ? (authContext.user.parentAdminId as any)._id : authContext.user.parentAdminId)
     : authContext.user._id;
 
-  const data = await getSsrPublicInquiries(adminId.toString(), page, 25);
+  const data = await getSsrPublicInquiries(adminId.toString(), page, limit, type, startDate, endDate);
 
   return (
     <div className="space-y-6">

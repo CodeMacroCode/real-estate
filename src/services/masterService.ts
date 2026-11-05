@@ -22,24 +22,45 @@ export interface SsrMasterOption {
   updatedAt: string;
 }
 
+export interface MasterPaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
+}
+
 export interface GetSsrMastersParams {
   userId: string;
   roleSlug: string;
   category?: MasterCategory;
   includeInactive?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface SsrMastersResult {
+  options: SsrMasterOption[];
+  pagination: MasterPaginationInfo;
 }
 
 /**
  * Server-Side Render (SSR) Data Loader for Master Settings.
  * Direct database execution without round-trip HTTP overhead,
- * maintaining strict Multi-Tenant isolation and global defaults merging.
+ * maintaining strict Multi-Tenant isolation, global defaults merging,
+ * search filtering, and pagination.
  */
-export async function getSsrMasterOptions({
+export async function getSsrMasterOptionsPaginated({
   userId,
   roleSlug,
   category,
   includeInactive = false,
-}: GetSsrMastersParams): Promise<SsrMasterOption[]> {
+  search,
+  page = 1,
+  limit = 10,
+}: GetSsrMastersParams): Promise<SsrMastersResult> {
   await connectToDatabase();
 
   const isSuperAdmin = roleSlug === "super_admin";
@@ -76,6 +97,14 @@ export async function getSsrMasterOptions({
     filter.isActive = true;
   }
 
+  if (search && search.trim()) {
+    const searchRegex = new RegExp(search.trim(), "i");
+    filter.$and = filter.$and || [];
+    filter.$and.push({
+      $or: [{ label: searchRegex }, { value: searchRegex }],
+    });
+  }
+
   const rawDocs = await MasterOption.find(filter)
     .sort({ category: 1, displayOrder: 1, label: 1 })
     .lean();
@@ -90,7 +119,16 @@ export async function getSsrMasterOptions({
     }
   }
 
-  return Array.from(map.values()).map((doc: any) => ({
+  const allFiltered = Array.from(map.values());
+  const total = allFiltered.length;
+  const safeLimit = Math.max(1, limit);
+  const totalPages = Math.ceil(total / safeLimit) || 1;
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const skip = (safePage - 1) * safeLimit;
+
+  const paginatedDocs = allFiltered.slice(skip, skip + safeLimit);
+
+  const options: SsrMasterOption[] = paginatedDocs.map((doc: any) => ({
     _id: doc._id.toString(),
     adminId: doc.adminId ? doc.adminId.toString() : null,
     category: doc.category,
@@ -103,5 +141,30 @@ export async function getSsrMasterOptions({
     createdAt: doc.createdAt?.toISOString?.() || new Date().toISOString(),
     updatedAt: doc.updatedAt?.toISOString?.() || new Date().toISOString(),
   }));
+
+  return {
+    options,
+    pagination: {
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages,
+      hasNextPage: safePage < totalPages,
+      hasPrevPage: safePage > 1,
+    },
+  };
 }
 
+/**
+ * Backward-compatible helper for cases requiring the flat array of all options
+ */
+export async function getSsrMasterOptions(
+  params: GetSsrMastersParams
+): Promise<SsrMasterOption[]> {
+  const result = await getSsrMasterOptionsPaginated({
+    ...params,
+    page: 1,
+    limit: 1000,
+  });
+  return result.options;
+}

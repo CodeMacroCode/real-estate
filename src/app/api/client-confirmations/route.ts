@@ -24,11 +24,29 @@ export async function GET(req: NextRequest) {
     const isSuperAdmin = roleSlug === 'super_admin';
     const isAdmin = roleSlug === 'admin';
 
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
     const query: any = {};
     if (isAdmin) {
       query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
     } else if (!isSuperAdmin) {
       query.createdById = new mongoose.Types.ObjectId(authContext.user._id);
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        if (endDate.length <= 10) {
+          end.setHours(23, 59, 59, 999);
+        }
+        query.createdAt.$lte = end;
+      }
     }
 
     const confirmations = await ClientConfirmation.find(query)

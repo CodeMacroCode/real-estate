@@ -68,9 +68,31 @@ export async function GET(
       .sort({ createdAt: -1 })
       .lean();
 
+    // Fetch latest appointment for each lead to power quotation and invoice actions
+    const leadIds = leads.map((l: any) => l._id);
+    const appointments = await Appointment.find({
+      leadId: { $in: leadIds },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Map leadId to its latest appointment
+    const leadAppointmentMap = new Map<string, any>();
+    for (const apt of appointments) {
+      const lid = apt.leadId?.toString();
+      if (lid && !leadAppointmentMap.has(lid)) {
+        leadAppointmentMap.set(lid, apt);
+      }
+    }
+
+    const enrichedLeads = leads.map((l: any) => ({
+      ...l,
+      latestAppointment: leadAppointmentMap.get(l._id.toString()) || null,
+    }));
+
     return jsonResponse({
       ...client,
-      leads: leads || [],
+      leads: enrichedLeads || [],
     });
   } catch (error: any) {
     return errorResponse(error.message || "Failed to fetch client", 500);

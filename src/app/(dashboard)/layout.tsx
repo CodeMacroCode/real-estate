@@ -22,7 +22,7 @@ export default async function DashboardLayout({
 
   return (
     <AuthProvider user={cleanUser} role={cleanRole}>
-      <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
+      <div className="flex min-h-screen bg-slate-50">
         <Sidebar user={cleanUser} />
         <div className="flex flex-1 flex-col pl-64 min-w-0">
           <Header user={cleanUser} />

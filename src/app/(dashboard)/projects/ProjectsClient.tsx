@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Layers,
@@ -40,6 +41,8 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import { SearchSelect, SearchOption } from "@/components/ui/SearchSelect";
+import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
 
 interface ProjectsClientProps {
   initialProjects: SsrProjectItem[];
@@ -87,29 +90,82 @@ export function ProjectsClient({
     status: "Available",
   });
 
+  // Live Master Options state (SSR initial, updated on demand from /api/masters)
+  const [liveMasterOptions, setLiveMasterOptions] = useState<SsrMasterOption[]>(masterOptions);
+  const [isMastersLoading, setIsMastersLoading] = useState(false);
+
+  // Single unified fetch for all master settings
+  const refreshMasterOptions = async () => {
+    try {
+      setIsMastersLoading(true);
+      const res = await fetch("/api/masters");
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data) && json.data.length > 0) {
+          setLiveMasterOptions(json.data);
+        }
+      }
+    } catch (err) {
+      console.error("Error refreshing master options:", err);
+    } finally {
+      setIsMastersLoading(false);
+    }
+  };
+
   // Master Settings Options Extracted & Filtered
-  const projectTypeOptions = masterOptions
-    .filter((o) => o.category === "property_types" && o.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const projectTypeSelectOptions: SearchOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "property_types" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.label, label: o.label }));
+    }
+    return [
+      { value: "Residential", label: "Residential" },
+      { value: "Commercial", label: "Commercial" },
+      { value: "Mixed-Use", label: "Mixed-Use" },
+      { value: "Township", label: "Township" },
+    ];
+  }, [liveMasterOptions]);
 
-  const projectStatusOptions = masterOptions
-    .filter((o) => o.category === "property_statuses" && o.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const projectStatusSelectOptions: SearchOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "property_statuses" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.label, label: o.label }));
+    }
+    return [
+      { value: "Pre-Launch", label: "Pre-Launch" },
+      { value: "Under Construction", label: "Under Construction" },
+      { value: "Ready to Move", label: "Ready to Move" },
+    ];
+  }, [liveMasterOptions]);
 
-  const amenitiesOptions = masterOptions
+  const furnishingSelectOptions: SearchOption[] = useMemo(() => {
+    const active = liveMasterOptions
+      .filter((o) => o.category === "furnishing_options" && o.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    if (active.length > 0) {
+      return active.map((o) => ({ value: o.label, label: o.label }));
+    }
+    return [
+      { value: "Unfurnished", label: "Unfurnished" },
+      { value: "Semi-Furnished", label: "Semi-Furnished" },
+      { value: "Fully-Furnished", label: "Fully-Furnished" },
+    ];
+  }, [liveMasterOptions]);
+
+  const amenitiesOptions = liveMasterOptions
     .filter((o) => o.category === "amenities" && o.isActive)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
-
-  const furnishingOptions = masterOptions
-    .filter((o) => o.category === "furnishing_options" && o.isActive)
     .sort((a, b) => a.displayOrder - b.displayOrder);
 
   // Project form state
   const [formData, setFormData] = useState({
     name: "",
     developerName: "",
-    projectType: projectTypeOptions[0]?.label || "Residential",
-    constructionStatus: projectStatusOptions[0]?.label || "Under Construction",
+    projectType: "Residential",
+    constructionStatus: "Under Construction",
     city: "Bengaluru",
     address: "",
     reraNumber: "",
@@ -190,15 +246,36 @@ export function ProjectsClient({
     }
   };
 
-  const handleFilterChange = (newSearch?: string, newType?: string, newStatus?: string) => {
+  const handleFilterChange = (
+    newSearch?: string,
+    newType?: string,
+    newStatus?: string,
+    startDate?: string | null,
+    endDate?: string | null
+  ) => {
     const s = newSearch !== undefined ? newSearch : search;
     const t = newType !== undefined ? newType : projectTypeFilter;
     const st = newStatus !== undefined ? newStatus : statusFilter;
 
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (s.trim()) params.set("search", s.trim());
+    else params.delete("search");
+
     if (t && t !== "ALL") params.set("projectType", t);
+    else params.delete("projectType");
+
     if (st && st !== "ALL") params.set("constructionStatus", st);
+    else params.delete("constructionStatus");
+
+    if (startDate !== undefined) {
+      if (startDate) params.set("startDate", startDate);
+      else params.delete("startDate");
+    }
+    if (endDate !== undefined) {
+      if (endDate) params.set("endDate", endDate);
+      else params.delete("endDate");
+    }
+
     params.set("page", "1");
 
     startTransition(() => {
@@ -264,6 +341,7 @@ export function ProjectsClient({
     const imgs = p.images || [];
     setEditCoverImage(p.coverImage || imgs[0] || "");
     setEditProjectImages(imgs.length > 0 ? imgs : p.coverImage ? [p.coverImage] : []);
+    refreshMasterOptions();
     setIsEditModalOpen(true);
   };
 
@@ -448,8 +526,8 @@ export function ProjectsClient({
       setFormData({
         name: "",
         developerName: "",
-        projectType: projectTypeOptions[0]?.label || "Residential",
-        constructionStatus: projectStatusOptions[0]?.label || "Under Construction",
+        projectType: projectTypeSelectOptions[0]?.label || "Residential",
+        constructionStatus: projectStatusSelectOptions[0]?.label || "Under Construction",
         city: "Bengaluru",
         address: "",
         reraNumber: "",
@@ -524,7 +602,10 @@ export function ProjectsClient({
 
         <button
           type="button"
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            refreshMasterOptions();
+            setIsCreateModalOpen(true);
+          }}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
         >
           <Plus className="size-4" />
@@ -533,8 +614,8 @@ export function ProjectsClient({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
-        <div className="relative flex-1 w-full sm:max-w-md">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="relative flex-1 w-full lg:max-w-md">
           <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
           <input
             type="text"
@@ -548,7 +629,21 @@ export function ProjectsClient({
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          <div className="w-full sm:w-auto min-w-[200px]">
+            <DateRangeFilter
+              placeholder="Filter by created date..."
+              className="w-full"
+              defaultStartDate={searchParams.get("startDate")}
+              defaultEndDate={searchParams.get("endDate")}
+              onDateRangeChange={(start, end, startStr, endStr) => {
+                const s = startStr || (start && !isNaN(start.getTime()) ? start.toISOString() : null);
+                const e = endStr || (end && !isNaN(end.getTime()) ? end.toISOString() : null);
+                handleFilterChange(undefined, undefined, undefined, s, e);
+              }}
+            />
+          </div>
+
           <select
             value={projectTypeFilter}
             onChange={(e) => {
@@ -743,15 +838,14 @@ export function ProjectsClient({
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenStructure(p)}
+                      <Link
+                        href={`/projects/${encodeURIComponent(p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}`}
                         className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition cursor-pointer"
-                        title="View Towers, Floors & Units Tree"
+                        title="Open Project Inventory Tree & Elevation"
                       >
                         <Eye className="size-3.5" />
-                        Tree Structure
-                      </button>
+                        <span>Tree Structure</span>
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(p)}
@@ -759,17 +853,6 @@ export function ProjectsClient({
                         title="Edit Project Details"
                       >
                         <Edit className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedProjectIdForUnit(p._id);
-                          setIsAddUnitModalOpen(true);
-                        }}
-                        className="p-1 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition cursor-pointer"
-                        title="Add Unit to Project"
-                      >
-                        <Plus className="size-4" />
                       </button>
                     </div>
                   </TableCell>
@@ -781,11 +864,38 @@ export function ProjectsClient({
         </Table>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
-          <div className="text-xs text-slate-500">
-            Showing <span className="font-semibold">{initialProjects.length}</span> of{" "}
-            <span className="font-semibold">{pagination.total}</span> total projects
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <div>
+              Showing <span className="font-semibold text-slate-800">{initialProjects.length}</span> of{" "}
+              <span className="font-semibold text-slate-800">{pagination.total}</span> total projects
+            </div>
+
+            {/* Rows Per Page Limit Selector */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+              <span className="text-slate-600">Rows per page:</span>
+              <select
+                value={pagination.limit}
+                onChange={(e) => {
+                  const newLimit = e.target.value;
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("limit", newLimit);
+                  params.set("page", "1");
+                  startTransition(() => {
+                    router.push(`/projects?${params.toString()}`);
+                  });
+                }}
+                className="px-2 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -1043,8 +1153,8 @@ export function ProjectsClient({
 
       {/* Create Project Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <Plus className="size-4 text-blue-600" />
@@ -1094,50 +1204,23 @@ export function ProjectsClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Project Type (Category) *
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.projectType}
-                    onChange={(e) => setFormData({ ...formData, projectType: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {projectTypeOptions.length > 0 ? (
-                      projectTypeOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Residential">Residential</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Mixed-Use">Mixed-Use</option>
-                        <option value="Township">Township</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, projectType: val })}
+                    placeholder="Search / Select Project Type..."
+                    options={projectTypeSelectOptions}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Construction Status *
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.constructionStatus}
-                    onChange={(e) => setFormData({ ...formData, constructionStatus: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {projectStatusOptions.length > 0 ? (
-                      projectStatusOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Pre-Launch">Pre-Launch</option>
-                        <option value="Under Construction">Under Construction</option>
-                        <option value="Ready to Move">Ready to Move</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, constructionStatus: val })}
+                    placeholder="Search / Select Status..."
+                    options={projectStatusSelectOptions}
+                  />
                 </div>
               </div>
 
@@ -1147,25 +1230,12 @@ export function ProjectsClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Furnishing Option (Master Settings)
                   </label>
-                  <select
+                  <SearchSelect
                     value={formData.furnishing}
-                    onChange={(e) => setFormData({ ...formData, furnishing: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {furnishingOptions.length > 0 ? (
-                      furnishingOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Unfurnished">Unfurnished</option>
-                        <option value="Semi-Furnished">Semi-Furnished</option>
-                        <option value="Fully-Furnished">Fully-Furnished</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, furnishing: val })}
+                    placeholder="Search / Select Furnishing..."
+                    options={furnishingSelectOptions}
+                  />
                 </div>
 
                 <div>
@@ -1344,8 +1414,8 @@ export function ProjectsClient({
 
       {/* Edit Project Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <Edit className="size-4 text-indigo-600" />
@@ -1396,50 +1466,23 @@ export function ProjectsClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Project Type (Category) *
                   </label>
-                  <select
+                  <SearchSelect
                     value={editFormData.projectType}
-                    onChange={(e) => setEditFormData({ ...editFormData, projectType: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    {projectTypeOptions.length > 0 ? (
-                      projectTypeOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Residential">Residential</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Mixed-Use">Mixed-Use</option>
-                        <option value="Township">Township</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(val) => setEditFormData({ ...editFormData, projectType: val })}
+                    placeholder="Search / Select Project Type..."
+                    options={projectTypeSelectOptions}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Construction Status *
                   </label>
-                  <select
+                  <SearchSelect
                     value={editFormData.constructionStatus}
-                    onChange={(e) => setEditFormData({ ...editFormData, constructionStatus: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    {projectStatusOptions.length > 0 ? (
-                      projectStatusOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Pre-Launch">Pre-Launch</option>
-                        <option value="Under Construction">Under Construction</option>
-                        <option value="Ready to Move">Ready to Move</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(val) => setEditFormData({ ...editFormData, constructionStatus: val })}
+                    placeholder="Search / Select Status..."
+                    options={projectStatusSelectOptions}
+                  />
                 </div>
               </div>
 
@@ -1449,25 +1492,12 @@ export function ProjectsClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Furnishing Option (Master Settings)
                   </label>
-                  <select
+                  <SearchSelect
                     value={editFormData.furnishing}
-                    onChange={(e) => setEditFormData({ ...editFormData, furnishing: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    {furnishingOptions.length > 0 ? (
-                      furnishingOptions.map((opt) => (
-                        <option key={opt._id} value={opt.label}>
-                          {opt.label}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Unfurnished">Unfurnished</option>
-                        <option value="Semi-Furnished">Semi-Furnished</option>
-                        <option value="Fully-Furnished">Fully-Furnished</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(val) => setEditFormData({ ...editFormData, furnishing: val })}
+                    placeholder="Search / Select Furnishing..."
+                    options={furnishingSelectOptions}
+                  />
                 </div>
 
                 <div>

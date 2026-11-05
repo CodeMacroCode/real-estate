@@ -25,6 +25,8 @@ export default async function PropertiesPage({
   const transactionType = params.transactionType;
   const status = params.status;
   const city = params.city;
+  const startDate = params.startDate;
+  const endDate = params.endDate;
   const page = parseInt(params.page || "1", 10);
   const limit = parseInt(params.limit || "20", 10);
 
@@ -38,6 +40,8 @@ export default async function PropertiesPage({
       transactionType,
       status,
       city,
+      startDate,
+      endDate,
       page,
       limit,
     }),

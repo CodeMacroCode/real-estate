@@ -5,6 +5,7 @@ import { MasterOption, MasterCategory } from "@/models/MasterOption";
 import { User } from "@/models/User";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
+import { getSsrMasterOptionsPaginated } from "@/services/masterService";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +23,13 @@ const VALID_CATEGORIES: MasterCategory[] = [
 /**
  * GET /api/masters
  * Query Params:
- *  - category: MasterCategory (required)
+ *  - category: MasterCategory (optional)
  *  - includeInactive: boolean (optional, default false)
+ *  - search: string (optional)
+ *  - page: number (optional, default 1)
+ *  - limit: number (optional)
  *
- * Scoping:
- *  - Merges Global Defaults (adminId: null) with current organization's custom entries (adminId: targetAdminId).
- *  - For sub-roles, queries using their parentAdminId.
+ * Always returns paginated response with "pagination": { total, page, limit, totalPages }
  */
 export async function GET(req: NextRequest) {
   try {
@@ -37,64 +39,31 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const category = searchParams.get("category") as MasterCategory;
+    const category = searchParams.get("category") as MasterCategory | null;
     const includeInactive = searchParams.get("includeInactive") === "true";
+    const search = searchParams.get("search") || undefined;
 
-    if (!category || !VALID_CATEGORIES.includes(category)) {
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+
+    if (category && !VALID_CATEGORIES.includes(category)) {
       return errorResponse(
-        `Invalid or missing category. Allowed values: ${VALID_CATEGORIES.join(", ")}`,
+        `Invalid category. Allowed values: ${VALID_CATEGORIES.join(", ")}`,
         400,
       );
     }
 
-    const isSuperAdmin = authContext.role.slug === "super_admin";
-    const isAdmin = authContext.role.slug === "admin";
+    const result = await getSsrMasterOptionsPaginated({
+      userId: authContext.user._id,
+      roleSlug: authContext.role.slug,
+      category: category || undefined,
+      includeInactive,
+      search,
+      page,
+      limit,
+    });
 
-    // Determine target admin ID for scoping
-    let orgAdminId: mongoose.Types.ObjectId | null = null;
-    if (isAdmin) {
-      orgAdminId = new mongoose.Types.ObjectId(authContext.user._id);
-    } else if (!isSuperAdmin) {
-      // Sub-role: look up parent admin
-      const currentUser = await User.findById(authContext.user._id).lean();
-      if (currentUser?.parentAdminId) {
-        const parentId =
-          typeof currentUser.parentAdminId === "object" && "_id" in currentUser.parentAdminId
-            ? (currentUser.parentAdminId as any)._id
-            : currentUser.parentAdminId;
-        orgAdminId = new mongoose.Types.ObjectId(String(parentId));
-      }
-    }
-
-    // Build query: global defaults OR tenant's custom masters
-    const filter: any = {
-      category,
-      $or: [{ adminId: null }],
-    };
-
-    if (orgAdminId) {
-      filter.$or.push({ adminId: orgAdminId });
-    }
-
-    if (!includeInactive) {
-      filter.isActive = true;
-    }
-
-    // Sort: system defaults first, then by displayOrder, then label
-    const options = await MasterOption.find(filter)
-      .sort({ displayOrder: 1, label: 1 })
-      .lean();
-
-    // Deduplicate: If tenant has customized a value matching a global default, tenant's override takes precedence
-    const optionMap = new Map<string, any>();
-    for (const opt of options) {
-      const existing = optionMap.get(opt.value);
-      if (!existing || (!existing.adminId && opt.adminId)) {
-        optionMap.set(opt.value, opt);
-      }
-    }
-
-    return jsonResponse(Array.from(optionMap.values()));
+    return jsonResponse(result.options, 200, result.pagination);
   } catch (error: any) {
     console.error("GET /api/masters error:", error);
     return errorResponse(

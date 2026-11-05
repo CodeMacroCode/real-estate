@@ -25,17 +25,31 @@ export async function GET(
     }
 
     const { id } = await params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return errorResponse("Invalid project ID", 400);
+    await connectToDatabase();
+
+    let project: any;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      project = await Project.findById(id);
+    } else {
+      const decoded = decodeURIComponent(id).trim();
+      project = await Project.findOne({
+        $or: [
+          { "seo.slug": decoded.toLowerCase() },
+          { projectId: { $regex: new RegExp(`^${decoded}$`, "i") } },
+          { name: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+        ],
+      });
     }
 
-    await connectToDatabase();
+    if (!project) {
+      return errorResponse("Project not found", 404);
+    }
 
     const { searchParams } = new URL(req.url);
     const tower = searchParams.get("tower");
     const status = searchParams.get("status");
 
-    const query: any = { projectId: new mongoose.Types.ObjectId(id) };
+    const query: any = { projectId: project._id };
     if (tower) query.towerName = tower;
     if (status) query.status = status;
 
@@ -65,13 +79,22 @@ export async function POST(
     }
 
     const { id } = await params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return errorResponse("Invalid project ID", 400);
-    }
-
     await connectToDatabase();
 
-    const project = await Project.findById(id);
+    let project: any;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      project = await Project.findById(id);
+    } else {
+      const decoded = decodeURIComponent(id).trim();
+      project = await Project.findOne({
+        $or: [
+          { "seo.slug": decoded.toLowerCase() },
+          { projectId: { $regex: new RegExp(`^${decoded}$`, "i") } },
+          { name: { $regex: new RegExp(`^${decoded.replace(/[-_]/g, "[ -_]")}$`, "i") } },
+        ],
+      });
+    }
+
     if (!project) {
       return errorResponse("Project not found", 404);
     }

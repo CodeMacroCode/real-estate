@@ -89,6 +89,9 @@ export async function PATCH(
     if (body.propertyCategory) updateFields.propertyCategory = body.propertyCategory;
     if (body.propertyType) updateFields.propertyType = body.propertyType;
     if (body.transactionType) updateFields.transactionType = body.transactionType;
+    if (body.ownerId && mongoose.Types.ObjectId.isValid(body.ownerId)) {
+      updateFields.ownerId = new mongoose.Types.ObjectId(body.ownerId);
+    }
     if (body.pricing) updateFields.pricing = { ...property.pricing, ...body.pricing };
     if (body.areaDetails) updateFields.areaDetails = { ...property.areaDetails, ...body.areaDetails };
     if (body.location) updateFields.location = { ...property.location, ...body.location };

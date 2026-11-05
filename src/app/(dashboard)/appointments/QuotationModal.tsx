@@ -203,7 +203,7 @@ export default function QuotationModal({
           <div className="p-6 space-y-4 overflow-y-auto flex-1">
             {/* Existing Active Proposal Badge */}
             {appointment.quotationUrl && (
-              <div className="p-3 bg-gradient-to-r from-violet-50 via-purple-50/40 to-violet-50 border border-violet-200/90 rounded-xl shadow-xs space-y-2">
+              <div className="p-3.5 bg-gradient-to-r from-violet-50 via-purple-50/60 to-violet-50 border border-violet-200/90 rounded-xl shadow-xs space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2 text-violet-900 font-bold truncate mr-2">
                     <CheckCircle2 className="size-4 shrink-0 text-violet-600" />
@@ -222,6 +222,28 @@ export default function QuotationModal({
                     <ExternalLink className="size-3 text-violet-500" />
                   </a>
                 </div>
+
+                {/* If the current quotation file is an image, display a clean highlighted preview thumbnail */}
+                {/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(appointment.quotationUrl) && (
+                  <div className="relative rounded-lg overflow-hidden border border-violet-200/80 bg-white shadow-2xs group flex items-center justify-center p-1">
+                    <a
+                      href={appointment.quotationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block relative overflow-hidden max-h-36 w-full cursor-pointer text-center"
+                    >
+                      <img
+                        src={appointment.quotationUrl}
+                        alt="Proposal preview"
+                        className="mx-auto h-36 w-full object-contain bg-slate-900/5 rounded group-hover:scale-[1.02] transition duration-200"
+                      />
+                      <div className="absolute inset-0 bg-slate-900/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-semibold gap-1.5 backdrop-blur-[1px] rounded">
+                        <Eye className="size-4" />
+                        <span>Click to view full image</span>
+                      </div>
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

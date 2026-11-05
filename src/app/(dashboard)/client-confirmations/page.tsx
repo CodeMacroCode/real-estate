@@ -42,6 +42,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
 
 interface ClientConfirmationItem {
   _id: string;
@@ -78,8 +79,14 @@ export default function ClientConfirmationsPage() {
   // Filter & Search
   const [outcomeFilter, setOutcomeFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+    startStr?: string;
+    endStr?: string;
+  }>({ start: null, end: null });
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Modals
   const [isOpen, setIsOpen] = useState(false);
@@ -111,7 +118,31 @@ export default function ClientConfirmationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/client-confirmations");
+      const params = new URLSearchParams();
+      if (
+        dateRange.startStr ||
+        (dateRange.start && !isNaN(dateRange.start.getTime()))
+      ) {
+        params.append(
+          "startDate",
+          dateRange.startStr || dateRange.start!.toISOString(),
+        );
+      }
+      if (
+        dateRange.endStr ||
+        (dateRange.end && !isNaN(dateRange.end.getTime()))
+      ) {
+        params.append(
+          "endDate",
+          dateRange.endStr || dateRange.end!.toISOString(),
+        );
+      }
+
+      const url = params.toString()
+        ? `/api/client-confirmations?${params.toString()}`
+        : "/api/client-confirmations";
+
+      const res = await fetch(url);
       const json = await res.json();
       if (json.success) {
         setConfirmations(json.data || []);
@@ -123,7 +154,7 @@ export default function ClientConfirmationsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   const fetchAppointments = useCallback(async (query: string = "") => {
     try {
@@ -417,16 +448,32 @@ export default function ClientConfirmationsPage() {
         </button>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search confirmations by client name, phone, or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
-        />
+      {/* Search and Filters Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search confirmations by client name, phone, or email..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+          />
+        </div>
+
+        <div className="w-full sm:w-auto min-w-[200px]">
+          <DateRangeFilter
+            placeholder="Filter by decision date..."
+            className="w-full"
+            onDateRangeChange={(start, end, startStr, endStr) => {
+              setDateRange({ start, end, startStr, endStr });
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
 
       {/* CONFIRMATION TABLE */}
@@ -626,10 +673,29 @@ export default function ClientConfirmationsPage() {
 
             {/* Pagination Footer */}
             {filteredConfirmations.length > 0 && (
-              <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
-                <div className="text-xs text-slate-500">
-                  Showing <span className="font-semibold">{paginatedConfirmations.length}</span> of{" "}
-                  <span className="font-semibold">{filteredConfirmations.length}</span> total confirmations
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+                <div className="flex items-center gap-4 text-xs text-slate-500">
+                  <div>
+                    Showing <span className="font-semibold text-slate-800">{paginatedConfirmations.length}</span> of{" "}
+                    <span className="font-semibold text-slate-800">{filteredConfirmations.length}</span> total confirmations
+                  </div>
+                  <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+                    <span className="text-slate-600">Rows per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="px-2 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

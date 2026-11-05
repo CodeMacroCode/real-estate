@@ -202,12 +202,38 @@ export async function ingestWebsiteInquiry(payload: InboundInquiryPayload): Prom
 /**
  * SSR Service: Fetch inquiries for organization dashboard
  */
-export async function getSsrPublicInquiries(adminId: string, page = 1, limit = 20) {
+export async function getSsrPublicInquiries(
+  adminId: string,
+  page = 1,
+  limit = 20,
+  filterType?: string,
+  startDate?: string,
+  endDate?: string
+) {
   await connectToDatabase();
+
+  const query: any = { adminId };
+  if (filterType && filterType !== "All") {
+    query.inquiryType = filterType;
+  }
+
+  if (startDate || endDate) {
+    query.createdAt = {};
+    if (startDate) {
+      query.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      if (endDate.length <= 10) {
+        end.setHours(23, 59, 59, 999);
+      }
+      query.createdAt.$lte = end;
+    }
+  }
 
   const skip = (page - 1) * limit;
   const [inquiries, total] = await Promise.all([
-    PublicInquiry.find({ adminId })
+    PublicInquiry.find(query)
       .populate("propertyId", "title propertyId")
       .populate("projectId", "name projectId")
       .populate("crmLeadId", "leadTitle status")
@@ -215,7 +241,7 @@ export async function getSsrPublicInquiries(adminId: string, page = 1, limit = 2
       .skip(skip)
       .limit(limit)
       .lean(),
-    PublicInquiry.countDocuments({ adminId }),
+    PublicInquiry.countDocuments(query),
   ]);
 
   return {

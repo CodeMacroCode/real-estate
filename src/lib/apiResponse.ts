@@ -24,7 +24,7 @@ function logApiResponse(status: number, body: any) {
         success: true,
         dataLength: body.data.length,
         data: body.data,
-        meta: body.meta,
+        pagination: (body as any).pagination,
         truncated: `... +${body.data.length - 2} more items`,
       },
       { depth: 4, colors: true },
@@ -37,13 +37,17 @@ function logApiResponse(status: number, body: any) {
 export function jsonResponse<T>(
   data: T,
   status: number = 200,
-  meta?: any,
+  paginationOrMeta?: any,
 ): NextResponse<ApiResponse<T>> {
-  const body: ApiResponse<T> = {
+  const body: any = {
     success: true,
     data,
-    meta,
   };
+
+  if (paginationOrMeta) {
+    body.pagination = paginationOrMeta;
+    body.meta = paginationOrMeta; // backwards compatibility
+  }
 
   logApiResponse(status, body);
 

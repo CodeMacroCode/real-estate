@@ -83,6 +83,7 @@ export function StaffClient({
 
   // Filters & Pagination
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,7 +148,7 @@ export function StaffClient({
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "10",
+        limit: limit.toString(),
       });
       if (searchTerm) params.append("search", searchTerm);
       if (statusFilter) params.append("status", statusFilter);
@@ -168,7 +169,7 @@ export function StaffClient({
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, statusFilter, selectedAdminId]);
+  }, [page, limit, searchTerm, statusFilter, selectedAdminId]);
 
   const fetchRoles = useCallback(async () => {
     try {

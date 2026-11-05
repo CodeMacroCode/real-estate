@@ -1087,8 +1087,8 @@ export default function AppointmentsPage() {
                             </button>
                           )}
 
-                          {/* 2. Quotation / Proposal (<FileText />) */}
-                          {apt.outcome !== "NO" && (
+                          {/* 2. Quotation / Proposal (<FileText />) - hidden when outcome is NO or MAYBE (Follow-up) */}
+                          {apt.outcome !== "NO" && apt.outcome !== "MAYBE" && (
                             <button
                               type="button"
                               onClick={() => {
@@ -1163,10 +1163,29 @@ export default function AppointmentsPage() {
 
         {/* Pagination Footer */}
         {totalCount > 0 && (
-          <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
-            <div className="text-xs text-slate-500">
-              Showing <span className="font-semibold">{appointments.length}</span> of{" "}
-              <span className="font-semibold">{totalCount}</span> total appointments
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 px-6 py-3.5 bg-slate-50/50">
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <div>
+                Showing <span className="font-semibold text-slate-800">{appointments.length}</span> of{" "}
+                <span className="font-semibold text-slate-800">{totalCount}</span> total appointments
+              </div>
+              <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+                <span className="text-slate-600">Rows per page:</span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
