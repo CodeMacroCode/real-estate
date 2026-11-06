@@ -4,6 +4,7 @@ import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { Property } from "@/models/Property";
 import { Owner } from "@/models/Owner";
+import { Booking } from "@/models/Booking";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import { shouldAutoUnpublishStatus, calculateInvestmentRoi } from "@/services/propertyService";
@@ -38,13 +39,27 @@ export async function GET(
     const property = await Property.findOne(query)
       .populate("ownerId", "name mobile email ownershipType panGstNumber")
       .populate("projectId", "name developerName reraNumber")
-      .populate("unitId", "towerName floorNumber unitNumber price status");
+      .populate("unitId", "towerName floorNumber unitNumber price status")
+      .lean();
 
     if (!property) {
       return errorResponse("Property not found or unauthorized", 404);
     }
 
-    return jsonResponse(property);
+    // Retrieve active booking/client track record if property is Hold, Booked, Sold, Rented, Leased
+    const activeBooking = await Booking.findOne({
+      propertyId: property._id,
+      bookingStatus: { $ne: "Cancelled" },
+    })
+      .populate("clientId", "clientName phone email address companyName status")
+      .populate("createdById", "name email")
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    return jsonResponse({
+      ...property,
+      booking: activeBooking || null,
+    });
   } catch (error: any) {
     console.error("GET /api/properties/[id] error:", error);
     return errorResponse(error.message || "Failed to retrieve property", 500);

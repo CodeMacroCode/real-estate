@@ -144,6 +144,18 @@ export default function ProjectInventoryTreePage() {
   });
   const [clientsList, setClientsList] = useState<any[]>([]);
 
+  // Client Mode in Status Modal: 'existing' vs 'new'
+  const [clientSelectionMode, setClientSelectionMode] = useState<"existing" | "new">("existing");
+  const [newClientForm, setNewClientForm] = useState({
+    clientName: "",
+    phone: "",
+    email: "",
+    address: "",
+    companyName: "",
+    status: "Active",
+    notes: "",
+  });
+
   // Filtering states on current Tower inventory
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [unitTypeFilter, setUnitTypeFilter] = useState<string>("ALL");
@@ -534,6 +546,16 @@ export default function ProjectInventoryTreePage() {
       clientId: unit.bookedByClientId || "",
       notes: unit.notes || "",
     });
+    setClientSelectionMode("existing");
+    setNewClientForm({
+      clientName: "",
+      phone: "",
+      email: "",
+      address: "",
+      companyName: "",
+      status: "Active",
+      notes: "",
+    });
     fetchClients();
     setIsUnitModalOpen(true);
   };
@@ -543,12 +565,43 @@ export default function ProjectInventoryTreePage() {
     if (!selectedUnit) return;
     try {
       setIsUpdatingStatus(true);
+      let targetClientId = unitStatusUpdate.clientId;
+
+      // If user chose "new client", register the client in CRM first
+      if (
+        (unitStatusUpdate.status === "Booked" ||
+          unitStatusUpdate.status === "Sold" ||
+          unitStatusUpdate.status === "Hold") &&
+        clientSelectionMode === "new"
+      ) {
+        if (!newClientForm.clientName.trim() || !newClientForm.phone.trim()) {
+          toast.error("New client name and phone are required");
+          setIsUpdatingStatus(false);
+          return;
+        }
+
+        const clientRes = await fetch("/api/clients", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newClientForm),
+        });
+        const clientJson = await clientRes.json();
+        if (!clientRes.ok || !clientJson.data?._id) {
+          throw new Error(clientJson.message || clientJson.error || "Failed to register new client");
+        }
+        targetClientId = clientJson.data._id;
+        toast.success(`Client ${clientJson.data.clientName} registered in CRM!`);
+      }
+
       const res = await fetch(
         `/api/projects/units/${selectedUnit._id}/status`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(unitStatusUpdate),
+          body: JSON.stringify({
+            ...unitStatusUpdate,
+            clientId: targetClientId,
+          }),
         },
       );
       const json = await res.json();
@@ -1901,30 +1954,161 @@ export default function ProjectInventoryTreePage() {
               </div>
 
               {(unitStatusUpdate.status === "Booked" ||
-                unitStatusUpdate.status === "Sold") && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Booked by Client
-                  </label>
-                  <select
-                    value={unitStatusUpdate.clientId}
-                    onChange={(e) =>
-                      setUnitStatusUpdate({
-                        ...unitStatusUpdate,
-                        clientId: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="">
-                      -- Choose Buyer Client (Optional) --
-                    </option>
-                    {clientsList.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.clientName} ({c.phone})
-                      </option>
-                    ))}
-                  </select>
+                unitStatusUpdate.status === "Sold" ||
+                unitStatusUpdate.status === "Hold") && (
+                <div className="space-y-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-800">
+                      Buyer Client Allocation
+                    </label>
+                    <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setClientSelectionMode("existing")}
+                        className={`px-2 py-0.5 rounded-md transition ${
+                          clientSelectionMode === "existing"
+                            ? "bg-white text-blue-700 shadow-2xs font-bold"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        Existing Client
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClientSelectionMode("new")}
+                        className={`px-2 py-0.5 rounded-md transition ${
+                          clientSelectionMode === "new"
+                            ? "bg-white text-blue-700 shadow-2xs font-bold"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        + New Client
+                      </button>
+                    </div>
+                  </div>
+
+                  {clientSelectionMode === "existing" ? (
+                    <div>
+                      <select
+                        value={unitStatusUpdate.clientId}
+                        onChange={(e) =>
+                          setUnitStatusUpdate({
+                            ...unitStatusUpdate,
+                            clientId: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="">
+                          -- Choose Buyer Client from CRM Directory --
+                        </option>
+                        {clientsList.map((c) => (
+                          <option key={c._id} value={c._id}>
+                            {c.clientName} ({c.phone})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Select an existing buyer client or switch to "+ New Client" above to create an account.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pt-1 border-t border-slate-200/60 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Client Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Full Name"
+                            value={newClientForm.clientName}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                clientName: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Phone Number *
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="e.g. 9876543210"
+                            value={newClientForm.phone}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                phone: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Email (Optional)
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="client@example.com"
+                            value={newClientForm.email}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                email: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Company (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Company Name"
+                            value={newClientForm.companyName}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                companyName: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                          Address / Location
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Residential / City Address"
+                          value={newClientForm.address}
+                          onChange={(e) =>
+                            setNewClientForm({
+                              ...newClientForm,
+                              address: e.target.value,
+                            })
+                          }
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

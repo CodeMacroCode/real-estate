@@ -19,6 +19,8 @@ import {
   CheckCircle,
   FileSpreadsheet,
   Share2,
+  FolderLock,
+  BadgeCheck,
 } from "lucide-react";
 import { SafeUser } from "@/types";
 
@@ -143,6 +145,13 @@ export function Sidebar({ user }: SidebarProps) {
       href: "/projects",
       icon: Layers,
       active: pathname.startsWith("/projects"),
+      visible: true,
+    },
+    {
+      name: "Client Track Record",
+      href: "/bookings",
+      icon: FolderLock,
+      active: pathname.startsWith("/bookings"),
       visible: true,
     },
     {

@@ -23,6 +23,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  FolderLock,
+  UserCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { SsrPropertyItem } from "@/services/propertyService";
 import { SsrMasterOption } from "@/services/masterService";
@@ -82,6 +85,122 @@ export function PropertiesClient({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Status & Client Allocation Modal state (like Project Section)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusTargetProperty, setStatusTargetProperty] = useState<any>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [propertyStatusForm, setPropertyStatusForm] = useState({
+    status: "Available",
+    clientId: "",
+    notes: "",
+  });
+  const [clientsList, setClientsList] = useState<any[]>([]);
+  const [clientSelectionMode, setClientSelectionMode] = useState<"existing" | "new">("existing");
+  const [newClientForm, setNewClientForm] = useState({
+    clientName: "",
+    phone: "",
+    email: "",
+    address: "",
+    companyName: "",
+    status: "Active",
+    notes: "",
+  });
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch("/api/clients?limit=50");
+      const json = await res.json();
+      if (res.ok && json.data) {
+        setClientsList(json.data);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleOpenStatusModal = (property: any) => {
+    setStatusTargetProperty(property);
+    setPropertyStatusForm({
+      status: property.status || "Available",
+      clientId: "",
+      notes: "",
+    });
+    setClientSelectionMode("existing");
+    setNewClientForm({
+      clientName: "",
+      phone: "",
+      email: "",
+      address: "",
+      companyName: "",
+      status: "Active",
+      notes: "",
+    });
+    fetchClients();
+    setIsStatusModalOpen(true);
+  };
+
+  const handleUpdatePropertyStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!statusTargetProperty) return;
+
+    try {
+      setIsUpdatingStatus(true);
+      let targetClientId = propertyStatusForm.clientId;
+
+      // If user chose "new client", register the client in CRM first
+      if (
+        (propertyStatusForm.status === "Booked" ||
+          propertyStatusForm.status === "Sold" ||
+          propertyStatusForm.status === "Hold" ||
+          propertyStatusForm.status === "Rented" ||
+          propertyStatusForm.status === "Leased") &&
+        clientSelectionMode === "new"
+      ) {
+        if (!newClientForm.clientName.trim() || !newClientForm.phone.trim()) {
+          toast.error("New client name and phone are required");
+          setIsUpdatingStatus(false);
+          return;
+        }
+
+        const clientRes = await fetch("/api/clients", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newClientForm),
+        });
+        const clientJson = await clientRes.json();
+        if (!clientRes.ok || !clientJson.data?._id) {
+          throw new Error(clientJson.message || clientJson.error || "Failed to register new client");
+        }
+        targetClientId = clientJson.data._id;
+        toast.success(`Client ${clientJson.data.clientName} registered in CRM!`);
+      }
+
+      const res = await fetch(`/api/properties/${statusTargetProperty._id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...propertyStatusForm,
+          clientId: targetClientId,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to update property status");
+
+      toast.success(
+        `Property ${statusTargetProperty.propertyId} status updated to ${propertyStatusForm.status}! Added to Client Track Record.`
+      );
+      setIsStatusModalOpen(false);
+      setStatusTargetProperty(null);
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update status");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   // Owners list for linking dropdown with Infinite Scroll & Search
   const [ownerOptions, setOwnerOptions] = useState<SelectOption[]>([]);
@@ -939,6 +1058,15 @@ export function PropertiesClient({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
+                          onClick={() => handleOpenStatusModal(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition cursor-pointer"
+                          title="Change Property Status & Allocate Client"
+                        >
+                          <FolderLock className="size-3.5 text-emerald-600" />
+                          <span>Status / Allocate</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleOpenDetail(p)}
                           className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition cursor-pointer"
                           title="View Property Full Specs"
@@ -1044,22 +1172,47 @@ export function PropertiesClient({
       {/* Property Full Specs Modal */}
       {isDetailModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  {selectedProperty?.title} ({selectedProperty?.propertyId})
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Category: {selectedProperty?.propertyCategory} • Type:{" "}
-                  {selectedProperty?.propertyType} • Status:{" "}
-                  {selectedProperty?.status}
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-blue-100 text-blue-700">
+                  <Building2 className="size-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base text-slate-900">
+                      {selectedProperty?.title}
+                    </h3>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-bold">
+                      {selectedProperty?.propertyId}
+                    </span>
+                    <span
+                      className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        selectedProperty?.status === "Available"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : selectedProperty?.status === "Sold"
+                            ? "bg-purple-900 text-white"
+                            : selectedProperty?.status === "Booked"
+                              ? "bg-[#dcf836] text-slate-950 font-bold"
+                              : selectedProperty?.status === "Hold"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {selectedProperty?.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Category: {selectedProperty?.propertyCategory} • Type:{" "}
+                    {selectedProperty?.propertyType} • Transaction:{" "}
+                    {selectedProperty?.transactionType}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDetailModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition cursor-pointer"
               >
                 ✕
               </button>
@@ -1067,22 +1220,201 @@ export function PropertiesClient({
 
             <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
               {loadingDetail ? (
-                <div className="text-center py-12 text-slate-400">
-                  Loading specs...
+                <div className="text-center py-16 text-slate-400">
+                  Loading full property specifications...
                 </div>
               ) : selectedProperty ? (
                 <>
+                  {/* CLIENT BUY / BOOK / HOLD TRACK RECORD CARD */}
+                  {selectedProperty.booking ? (
+                    <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 space-y-3">
+                      <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="size-4 text-indigo-600" />
+                          <span className="font-bold text-slate-900 text-xs">
+                            Buyer / Client Allotment & Track Record
+                          </span>
+                        </div>
+                        <span className="font-mono text-[11px] font-bold text-indigo-700">
+                          {selectedProperty.booking.bookingNumber}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-2.5 bg-white rounded-lg border border-indigo-100">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                            Client Name
+                          </span>
+                          <span className="font-bold text-slate-900 text-xs">
+                            {selectedProperty.booking.clientId?.clientName || "—"}
+                          </span>
+                          <span className="block text-[11px] text-slate-500 font-mono">
+                            {selectedProperty.booking.clientId?.phone}
+                          </span>
+                          {selectedProperty.booking.clientId?._id && (
+                            <a
+                              href={`/client-information/${selectedProperty.booking.clientId._id}`}
+                              className="text-blue-600 hover:underline text-[10px] font-semibold mt-1 inline-block"
+                            >
+                              Open Client CRM Profile &rarr;
+                            </a>
+                          )}
+                        </div>
+
+                        <div className="p-2.5 bg-white rounded-lg border border-indigo-100 font-mono">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block font-sans">
+                            Deal Value & Balance
+                          </span>
+                          <div className="text-slate-900 font-bold text-xs">
+                            Agreement: ₹{Number(selectedProperty.booking.agreementValue || 0).toLocaleString("en-IN")}
+                          </div>
+                          <div className="text-emerald-700 font-semibold text-[11px]">
+                            Paid: ₹{Number(selectedProperty.booking.totalPaid || 0).toLocaleString("en-IN")}
+                          </div>
+                          <div className="text-rose-600 font-semibold text-[11px]">
+                            Pending: ₹{Number(selectedProperty.booking.balanceAmount || 0).toLocaleString("en-IN")}
+                          </div>
+                        </div>
+
+                        <div className="p-2.5 bg-white rounded-lg border border-indigo-100">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                            Allotment Stage & Locker
+                          </span>
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5 ${
+                              selectedProperty.booking.bookingStatus === "Sold"
+                                ? "bg-slate-900 text-white"
+                                : selectedProperty.booking.bookingStatus === "Booked"
+                                  ? "bg-[#dcf836] text-slate-950 font-bold"
+                                  : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {selectedProperty.booking.bookingStatus}
+                          </span>
+                          <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1 font-medium">
+                            <FolderLock className="size-3 text-slate-400" />
+                            <span>{selectedProperty.booking.documents?.length || 0} Locker Files</span>
+                          </div>
+                          <a
+                            href="/bookings"
+                            className="text-indigo-600 hover:underline text-[10px] font-semibold inline-block mt-0.5"
+                          >
+                            Open in Client Track Record &rarr;
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Bank Loan summary if active */}
+                      {selectedProperty.booking.loanDetails?.isLoanRequired && (
+                        <div className="p-2.5 bg-white rounded-lg border border-indigo-100 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-semibold text-slate-800">
+                              Bank Financing: {selectedProperty.booking.loanDetails.bankName || "Bank Loan"}
+                            </span>
+                            <span className="text-slate-500 block text-[11px]">
+                              Status: {selectedProperty.booking.loanDetails.loanStatus || "In Process"} • A/C: {selectedProperty.booking.loanDetails.loanAccountNumber || "—"}
+                            </span>
+                          </div>
+                          <div className="text-right font-mono">
+                            <span className="text-slate-500 block text-[10px]">Sanctioned</span>
+                            <span className="font-bold text-slate-900">
+                              ₹{Number(selectedProperty.booking.loanDetails.sanctionedAmount || 0).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="size-4 text-emerald-600" />
+                        <div>
+                          <span className="font-bold text-emerald-900">
+                            Status: Available for Sale / Rent
+                          </span>
+                          <p className="text-[11px] text-emerald-700">
+                            No buyer or tenant currently holding or booked on this property.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDetailModalOpen(false);
+                          handleOpenStatusModal(selectedProperty);
+                        }}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-xs transition cursor-pointer shadow-2xs"
+                      >
+                        Allocate to Client &rarr;
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Pricing & Valuation Card */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <div>
+                      <span className="font-semibold text-slate-400 block text-[10px] uppercase">
+                        Asking Price / Rent
+                      </span>
+                      <div className="font-bold text-slate-900 text-sm mt-0.5 font-mono">
+                        {selectedProperty.pricing?.price
+                          ? `₹${Number(selectedProperty.pricing.price).toLocaleString("en-IN")}`
+                          : selectedProperty.pricing?.monthlyRent
+                            ? `₹${Number(selectedProperty.pricing.monthlyRent).toLocaleString("en-IN")}/mo`
+                            : "Negotiable"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="font-semibold text-slate-400 block text-[10px] uppercase">
+                        Carpet / Area
+                      </span>
+                      <div className="font-bold text-slate-900 text-sm mt-0.5">
+                        {selectedProperty.areaDetails?.carpetArea ||
+                          selectedProperty.areaDetails?.builtUpArea ||
+                          0}{" "}
+                        {selectedProperty.areaDetails?.areaUnit}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="font-semibold text-slate-400 block text-[10px] uppercase">
+                        Rate per Unit Area
+                      </span>
+                      <div className="font-bold text-slate-900 text-sm mt-0.5 font-mono">
+                        {selectedProperty.pricing?.pricePerUnitArea
+                          ? `₹${Number(selectedProperty.pricing.pricePerUnitArea).toLocaleString("en-IN")}/${selectedProperty.areaDetails?.areaUnit || "sq ft"}`
+                          : "—"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="font-semibold text-slate-400 block text-[10px] uppercase">
+                        Negotiable
+                      </span>
+                      <div className="font-bold text-slate-900 text-sm mt-0.5">
+                        {selectedProperty.pricing?.isNegotiable ? "Yes (Flexible)" : "Fixed Price"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Owner & Location Grid */}
                   <div className="grid grid-cols-2 gap-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                     <div>
                       <span className="font-semibold text-slate-500">
                         Owner Details:
                       </span>
                       <div className="font-bold text-slate-900 text-sm mt-0.5">
-                        {selectedProperty.ownerId?.name}
+                        {selectedProperty.ownerId?.name || "—"}
                       </div>
                       <div className="text-slate-500 font-mono">
                         {selectedProperty.ownerId?.mobile}
                       </div>
+                      {selectedProperty.ownerId?.email && (
+                        <div className="text-slate-400 text-[11px]">
+                          {selectedProperty.ownerId.email}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <span className="font-semibold text-slate-500">
@@ -1094,9 +1426,42 @@ export function PropertiesClient({
                       <div className="text-slate-500">
                         {selectedProperty.location?.address}
                       </div>
+                      {selectedProperty.location?.landmark && (
+                        <div className="text-slate-400 text-[11px]">
+                          Landmark: {selectedProperty.location.landmark}
+                        </div>
+                      )}
                     </div>
                   </div>
 
+                  {/* Project / Unit Interlink (if linked to a project) */}
+                  {selectedProperty.projectId && (
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-slate-400 uppercase text-[10px] font-bold block">
+                          Linked Real Estate Project
+                        </span>
+                        <span className="font-bold text-slate-900 text-sm">
+                          {selectedProperty.projectId.name}
+                        </span>
+                        <span className="text-slate-500 block text-[11px]">
+                          Developer: {selectedProperty.projectId.developerName || "—"} • RERA: {selectedProperty.projectId.reraNumber || "—"}
+                        </span>
+                      </div>
+                      {selectedProperty.unitId && (
+                        <div className="text-right">
+                          <span className="text-slate-400 uppercase text-[10px] font-bold block">
+                            Unit Details
+                          </span>
+                          <span className="font-mono font-bold text-slate-900">
+                            {selectedProperty.unitId.towerName} • {selectedProperty.unitId.unitNumber}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pre-Leased Commercial Investment Metrics */}
                   {selectedProperty.investmentSpecs?.grossYieldPercent ? (
                     <div className="p-3.5 bg-purple-50 rounded-xl border border-purple-200">
                       <div className="font-bold text-purple-900 text-sm flex items-center gap-1.5">
@@ -1137,6 +1502,38 @@ export function PropertiesClient({
                     </div>
                   ) : null}
 
+                  {/* Amenities Tags */}
+                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                    <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1.5">
+                      <span className="font-bold text-slate-800 text-xs block">
+                        Features & Amenities:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedProperty.amenities.map((am: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium"
+                          >
+                            ✓ {am}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description Notes */}
+                  {selectedProperty.description && (
+                    <div className="p-3.5 border border-slate-200 rounded-xl bg-slate-50 space-y-1">
+                      <span className="font-bold text-slate-800 text-xs block">
+                        Property Description & Highlights:
+                      </span>
+                      <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line">
+                        {selectedProperty.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Website CMS Publishing Status */}
                   <div className="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl bg-slate-50">
                     <div>
                       <span className="font-semibold text-slate-800">
@@ -2053,6 +2450,282 @@ export function PropertiesClient({
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* MODAL: PROPERTY STATUS & CLIENT ALLOCATION (Like Project Section) */}
+      {isStatusModalOpen && statusTargetProperty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+                  <FolderLock className="size-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    {statusTargetProperty.title}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {statusTargetProperty.propertyId} • {statusTargetProperty.propertyCategory} ({statusTargetProperty.propertyType})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStatusModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-lg hover:bg-slate-200"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePropertyStatus} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Carpet / Built-up Area
+                  </span>
+                  <span className="font-bold text-slate-800">
+                    {statusTargetProperty.areaDetails?.carpetArea || statusTargetProperty.areaDetails?.builtUpArea || 0} {statusTargetProperty.areaDetails?.areaUnit}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Price / Rent
+                  </span>
+                  <span className="font-bold text-slate-900 font-mono">
+                    {statusTargetProperty.pricing?.price
+                      ? `₹${Number(statusTargetProperty.pricing.price).toLocaleString("en-IN")}`
+                      : statusTargetProperty.pricing?.monthlyRent
+                        ? `₹${Number(statusTargetProperty.pricing.monthlyRent).toLocaleString("en-IN")}/mo`
+                        : "Negotiable"}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Change Property Status *
+                </label>
+                <select
+                  value={propertyStatusForm.status}
+                  onChange={(e) =>
+                    setPropertyStatusForm({
+                      ...propertyStatusForm,
+                      status: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                >
+                  <option value="Available">Available (Active for Sale/Rent)</option>
+                  <option value="Hold">Hold (Temporary Token Hold)</option>
+                  <option value="Booked">Booked (Reserved with Buyer)</option>
+                  <option value="Sold">Sold (Contract Closed)</option>
+                  <option value="Rented">Rented</option>
+                  <option value="Leased">Leased</option>
+                  <option value="Blocked">Blocked</option>
+                  <option value="Archived">Archived</option>
+                </select>
+              </div>
+
+              {/* Client Allocation Section (Existing vs. New Client) */}
+              {(propertyStatusForm.status === "Booked" ||
+                propertyStatusForm.status === "Sold" ||
+                propertyStatusForm.status === "Hold" ||
+                propertyStatusForm.status === "Rented" ||
+                propertyStatusForm.status === "Leased") && (
+                <div className="space-y-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-800">
+                      Buyer / Client Allocation
+                    </label>
+                    <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setClientSelectionMode("existing")}
+                        className={`px-2 py-0.5 rounded-md transition ${
+                          clientSelectionMode === "existing"
+                            ? "bg-white text-emerald-700 shadow-2xs font-bold"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        Existing Client
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setClientSelectionMode("new")}
+                        className={`px-2 py-0.5 rounded-md transition ${
+                          clientSelectionMode === "new"
+                            ? "bg-white text-emerald-700 shadow-2xs font-bold"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        + New Client
+                      </button>
+                    </div>
+                  </div>
+
+                  {clientSelectionMode === "existing" ? (
+                    <div>
+                      <select
+                        value={propertyStatusForm.clientId}
+                        onChange={(e) =>
+                          setPropertyStatusForm({
+                            ...propertyStatusForm,
+                            clientId: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                      >
+                        <option value="">
+                          -- Choose Buyer Client from CRM Directory --
+                        </option>
+                        {clientsList.map((c) => (
+                          <option key={c._id} value={c._id}>
+                            {c.clientName} ({c.phone})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Select a buyer client to log this property in their Client Track Record & Document Locker.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pt-1 border-t border-slate-200/60 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Client Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Full Name"
+                            value={newClientForm.clientName}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                clientName: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Phone Number *
+                          </label>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="e.g. 9876543210"
+                            value={newClientForm.phone}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                phone: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Email (Optional)
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="client@example.com"
+                            value={newClientForm.email}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                email: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                            Company (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Company Name"
+                            value={newClientForm.companyName}
+                            onChange={(e) =>
+                              setNewClientForm({
+                                ...newClientForm,
+                                companyName: e.target.value,
+                              })
+                            }
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                          Address / Location
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Residential / City Address"
+                          value={newClientForm.address}
+                          onChange={(e) =>
+                            setNewClientForm({
+                              ...newClientForm,
+                              address: e.target.value,
+                            })
+                          }
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Audit Notes / Remarks
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Agreement signed, Token received, Loan applied..."
+                  value={propertyStatusForm.notes}
+                  onChange={(e) =>
+                    setPropertyStatusForm({
+                      ...propertyStatusForm,
+                      notes: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusModalOpen(false)}
+                  className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingStatus}
+                  className="px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-black rounded-lg shadow-xs transition disabled:opacity-50 cursor-pointer"
+                >
+                  {isUpdatingStatus ? "Updating..." : "Save Status & Record"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

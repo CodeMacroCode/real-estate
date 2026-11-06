@@ -16,3 +16,4 @@ export * from './Project';
 export * from './ProjectUnit';
 export * from './Property';
 export * from './PublicInquiry';
+export * from './Booking';

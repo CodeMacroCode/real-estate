@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { ProjectUnit } from "@/models/ProjectUnit";
+import { Project } from "@/models/Project";
+import { Booking } from "@/models/Booking";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import { recalculateProjectCounters } from "@/services/projectService";
@@ -88,6 +90,56 @@ export async function PATCH(
       newValues: { status },
       source: "api",
     });
+
+    // Automatically create or update Booking ledger entry when marked as Booked or Sold with a client
+    if ((status === "Booked" || status === "Sold") && clientId) {
+      try {
+        const project = await Project.findById(currentUnit.projectId);
+        const invLabel = `${project?.name || "Project"} - ${currentUnit.towerName} - Unit ${currentUnit.unitNumber}`;
+
+        const existingBooking = await Booking.findOne({
+          projectUnitId: currentUnit._id,
+        });
+
+        if (existingBooking) {
+          existingBooking.bookingStatus = status;
+          existingBooking.clientId = new mongoose.Types.ObjectId(clientId);
+          if (notes) existingBooking.notes = notes;
+          await existingBooking.save();
+        } else {
+          const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+          const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+          const bkgNumber = `BKG-${datePrefix}-${randomSuffix}`;
+
+          await Booking.create({
+            adminId: currentUnit.adminId,
+            bookingNumber: bkgNumber,
+            clientId: new mongoose.Types.ObjectId(clientId),
+            itemType: "ProjectUnit",
+            projectId: currentUnit.projectId,
+            projectUnitId: currentUnit._id,
+            inventoryLabel: invLabel,
+            bookingStatus: status,
+            agreementValue: currentUnit.price || 0,
+            payments: [],
+            documents: [],
+            notes: notes || `Directly booked from Project Elevation / Inventory.`,
+            createdById: authContext.user._id,
+          });
+        }
+      } catch (bookingErr) {
+        console.error("Auto booking creation failed:", bookingErr);
+      }
+    } else if (status === "Available") {
+      try {
+        await Booking.findOneAndUpdate(
+          { projectUnitId: currentUnit._id },
+          { $set: { bookingStatus: "Cancelled" } }
+        );
+      } catch (err) {
+        console.error("Auto cancel booking failed:", err);
+      }
+    }
 
     return jsonResponse(updatedUnit);
   } catch (error: any) {

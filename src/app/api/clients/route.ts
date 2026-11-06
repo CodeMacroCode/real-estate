@@ -109,3 +109,70 @@ export async function GET(req: NextRequest) {
     return errorResponse(error.message || "Failed to fetch clients", 500);
   }
 }
+
+/**
+ * POST /api/clients
+ * Create a new Client record directly in the CRM directory
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const authContext = await getAuthenticatedContext(req);
+    if (!authContext) {
+      return errorResponse("Unauthorized", 401);
+    }
+
+    await connectToDatabase();
+    const body = await req.json();
+    const { clientName, phone, email, address, companyName, status = "Active", notes } = body;
+
+    if (!clientName?.trim() || !phone?.trim()) {
+      return errorResponse("Client name and phone are required", 400);
+    }
+
+    const roleSlug = authContext.role?.slug || "";
+    let adminId: mongoose.Types.ObjectId;
+    if (roleSlug === "super_admin" && body.adminId) {
+      adminId = new mongoose.Types.ObjectId(body.adminId);
+    } else if (roleSlug === "admin") {
+      adminId = new mongoose.Types.ObjectId(authContext.user._id);
+    } else {
+      adminId = new mongoose.Types.ObjectId(
+        (authContext.user.parentAdminId || authContext.user._id).toString()
+      );
+    }
+
+    // Check for duplicate phone under the same admin
+    const existingClient = await Client.findOne({
+      adminId,
+      phone: phone.trim(),
+    });
+
+    if (existingClient) {
+      return errorResponse(
+        `A client with phone number ${phone.trim()} already exists (${existingClient.clientName})`,
+        409
+      );
+    }
+
+    const newClient = new Client({
+      adminId,
+      clientName: clientName.trim(),
+      phone: phone.trim(),
+      email: email?.trim()?.toLowerCase() || undefined,
+      address: address?.trim() || undefined,
+      companyName: companyName?.trim() || undefined,
+      status,
+      notes: notes?.trim() || undefined,
+      totalDealsWon: 0,
+      totalRevenue: 0,
+      createdById: new mongoose.Types.ObjectId(authContext.user._id),
+    });
+
+    await newClient.save();
+
+    return jsonResponse(newClient, 201);
+  } catch (error: any) {
+    console.error("POST /api/clients error:", error);
+    return errorResponse(error.message || "Failed to create client", 500);
+  }
+}
