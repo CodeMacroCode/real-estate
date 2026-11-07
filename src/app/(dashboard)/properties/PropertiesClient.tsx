@@ -486,16 +486,7 @@ export function PropertiesClient({
               floorName: floorLabel,
               floorNumber: currentCount,
               planImageUrl: json.data.fileUrl,
-              hotspots: [
-                {
-                  id: `spot-${Date.now()}-${i}`,
-                  xPercent: 24,
-                  yPercent: 26,
-                  title: "IOT TV",
-                  subtitle: `60" Sony - SN #29489`,
-                  category: "Smart Electronics",
-                },
-              ],
+              hotspots: [],
             },
           ]);
         }

@@ -52,6 +52,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       require("@/models/Project");
       require("@/models/ProjectUnit");
       require("@/models/Booking");
+      require("@/models/StoredFile");
       return mongooseInstance;
     });
   }

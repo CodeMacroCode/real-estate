@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublicPropertyBySlug } from "@/services/publicPortalService";
 import { PropertyDetailInquiryForm } from "@/components/property/PropertyDetailInquiryForm";
+import { InteractiveFloorMapViewer } from "@/components/property/InteractiveFloorMapViewer";
 
 interface PublicPropertyDetailPageProps {
   params: Promise<{
@@ -119,15 +120,19 @@ export default async function PublicPropertyDetailPage({
             </div>
 
             {/* Gallery / Images */}
-            {property.media.images && property.media.images.length > 0 && (
+            {((property.media.featuredImage) || (property.media.images && property.media.images.length > 0)) && (
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">Property Gallery</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {property.media.images.map((img, idx) => (
-                    <div key={idx} className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-100">
-                      <img src={img} alt={`${property.title} photo ${idx + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-slate-900">Property Photos &amp; Gallery</h2>
+                </div>
+
+                {/* Main Hero Photo (Displaying clean single image) */}
+                <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/60 shadow-xs relative group">
+                  <img
+                    src={property.media.featuredImage || property.media.images?.[0]}
+                    alt={property.title}
+                    className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                  />
                 </div>
               </div>
             )}
@@ -206,6 +211,69 @@ export default async function PublicPropertyDetailPage({
               />
             </div>
           </div>
+        </div>
+
+        {/* Dedicated Full-Width Section for Interactive Floor Plan Maps & Blueprints */}
+        <div className="mt-12">
+          <div className="mb-4">
+            <span className="text-xs font-bold text-cyan-600 tracking-wider uppercase">
+              Architectural Blueprints &amp; Layout
+            </span>
+            <h2 className="text-2xl font-extrabold text-slate-900 mt-0.5">
+              Interactive Floor Maps &amp; Unit Inspection
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Explore individual room specifications, smart home devices, and blueprint dimensions.
+            </p>
+          </div>
+
+          <InteractiveFloorMapViewer
+            floorPlans={
+              (property.media.floorPlanMaps && property.media.floorPlanMaps.length > 0
+                ? property.media.floorPlanMaps
+                : property.media.floorPlans && property.media.floorPlans.length > 0
+                ? property.media.floorPlans.map((fpUrl, i) => ({
+                    floorName: i === 0 ? "Ground Floor" : `${i}th Floor`,
+                    floorNumber: i + 1,
+                    planImageUrl: fpUrl,
+                    roomTitle: property.title,
+                    status: "Available",
+                    hotspots: [],
+                  }))
+                : [
+                    {
+                      floorName: "Main Layout",
+                      floorNumber: 1,
+                      planImageUrl:
+                        property.media.featuredImage ||
+                        property.media.images?.[0] ||
+                        "/uploads/invoices/kola_1793781763751_jej9fx.jpg",
+                      roomTitle: property.title,
+                      status: "Available",
+                      hotspots: [],
+                    },
+                  ]
+              ).map((fp: any) => ({
+                ...fp,
+                hotspots: (fp.hotspots || []).filter(
+                  (spot: any) => !spot.title?.includes("IOT TV") && !spot.subtitle?.includes("29489")
+                ),
+              }))
+            }
+            defaultPropertyTitle={property.title}
+            propertyCategory={property.propertyCategory}
+            propertyType={property.propertyType}
+            carpetArea={property.areaDetails.carpetArea}
+            areaUnit={property.areaDetails.areaUnit}
+            bedrooms={property.residentialSpecs?.bedrooms}
+            bathrooms={property.residentialSpecs?.bathrooms}
+            furnishing={property.residentialSpecs?.furnishing}
+            facing={property.residentialSpecs?.facing}
+            city={property.location.city}
+            address={property.location.address}
+            amenities={property.amenities}
+            propertyImages={property.media.images}
+          />
         </div>
       </div>
     </div>
