@@ -41,12 +41,17 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       // Ensure all critical Mongoose models are registered in memory across HMR
+      require("@/models/Role");
+      require("@/models/User");
+      require("@/models/Lead");
+      require("@/models/Client");
+      require("@/models/Appointment");
+      require("@/models/ClientConfirmation");
       require("@/models/Owner");
       require("@/models/Property");
       require("@/models/Project");
       require("@/models/ProjectUnit");
-      require("@/models/User");
-      require("@/models/Role");
+      require("@/models/Booking");
       return mongooseInstance;
     });
   }

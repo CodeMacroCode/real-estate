@@ -125,6 +125,19 @@ export interface IPropertyDocument extends Document {
     images: string[];
     videos?: string[];
     floorPlans?: string[];
+    floorPlanMaps?: Array<{
+      floorName: string;
+      floorNumber?: number;
+      planImageUrl: string;
+      hotspots?: Array<{
+        id?: string;
+        xPercent: number;
+        yPercent: number;
+        title: string;
+        subtitle?: string;
+        category?: string;
+      }>;
+    }>;
     documents?: string[];
   };
 
@@ -312,6 +325,23 @@ const PropertySchema = new Schema<IPropertyDocument>(
       images: [{ type: String }],
       videos: [{ type: String }],
       floorPlans: [{ type: String }],
+      floorPlanMaps: [
+        {
+          floorName: { type: String, required: true },
+          floorNumber: { type: Number },
+          planImageUrl: { type: String, required: true },
+          hotspots: [
+            {
+              id: { type: String },
+              xPercent: { type: Number, required: true },
+              yPercent: { type: Number, required: true },
+              title: { type: String, required: true },
+              subtitle: { type: String },
+              category: { type: String },
+            },
+          ],
+        },
+      ],
       documents: [{ type: String }],
     },
 

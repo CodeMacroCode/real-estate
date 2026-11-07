@@ -326,6 +326,23 @@ export function PropertiesClient({
     currentIndex: number;
   } | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [floorPlans, setFloorPlans] = useState<
+    Array<{
+      floorName: string;
+      floorNumber?: number;
+      planImageUrl: string;
+      hotspots?: Array<{
+        id?: string;
+        xPercent: number;
+        yPercent: number;
+        title: string;
+        subtitle?: string;
+        category?: string;
+      }>;
+    }>
+  >([]);
+  const [isUploadingFloorPlan, setIsUploadingFloorPlan] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -428,6 +445,84 @@ export function PropertiesClient({
 
   const removeUploadedImage = (indexToRemove: number) => {
     setUploadedImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const removeExistingImage = (indexToRemove: number) => {
+    setExistingImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleFloorPlanUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setIsUploadingFloorPlan(true);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const bodyData = new FormData();
+        bodyData.append("file", file);
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: bodyData,
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to upload floor map");
+        if (json.data?.fileUrl) {
+          const currentCount = floorPlans.length + i + 1;
+          const floorLabel =
+            currentCount === 1
+              ? "Ground Floor"
+              : currentCount === 2
+              ? "1st Floor"
+              : currentCount === 3
+              ? "2nd Floor"
+              : `${currentCount - 1}th Floor`;
+
+          setFloorPlans((prev) => [
+            ...prev,
+            {
+              floorName: floorLabel,
+              floorNumber: currentCount,
+              planImageUrl: json.data.fileUrl,
+              hotspots: [
+                {
+                  id: `spot-${Date.now()}-${i}`,
+                  xPercent: 24,
+                  yPercent: 26,
+                  title: "IOT TV",
+                  subtitle: `60" Sony - SN #29489`,
+                  category: "Smart Electronics",
+                },
+              ],
+            },
+          ]);
+        }
+      }
+      toast.success("Floor map uploaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload floor plan");
+    } finally {
+      setIsUploadingFloorPlan(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeFloorPlan = (indexToRemove: number) => {
+    setFloorPlans((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const updateFloorPlanItem = (
+    index: number,
+    field: string,
+    value: any
+  ) => {
+    setFloorPlans((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
   };
 
   // Fetch owners only on modal open / demand (not duplicated on page load)
@@ -541,6 +636,7 @@ export function PropertiesClient({
           media: {
             featuredImage: uploadedImages[0] || "",
             images: uploadedImages,
+            floorPlanMaps: floorPlans,
           },
           publishing: {
             publishOnWebsite: formData.publishOnWebsite,
@@ -554,6 +650,7 @@ export function PropertiesClient({
       toast.success(`Property ${json.data.propertyId} listed successfully`);
       setIsCreateModalOpen(false);
       setUploadedImages([]);
+      setFloorPlans([]);
       startTransition(() => {
         router.refresh();
       });
@@ -588,6 +685,11 @@ export function PropertiesClient({
       publishOnWebsite: Boolean(p.publishing?.publishOnWebsite),
     });
     setUploadedImages([]);
+    const existingImgs = Array.isArray(p.media?.images) ? p.media.images : [];
+    setExistingImages(existingImgs);
+    setFloorPlans(
+      Array.isArray(p.media?.floorPlanMaps) ? p.media.floorPlanMaps : [],
+    );
     refreshMasterOptions();
     setIsEditModalOpen(true);
   };
@@ -598,6 +700,7 @@ export function PropertiesClient({
 
     try {
       setIsSubmitting(true);
+      const allImages = [...existingImages, ...uploadedImages];
       const res = await fetch(`/api/properties/${editingPropertyId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -629,14 +732,11 @@ export function PropertiesClient({
             furnishing: formData.furnishing,
           },
           amenities: formData.amenities,
-          ...(uploadedImages.length > 0
-            ? {
-                media: {
-                  featuredImage: uploadedImages[0],
-                  images: uploadedImages,
-                },
-              }
-            : {}),
+          media: {
+            featuredImage: allImages[0] || "",
+            images: allImages,
+            floorPlanMaps: floorPlans,
+          },
           publishing: {
             publishOnWebsite: formData.publishOnWebsite,
           },
@@ -650,6 +750,8 @@ export function PropertiesClient({
       setIsEditModalOpen(false);
       setEditingPropertyId(null);
       setUploadedImages([]);
+      setExistingImages([]);
+      setFloorPlans([]);
       startTransition(() => {
         router.refresh();
       });
@@ -1622,12 +1724,14 @@ export function PropertiesClient({
                       Uploading image(s)...
                     </p>
                   )}
+                  {/* Uploaded Images List in Create Modal */}
                   {uploadedImages.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {uploadedImages.map((imgUrl, idx) => (
                         <div
-                          key={idx}
-                          className="relative size-10 rounded-lg overflow-hidden border border-slate-200 group"
+                          key={`new-${idx}`}
+                          className="relative size-12 rounded-lg overflow-hidden border-2 border-emerald-500 group shadow-xs"
+                          title="Uploaded Photo"
                         >
                           <img
                             src={imgUrl}
@@ -1637,7 +1741,7 @@ export function PropertiesClient({
                           <button
                             type="button"
                             onClick={() => removeUploadedImage(idx)}
-                            className="absolute inset-0 bg-red-600/75 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity font-bold cursor-pointer"
                           >
                             ✕
                           </button>
@@ -1646,6 +1750,93 @@ export function PropertiesClient({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Floor Plans & Multi-floor Map Upload Section */}
+              <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Layers className="size-4 text-blue-600" />
+                    <span className="text-xs font-bold text-slate-800">
+                      Interactive Floor Maps / Blueprints
+                    </span>
+                    <span className="text-[10px] bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">
+                      Multi-Floor Supported
+                    </span>
+                  </div>
+                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 cursor-pointer transition">
+                    <Plus className="size-3.5" />
+                    <span>Upload Floor Map</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/png,image/jpeg,image/webp,image/jpg"
+                      onChange={handleFloorPlanUpload}
+                      disabled={isUploadingFloorPlan}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {isUploadingFloorPlan && (
+                  <p className="text-xs text-blue-600 animate-pulse">
+                    Uploading floor blueprint map...
+                  </p>
+                )}
+
+                {floorPlans.length === 0 ? (
+                  <div className="text-center py-3.5 border border-dashed border-blue-200 rounded-lg bg-white/60">
+                    <p className="text-xs text-slate-500">
+                      No floor maps uploaded. If this property has multiple floors, click &quot;Upload Floor Map&quot; to add floor blueprints with interactive pins.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {floorPlans.map((fp, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="size-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-50">
+                            <img
+                              src={fp.planImageUrl}
+                              alt={fp.floorName}
+                              className="size-full object-contain"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-700">
+                                Floor #{idx + 1}:
+                              </span>
+                              <input
+                                type="text"
+                                value={fp.floorName}
+                                onChange={(e) =>
+                                  updateFloorPlanItem(idx, "floorName", e.target.value)
+                                }
+                                placeholder="e.g. Ground Floor, 1st Floor"
+                                className="text-xs font-semibold px-2 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-blue-500"
+                              />
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {fp.hotspots?.length || 1} interactive pins configured
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeFloorPlan(idx)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -2006,30 +2197,145 @@ export function PropertiesClient({
                       Uploading image(s)...
                     </p>
                   )}
-                  {uploadedImages.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {uploadedImages.map((imgUrl, idx) => (
+                  {/* Existing & Uploaded Images List in Edit Modal */}
+                  {(existingImages.length > 0 || uploadedImages.length > 0) && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {existingImages.map((imgUrl, idx) => (
                         <div
-                          key={idx}
-                          className="relative size-10 rounded-lg overflow-hidden border border-slate-200 group"
+                          key={`exist-${idx}`}
+                          className="relative size-12 rounded-lg overflow-hidden border-2 border-slate-300 group shadow-xs"
+                          title="Existing Property Photo (Click ✕ to delete)"
                         >
                           <img
                             src={imgUrl}
-                            alt={`Upload ${idx + 1}`}
+                            alt={`Existing Photo ${idx + 1}`}
+                            className="size-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(idx)}
+                            className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity font-bold cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                          <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center leading-tight">
+                            Saved
+                          </span>
+                        </div>
+                      ))}
+                      {uploadedImages.map((imgUrl, idx) => (
+                        <div
+                          key={`new-${idx}`}
+                          className="relative size-12 rounded-lg overflow-hidden border-2 border-emerald-500 group shadow-xs"
+                          title="New Uploaded Photo (Will be saved on submit)"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`New Upload ${idx + 1}`}
                             className="size-full object-cover"
                           />
                           <button
                             type="button"
                             onClick={() => removeUploadedImage(idx)}
-                            className="absolute inset-0 bg-red-600/75 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity font-bold cursor-pointer"
                           >
                             ✕
                           </button>
+                          <span className="absolute bottom-0 left-0 right-0 bg-emerald-700 text-white text-[9px] text-center leading-tight">
+                            New
+                          </span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Floor Plans & Multi-floor Map Upload Section */}
+              <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Layers className="size-4 text-blue-600" />
+                    <span className="text-xs font-bold text-slate-800">
+                      Interactive Floor Maps / Blueprints
+                    </span>
+                    <span className="text-[10px] bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">
+                      Multi-Floor Supported
+                    </span>
+                  </div>
+                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 cursor-pointer transition">
+                    <Plus className="size-3.5" />
+                    <span>Upload Floor Map</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/png,image/jpeg,image/webp,image/jpg"
+                      onChange={handleFloorPlanUpload}
+                      disabled={isUploadingFloorPlan}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {isUploadingFloorPlan && (
+                  <p className="text-xs text-blue-600 animate-pulse">
+                    Uploading floor blueprint map...
+                  </p>
+                )}
+
+                {floorPlans.length === 0 ? (
+                  <div className="text-center py-3.5 border border-dashed border-blue-200 rounded-lg bg-white/60">
+                    <p className="text-xs text-slate-500">
+                      No floor maps uploaded. If this property has multiple floors, click &quot;Upload Floor Map&quot; to add floor blueprints with interactive pins.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {floorPlans.map((fp, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="size-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-50">
+                            <img
+                              src={fp.planImageUrl}
+                              alt={fp.floorName}
+                              className="size-full object-contain"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-700">
+                                Floor #{idx + 1}:
+                              </span>
+                              <input
+                                type="text"
+                                value={fp.floorName}
+                                onChange={(e) =>
+                                  updateFloorPlanItem(idx, "floorName", e.target.value)
+                                }
+                                placeholder="e.g. Ground Floor, 1st Floor"
+                                className="text-xs font-semibold px-2 py-0.5 border border-slate-200 rounded focus:ring-1 focus:ring-blue-500"
+                              />
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {fp.hotspots?.length || 1} interactive pins configured
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeFloorPlan(idx)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded hover:bg-red-50 transition"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

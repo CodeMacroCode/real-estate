@@ -1,4 +1,8 @@
 import mongoose, { Document, Model, Schema, Types } from "mongoose";
+import "./User";
+import "./Lead";
+import "./Appointment";
+import "./ClientConfirmation";
 
 export interface IClientDocument extends Document {
   _id: Types.ObjectId;

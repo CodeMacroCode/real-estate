@@ -56,6 +56,13 @@ export interface SsrPropertyItem {
   media?: {
     featuredImage?: string;
     images?: string[];
+    floorPlans?: string[];
+    floorPlanMaps?: Array<{
+      floorName: string;
+      floorNumber?: number;
+      planImageUrl: string;
+      hotspots?: any[];
+    }>;
   };
   amenities?: string[];
   furnishing?: string;
@@ -250,6 +257,8 @@ export async function getSsrProperties({
     media: {
       featuredImage: doc.media?.featuredImage || "",
       images: Array.isArray(doc.media?.images) ? doc.media.images : [],
+      floorPlans: Array.isArray(doc.media?.floorPlans) ? doc.media.floorPlans : [],
+      floorPlanMaps: Array.isArray(doc.media?.floorPlanMaps) ? doc.media.floorPlanMaps : [],
     },
     amenities: Array.isArray(doc.amenities) ? doc.amenities : [],
     furnishing: doc.residentialSpecs?.furnishing || "Unfurnished",

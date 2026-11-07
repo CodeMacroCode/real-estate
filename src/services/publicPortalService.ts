@@ -88,6 +88,19 @@ export interface SanitizedPublicProperty {
     images: string[];
     videos?: string[];
     floorPlans?: string[];
+    floorPlanMaps?: Array<{
+      floorName: string;
+      floorNumber?: number;
+      planImageUrl: string;
+      hotspots?: Array<{
+        id?: string;
+        xPercent: number;
+        yPercent: number;
+        title: string;
+        subtitle?: string;
+        category?: string;
+      }>;
+    }>;
   };
   featuredProperty: boolean;
   publishedAt?: string;
@@ -231,6 +244,19 @@ export function sanitizePublicProperty(doc: any): SanitizedPublicProperty {
       images: property.media?.images || [],
       videos: property.media?.videos || [],
       floorPlans: property.media?.floorPlans || [],
+      floorPlanMaps: (property.media?.floorPlanMaps || []).map((fpm: any) => ({
+        floorName: fpm.floorName || "Floor Plan",
+        floorNumber: fpm.floorNumber,
+        planImageUrl: fpm.planImageUrl,
+        hotspots: (fpm.hotspots || []).map((h: any) => ({
+          id: h.id || String(Math.random()),
+          xPercent: Number(h.xPercent) || 0,
+          yPercent: Number(h.yPercent) || 0,
+          title: h.title || "",
+          subtitle: h.subtitle || "",
+          category: h.category || "",
+        })),
+      })),
     },
     featuredProperty: Boolean(property.publishing?.featuredProperty),
     publishedAt: property.publishing?.publishedAt
