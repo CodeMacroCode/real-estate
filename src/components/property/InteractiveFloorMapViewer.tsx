@@ -6,12 +6,8 @@ import {
   Tv,
   CheckCircle2,
   MapPin,
-  Compass,
-  Square,
-  BedDouble,
   Building,
   Info,
-  Sparkles,
 } from "lucide-react";
 
 export interface FloorPlanHotspot {
@@ -169,91 +165,49 @@ export function InteractiveFloorMapViewer({
               )}
             </div>
 
-            {/* Spec Cards 2x3 Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {/* Type */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-cyan-50 text-cyan-600 shrink-0">
-                  <BedDouble className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase">Type</div>
-                  <div className="text-xs font-bold text-slate-800 truncate">
-                    {bedrooms ? `${bedrooms} BHK ${propertyType}` : propertyType}
-                  </div>
-                </div>
-              </div>
-
-              {/* Side / Orientation */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 shrink-0">
-                  <Compass className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase">Side</div>
-                  <div className="text-xs font-bold text-slate-800 truncate">
-                    {facing ? `${facing} Facing` : "Left Side"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floor */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
-                  <Building className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase">Floor</div>
-                  <div className="text-xs font-bold text-slate-800 truncate">
-                    {currentFloor.floorName || "6th Floor"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Connecting / Unit Room */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-teal-50 text-teal-600 shrink-0">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase">Adjacent</div>
-                  <div className="text-xs font-bold text-slate-800 truncate">Connecting Wing</div>
-                </div>
-              </div>
-
-              {/* View */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-sky-50 text-sky-600 shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase">View</div>
-                  <div className="text-xs font-bold text-slate-800 truncate">Ocean / City View</div>
-                </div>
-              </div>
-
-              {/* Size */}
-              <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-50 text-purple-600 shrink-0">
-                  <Square className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase">Size</div>
-                  <div className="text-xs font-bold text-slate-800 truncate">
-                    {carpetArea ? `${carpetArea} ${areaUnit}` : "220 SqFt"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
+            {/* Property Overview */}
             <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                Description
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
+                Property Overview
               </h4>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                One of our most popular units, this spacious floor layout is ideal for luxurious and modern living. Decorated with natural architectural accents, well-appointed circulation spaces, french doors, a comfortable lounge area, and ergonomic dining arrangements.
-              </p>
+              <dl className="grid grid-cols-2 gap-2 text-xs">
+                {carpetArea && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Carpet Area</dt>
+                    <dd className="font-bold text-slate-800 mt-0.5">{carpetArea} {areaUnit}</dd>
+                  </div>
+                )}
+                {propertyType && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Property Type</dt>
+                    <dd className="font-bold text-slate-800 mt-0.5">{propertyType}</dd>
+                  </div>
+                )}
+                {bedrooms !== undefined && bedrooms !== null && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Bedrooms</dt>
+                    <dd className="font-bold text-slate-800 mt-0.5">{bedrooms} BHK</dd>
+                  </div>
+                )}
+                {bathrooms !== undefined && bathrooms !== null && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Bathrooms</dt>
+                    <dd className="font-bold text-slate-800 mt-0.5">{bathrooms} Baths</dd>
+                  </div>
+                )}
+                {furnishing && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Furnishing</dt>
+                    <dd className="font-bold text-slate-800 mt-0.5">{furnishing}</dd>
+                  </div>
+                )}
+                {facing && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Facing</dt>
+                    <dd className="font-bold text-slate-800 mt-0.5">{facing} Facing</dd>
+                  </div>
+                )}
+              </dl>
             </div>
 
             {/* Features & Amenities */}
