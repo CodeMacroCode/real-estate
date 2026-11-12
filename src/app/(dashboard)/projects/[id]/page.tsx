@@ -962,6 +962,19 @@ export default function ProjectInventoryTreePage() {
                 </div>
               </div>
 
+              {/* Roof Top Cap of Building */}
+              <div className="flex items-center justify-center">
+                <div className="w-24 h-3 bg-slate-200 rounded-t-md border-t-2 border-x-2 border-slate-400" />
+              </div>
+              <div className="w-full h-1 bg-slate-400 rounded-xs mb-1" />
+
+              {/* Header column indicators: Floor Number | Flat Units | Demand */}
+              <div className="flex items-center gap-3 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                <div className="w-9 shrink-0 text-center font-mono">Floor</div>
+                <div className="flex-1 font-semibold text-slate-500">Flat / Unit Numbers</div>
+                <div className="w-24 shrink-0 text-right pr-1 font-mono">Demand %</div>
+              </div>
+
               {sortedFloorsDesc.length === 0 ? (
                 <div className="text-center py-20 text-slate-400 text-xs">
                   No floors added yet. Click &quot;Add Unit to {activeTower}
