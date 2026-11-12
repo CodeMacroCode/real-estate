@@ -103,10 +103,10 @@ export function PropertyCard({ property, onEnquireClick, agencySlug }: PropertyC
           </span>
         </div>
 
-        {/* Top-right white outlined "Verified" stamp */}
+        {/* Top-right solid contrast "Verified" stamp */}
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
-          <span className="px-2 py-0.5 bg-card-white/95 text-ink-green text-[10px] font-bold uppercase tracking-wider border border-ink-green flex items-center gap-1">
-            <Check className="size-3 text-brass" strokeWidth={2.5} />
+          <span className="px-2.5 py-1 bg-white/95 text-slate-900 text-[10px] font-bold uppercase tracking-wider border border-slate-300 shadow-xs flex items-center gap-1 backdrop-blur-xs">
+            <Check className="size-3 text-emerald-600 stroke-[3]" />
             Verified
           </span>
           <button
@@ -117,7 +117,7 @@ export function PropertyCard({ property, onEnquireClick, agencySlug }: PropertyC
               setIsFavourited(!isFavourited);
             }}
             aria-label="Save listing"
-            className="p-1 bg-card-white border border-line text-ink hover:text-brass"
+            className="p-1 bg-white/95 border border-slate-300 text-slate-700 hover:text-brass shadow-xs backdrop-blur-xs"
           >
             <Heart className={`size-3.5 ${isFavourited ? "fill-brass text-brass" : ""}`} strokeWidth={1.5} />
           </button>

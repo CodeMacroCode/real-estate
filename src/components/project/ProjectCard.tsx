@@ -79,8 +79,8 @@ export function ProjectCard({ project, agencySlug, onEnquireClick }: ProjectCard
 
         {/* Top-right Status stamp */}
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-          <span className="px-2 py-0.5 bg-card-white/95 text-ink-green text-[10px] font-bold uppercase tracking-wider border border-ink-green flex items-center gap-1">
-            <Check className="size-3 text-brass" strokeWidth={2.5} />
+          <span className="px-2.5 py-1 bg-white/95 text-slate-900 text-[10px] font-bold uppercase tracking-wider border border-slate-300 shadow-xs flex items-center gap-1 backdrop-blur-xs">
+            <Check className="size-3 text-emerald-600 stroke-[3]" />
             {project.constructionStatus || "New Launch"}
           </span>
         </div>
