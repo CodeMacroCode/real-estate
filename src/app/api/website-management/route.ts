@@ -106,15 +106,34 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
+    const updateDoc: any = {};
+    const unsetDoc: any = {};
+
+    if (agencyName !== undefined) {
+      updateDoc.agencyName = agencyName.trim();
+    }
+    if (cleanSlug) {
+      updateDoc.agencySlug = cleanSlug;
+    }
+
+    if (cleanDomain) {
+      updateDoc.customDomain = cleanDomain;
+    } else {
+      // Use $unset so MongoDB sparse index customDomain_1 does not store `{ customDomain: null }`
+      unsetDoc.customDomain = 1;
+    }
+
+    const updateOperations: any = {};
+    if (Object.keys(updateDoc).length > 0) {
+      updateOperations.$set = updateDoc;
+    }
+    if (Object.keys(unsetDoc).length > 0) {
+      updateOperations.$unset = unsetDoc;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       updateUserId,
-      {
-        $set: {
-          ...(agencyName !== undefined && { agencyName: agencyName.trim() }),
-          ...(cleanSlug !== undefined && { agencySlug: cleanSlug }),
-          customDomain: cleanDomain || null,
-        },
-      },
+      updateOperations,
       { new: true }
     ).select("_id name email agencyName agencySlug customDomain");
 
