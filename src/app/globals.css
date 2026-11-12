@@ -3,14 +3,38 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 15, 23, 42;
-  --background-rgb: 248, 250, 252;
+  --foreground-rgb: 29, 42, 36;
+  --background-rgb: 246, 242, 234;
+
+  /* Classic Indian Property Portal design tokens */
+  --ink-green: #0e3b2e;
+  --deep-green: #0b2d22;
+  --mid-green: #14503d;
+  --brass: #b5822c;
+  --paper: #f6f2ea;
+  --white: #ffffff;
+  --line: #d8d2c4;
+  --soft-line: #e6e0d2;
+  --text: #1d2a24;
+  --muted: #6b6a60;
+  --body-muted: #4a5750;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  color: var(--text);
+  background: var(--paper);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Blueprint divider line */
+.blueprint-divider {
+  border-top: 2px dashed #cfc8b8;
+}
+
+/* Hard outline focus ring */
+*:focus-visible {
+  outline: 2px solid var(--brass) !important;
+  outline-offset: 2px !important;
 }
 
 /* Custom styled scrollbars for table container */

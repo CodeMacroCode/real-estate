@@ -1,12 +1,19 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { getPublicProperties, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
+import {
+  getPublicProperties,
+  resolveAdminByHostOrSlug,
+  getTopLocationsForTenant,
+} from "@/services/publicPortalService";
 import PublicPortalClient from "./PublicPortalClient";
+import { PublicHeader } from "@/components/layout/PublicHeader";
+import { PublicFooter } from "@/components/layout/PublicFooter";
 
 export const metadata = {
   title: "Browse Properties & Real Estate Listings",
   description:
-    "Explore verified residential, commercial, and investment properties.",
+    "Explore RERA-verified residential, commercial, and land investments.",
 };
 
 interface PublicPropertiesPageProps {
@@ -28,13 +35,6 @@ interface PublicPropertiesPageProps {
   }>;
 }
 
-/**
- * SSR Server Component: Pre-renders public verified listings on the server.
- * Supports Multi-Tenant Domain Isolation:
- *  - If visited via admin custom domain / subdomain (e.g. apex.localhost:3000 or apexrealty.com),
- *    it resolves the admin and filters strictly to their inventory.
- *  - Also supports explicit ?adminId= or ?agency= parameter.
- */
 export default async function PublicPropertiesPage({
   searchParams,
 }: PublicPropertiesPageProps) {
@@ -56,6 +56,12 @@ export default async function PublicPropertiesPage({
     resolvedSearchParams.adminId ||
     undefined;
 
+  // Strict tenant isolation: Global un-scoped portal is disabled.
+  // Must provide a valid agency slug or adminId (e.g. /portal-properties?agency=prasad)
+  if (!targetAdminId) {
+    notFound();
+  }
+
   const agencyBranding = tenantFromHost || tenantFromQuery || null;
 
   const initialData = await getPublicProperties({
@@ -74,14 +80,23 @@ export default async function PublicPropertiesPage({
     sort: resolvedSearchParams.sort,
   });
 
+  const topLocations = await getTopLocationsForTenant(targetAdminId);
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <PublicPortalClient
-        initialProperties={initialData.properties}
-        initialPagination={initialData.pagination}
-        searchParams={resolvedSearchParams}
-        agencyBranding={agencyBranding}
+    <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
+      <PublicHeader agencyName={agencyBranding?.agencyName} />
+      <main className="flex-1">
+        <PublicPortalClient
+          initialProperties={initialData.properties}
+          initialPagination={initialData.pagination}
+          searchParams={resolvedSearchParams}
+          agencyBranding={agencyBranding}
+        />
+      </main>
+      <PublicFooter
+        agencyName={agencyBranding?.agencyName}
+        topLocations={topLocations}
       />
-    </main>
+    </div>
   );
 }

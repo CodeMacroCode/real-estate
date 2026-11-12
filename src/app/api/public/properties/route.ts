@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPublicProperties } from "@/services/publicPortalService";
+import { getPublicProperties, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
 
 /**
  * GET /api/public/properties
  * Public-facing listing endpoint for website visitors.
  * Filter query parameters:
- *  - adminId: (optional) Filter properties by specific real estate agency
+ *  - adminId / agency: (optional) Filter properties by specific real estate agency
  *  - category: Residential | Commercial | Land | Special Investment
  *  - propertyType: Apartment, Villa, Office, etc.
  *  - transactionType: Sale | Rent | Lease
@@ -24,7 +24,29 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const adminId = searchParams.get("adminId") || undefined;
+    let adminId = searchParams.get("adminId") || undefined;
+    const agency = searchParams.get("agency") || undefined;
+
+    if (!adminId && agency) {
+      const resolved = await resolveAdminByHostOrSlug(agency);
+      if (resolved?.adminId) {
+        adminId = resolved.adminId;
+      }
+    }
+
+    // Require an admin/agency context. Global cross-admin listing is strictly disabled.
+    if (!adminId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Agency or Admin identification is required. Global public marketplace is disabled.",
+          data: [],
+          pagination: { total: 0, page: 1, limit: 12, pages: 0 },
+        },
+        { status: 400 }
+      );
+    }
+
     const category = searchParams.get("category") || undefined;
     const propertyType = searchParams.get("propertyType") || undefined;
     const transactionType = searchParams.get("transactionType") || undefined;

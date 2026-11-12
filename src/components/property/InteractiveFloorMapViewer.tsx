@@ -3,12 +3,12 @@
 import React, { useState } from "react";
 import {
   Layers,
-  Tv,
-  CheckCircle2,
   MapPin,
+  CheckCircle2,
   Building,
   Info,
 } from "lucide-react";
+import { formatFloorOrdinal } from "@/lib/portalUtils";
 
 export interface FloorPlanHotspot {
   id?: string;
@@ -55,17 +55,17 @@ interface InteractiveFloorMapViewerProps {
 
 export function InteractiveFloorMapViewer({
   floorPlans,
-  defaultPropertyTitle = "Property Unit",
-  propertyCategory = "Residential",
-  propertyType = "Penthouse",
-  status = "Available",
+  defaultPropertyTitle = "Unit Plan",
+  propertyCategory,
+  propertyType = "Unit",
+  status = "AVAILABLE",
   carpetArea,
   areaUnit = "Sq. Ft.",
   bedrooms,
   bathrooms,
   furnishing,
   facing,
-  city,
+  city = "Nagpur",
   address,
   amenities = [],
   propertyImages = [],
@@ -79,35 +79,36 @@ export function InteractiveFloorMapViewer({
   }
 
   const currentFloor = floorPlans[activeFloorIndex] || floorPlans[0];
-  const hotspots = currentFloor.hotspots || [];
+  const hotspots = (currentFloor.hotspots || []).filter(
+    (s) => !s.title?.includes("IOT TV") && !s.subtitle?.includes("29489")
+  );
 
-  // Thumbnail strip at bottom: Floor plan + photos
   const allThumbnails = [
     { type: "map", url: currentFloor.planImageUrl, label: currentFloor.floorName },
     ...propertyImages.map((img, i) => ({ type: "photo", url: img, label: `Photo ${i + 1}` })),
   ];
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden my-6">
+    <div className="bg-card-white border-2 border-ink-green shadow-hard-brass my-6">
       {/* Top Header with Multi-Floor Tabs */}
-      <div className="bg-slate-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800">
+      <div className="bg-deep-green text-paper px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-ink-green">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/30">
-            <Layers className="w-5 h-5" />
+          <div className="size-8 bg-ink-green text-brass border border-brass flex items-center justify-center font-bold">
+            <Layers className="w-4 h-4" strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="font-bold text-base sm:text-lg text-white">
-              Interactive Floor Map &amp; Inspection
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brass block">
+              03 &mdash; Architectural Blueprint
+            </span>
+            <h3 className="font-serif font-bold text-base sm:text-lg text-paper">
+              Interactive Floor Blueprint &amp; Inspection
             </h3>
-            <p className="text-xs text-slate-400">
-              Interactive layout blueprint &amp; live room specifications
-            </p>
           </div>
         </div>
 
-        {/* Multi-floor tabs if > 1 floor */}
+        {/* Floor Switcher Tabs */}
         {floorPlans.length > 1 && (
-          <div className="flex items-center gap-1.5 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 overflow-x-auto max-w-full">
+          <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-ink-green border border-line/20">
             {floorPlans.map((floor, idx) => {
               const isActive = idx === activeFloorIndex;
               return (
@@ -119,13 +120,13 @@ export function InteractiveFloorMapViewer({
                     setSelectedHotspot(null);
                     setActiveThumbnailIndex(null);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`px-3 py-1 text-xs font-bold uppercase tracking-wider transition-all border ${
                     isActive
-                      ? "bg-cyan-600 text-white shadow-sm shadow-cyan-500/20"
-                      : "text-slate-300 hover:text-white hover:bg-slate-700/50"
+                      ? "bg-brass text-paper border-brass"
+                      : "text-line/80 border-transparent hover:text-paper hover:bg-deep-green"
                   }`}
                 >
-                  {floor.floorName || `Floor ${idx + 1}`}
+                  {floor.floorName || formatFloorOrdinal(floor.floorNumber || idx)}
                 </button>
               );
             })}
@@ -133,78 +134,74 @@ export function InteractiveFloorMapViewer({
         )}
       </div>
 
-      {/* Main split grid matching reference Image */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
-        {/* Left Column: Room Details, Specs, Description & Features */}
-        <div className="lg:col-span-5 p-6 sm:p-8 bg-slate-50/70 border-r border-slate-200 flex flex-col justify-between">
+      {/* Main split grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
+        {/* Left Column: Property Overview & Amenities */}
+        <div className="lg:col-span-5 p-6 sm:p-7 bg-paper/60 border-r border-line flex flex-col justify-between space-y-6">
           <div className="space-y-6">
-            {/* Room / Unit Title Header */}
             <div>
-              <div className="text-[11px] font-bold text-cyan-700 tracking-wider uppercase mb-1">
-                {currentFloor.floorName ? `${currentFloor.floorName} Layout` : "Unit Plan"}
+              <div className="text-[10px] font-bold text-brass tracking-widest uppercase mb-1">
+                {currentFloor.floorName ? `${currentFloor.floorName} Specification` : "Unit Layout"}
               </div>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                  {defaultPropertyTitle}
-                </h2>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    {status || "AVAILABLE"}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-cyan-100 text-cyan-800 border border-cyan-200">
-                    {propertyType || "Unit"}
-                  </span>
-                </div>
+              <h2 className="font-serif text-2xl font-bold text-ink-green tracking-tight">
+                {defaultPropertyTitle}
+              </h2>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-card-white text-ink-green border border-ink-green">
+                  {status}
+                </span>
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brass text-paper">
+                  {propertyType}
+                </span>
               </div>
               {(city || address) && (
-                <p className="text-xs text-slate-500 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  {address ? `${address}, ` : ""}
-                  {city}
+                <p className="text-xs text-muted-ink flex items-center gap-1 mt-2">
+                  <MapPin className="w-3.5 h-3.5 text-brass shrink-0" strokeWidth={1.5} />
+                  <span>{address ? `${address}, ` : ""}{city}</span>
                 </p>
               )}
             </div>
 
             {/* Property Overview */}
             <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
+              <h4 className="text-[11px] font-bold text-ink uppercase tracking-wider mb-2.5 pb-1 border-b border-line">
                 Property Overview
               </h4>
               <dl className="grid grid-cols-2 gap-2 text-xs">
                 {carpetArea && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Carpet Area</dt>
-                    <dd className="font-bold text-slate-800 mt-0.5">{carpetArea} {areaUnit}</dd>
+                  <div className="bg-card-white p-2.5 border border-line">
+                    <dt className="text-muted-ink text-[10px] uppercase font-semibold">Carpet Area</dt>
+                    <dd className="font-bold text-ink mt-0.5">{carpetArea} {areaUnit}</dd>
                   </div>
                 )}
                 {propertyType && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Property Type</dt>
-                    <dd className="font-bold text-slate-800 mt-0.5">{propertyType}</dd>
+                  <div className="bg-card-white p-2.5 border border-line">
+                    <dt className="text-muted-ink text-[10px] uppercase font-semibold">Property Type</dt>
+                    <dd className="font-bold text-ink mt-0.5">{propertyType}</dd>
                   </div>
                 )}
                 {bedrooms !== undefined && bedrooms !== null && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Bedrooms</dt>
-                    <dd className="font-bold text-slate-800 mt-0.5">{bedrooms} BHK</dd>
+                  <div className="bg-card-white p-2.5 border border-line">
+                    <dt className="text-muted-ink text-[10px] uppercase font-semibold">Bedrooms</dt>
+                    <dd className="font-bold text-ink mt-0.5">{bedrooms} BHK</dd>
                   </div>
                 )}
                 {bathrooms !== undefined && bathrooms !== null && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Bathrooms</dt>
-                    <dd className="font-bold text-slate-800 mt-0.5">{bathrooms} Baths</dd>
+                  <div className="bg-card-white p-2.5 border border-line">
+                    <dt className="text-muted-ink text-[10px] uppercase font-semibold">Bathrooms</dt>
+                    <dd className="font-bold text-ink mt-0.5">{bathrooms} Baths</dd>
                   </div>
                 )}
                 {furnishing && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Furnishing</dt>
-                    <dd className="font-bold text-slate-800 mt-0.5">{furnishing}</dd>
+                  <div className="bg-card-white p-2.5 border border-line">
+                    <dt className="text-muted-ink text-[10px] uppercase font-semibold">Furnishing</dt>
+                    <dd className="font-bold text-ink mt-0.5">{furnishing}</dd>
                   </div>
                 )}
                 {facing && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
-                    <dt className="text-slate-400 text-[10px] uppercase font-semibold">Facing</dt>
-                    <dd className="font-bold text-slate-800 mt-0.5">{facing} Facing</dd>
+                  <div className="bg-card-white p-2.5 border border-line">
+                    <dt className="text-muted-ink text-[10px] uppercase font-semibold">Facing</dt>
+                    <dd className="font-bold text-ink mt-0.5">{facing} Facing</dd>
                   </div>
                 )}
               </dl>
@@ -212,12 +209,12 @@ export function InteractiveFloorMapViewer({
 
             {/* Features & Amenities */}
             <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
+              <h4 className="text-[11px] font-bold text-ink uppercase tracking-wider mb-2.5 pb-1 border-b border-line">
                 Features &amp; Amenities
               </h4>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 {(amenities.length > 0
-                  ? amenities.slice(0, 12)
+                  ? amenities.slice(0, 10)
                   : [
                       "Balcony",
                       "Air Conditioning",
@@ -227,168 +224,84 @@ export function InteractiveFloorMapViewer({
                       "Spacious Wardrobes",
                       "Private Parking",
                       "24/7 Security",
-                      "High-Speed Wi-Fi",
-                      "Modern Bathroom",
-                      "Water Storage",
-                      "Security System",
                     ]
                 ).map((feat, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 text-xs font-medium text-slate-700 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/70 shadow-2xs"
+                    className="flex items-center gap-2 text-xs font-medium text-ink bg-card-white px-2.5 py-1.5 border border-line"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-brass shrink-0" strokeWidth={1.5} />
                     <span className="truncate">{feat}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Active Hotspot Inspector Card */}
-          {selectedHotspot && (
-            <div className="mt-6 p-4 rounded-2xl bg-slate-900 text-white border border-cyan-500/40 shadow-lg transition-all">
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-cyan-600 text-white">
-                    <Tv className="w-4 h-4" />
-                  </span>
-                  <span className="text-xs font-bold">{selectedHotspot.title}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedHotspot(null)}
-                  className="text-slate-400 hover:text-white text-xs p-1"
-                >
-                  ✕
-                </button>
-              </div>
-              {selectedHotspot.subtitle && (
-                <p className="text-xs text-cyan-300 font-mono">{selectedHotspot.subtitle}</p>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Right Column: Blueprint Floor Map with Interactive Pins */}
-        <div className="lg:col-span-7 bg-slate-100/80 p-4 sm:p-8 flex flex-col justify-between items-center relative overflow-hidden">
-          <div className="w-full max-w-2xl bg-white rounded-2xl p-4 shadow-sm border border-slate-200 relative">
-            {/* Floor watermark label */}
-            <div className="absolute top-5 right-6 z-10 text-right pointer-events-none">
-              <span className="text-sm font-extrabold tracking-widest text-slate-300 uppercase">
-                {currentFloor.floorName || "6TH FLOOR"}
-              </span>
-            </div>
+        {/* Right Column: Floor Blueprint Image Canvas */}
+        <div className="lg:col-span-7 p-6 flex flex-col justify-between bg-card-white">
+          <div className="relative w-full aspect-[4/3] max-h-[480px] bg-paper border-2 border-line overflow-hidden flex items-center justify-center">
+            {/* Blueprint border canvas */}
+            <div className="absolute inset-0 pointer-events-none border border-line" />
 
-            {/* Interactive Blueprint Canvas */}
-            <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center border border-slate-100">
-              <img
-                src={
-                  activeThumbnailIndex !== null && allThumbnails[activeThumbnailIndex]
-                    ? allThumbnails[activeThumbnailIndex].url
-                    : currentFloor.planImageUrl
-                }
-                alt={currentFloor.floorName}
-                className="w-full h-full object-contain select-none"
-              />
+            <img
+              src={
+                activeThumbnailIndex !== null && allThumbnails[activeThumbnailIndex]
+                  ? allThumbnails[activeThumbnailIndex].url
+                  : currentFloor.planImageUrl
+              }
+              alt={currentFloor.floorName}
+              className="w-full h-full object-contain select-none p-4 relative z-10"
+            />
 
-              {/* Pins (only active on floor plan view) */}
-              {activeThumbnailIndex === null &&
-                hotspots.map((spot, idx) => {
-                  const isSelected = selectedHotspot?.id === spot.id || selectedHotspot === spot;
-                  return (
-                    <div
-                      key={spot.id || idx}
-                      style={{
-                        left: `${spot.xPercent}%`,
-                        top: `${spot.yPercent}%`,
-                      }}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer z-20"
-                      onClick={() => setSelectedHotspot(spot)}
-                    >
-                      {/* Pulsing ring */}
-                      <span className="absolute -inset-1.5 rounded-full bg-cyan-400 opacity-75 animate-ping" />
-
-                      {/* Pin Button */}
-                      <div
-                        className={`relative flex items-center justify-center size-7 rounded-lg shadow-md transition-all ${
-                          isSelected
-                            ? "bg-cyan-500 text-white scale-110 ring-2 ring-white"
-                            : "bg-slate-900 text-white hover:bg-cyan-600 hover:scale-105"
-                        }`}
-                      >
-                        <Tv className="size-3.5" />
-                      </div>
-
-                      {/* Popover Tooltip */}
-                      <div
-                        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 transition-all pointer-events-auto ${
-                          isSelected
-                            ? "opacity-100 scale-100"
-                            : "opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none"
-                        }`}
-                      >
-                        <div className="bg-slate-900 text-white rounded-xl p-2.5 shadow-2xl border border-slate-700 min-w-[170px] whitespace-nowrap flex items-center gap-2.5">
-                          <div className="size-8 rounded-lg bg-cyan-600 flex items-center justify-center text-white shrink-0">
-                            <Tv className="size-4" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-bold text-white tracking-wide">
-                              {spot.title || "IOT TV"}
-                            </div>
-                            <div className="text-[10px] text-slate-300 font-mono">
-                              {spot.subtitle || `60" Sony - SN #29489`}
-                            </div>
-                          </div>
-                        </div>
-                        {/* Triangle pointer */}
-                        <div className="w-2.5 h-2.5 bg-slate-900 rotate-45 border-r border-b border-slate-700 mx-auto -mt-1.5" />
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-
-            {/* Helper notice */}
-            <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-cyan-600" />
-                Click pin marker to view connected device &amp; hardware specs
-              </span>
-              <span>{hotspots.length} Markers</span>
+            {/* Blueprint watermark */}
+            <div className="absolute bottom-2 right-2 z-10 px-2 py-0.5 bg-ink-green text-brass text-[9px] font-mono uppercase tracking-widest border border-brass">
+              Blueprint Scale 1:100
             </div>
           </div>
 
-          {/* Bottom Thumbnails Strip */}
-          <div className="w-full max-w-2xl mt-4 pt-3 border-t border-slate-200">
-            <div className="flex items-center justify-center gap-2.5 overflow-x-auto py-1">
-              {allThumbnails.map((thumb, i) => {
+          {/* Helper notice */}
+          <div className="mt-3 flex items-center justify-between text-[11px] text-muted-ink">
+            <span className="flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-brass shrink-0" strokeWidth={1.5} />
+              <span>Architectural line plan verified under municipal building bylaws.</span>
+            </span>
+            <span className="font-mono text-[10px] text-ink-green font-bold">
+              {currentFloor.floorName || "Ground Floor"}
+            </span>
+          </div>
+
+          {/* Thumbnail Gallery Strip at Bottom */}
+          {allThumbnails.length > 1 && (
+            <div className="mt-4 pt-3 border-t border-line flex items-center gap-2 overflow-x-auto pb-1">
+              {allThumbnails.map((thumb, idx) => {
                 const isSelected =
-                  (activeThumbnailIndex === null && i === 0) || activeThumbnailIndex === i;
+                  activeThumbnailIndex === idx ||
+                  (activeThumbnailIndex === null && idx === 0);
                 return (
                   <button
-                    key={i}
+                    key={idx}
                     type="button"
-                    onClick={() => setActiveThumbnailIndex(i === 0 ? null : i)}
-                    className={`size-14 sm:size-16 rounded-xl overflow-hidden border-2 bg-white shrink-0 transition-all ${
+                    onClick={() => setActiveThumbnailIndex(idx)}
+                    className={`relative shrink-0 size-14 border-2 transition-all overflow-hidden ${
                       isSelected
-                        ? "border-cyan-600 shadow-md ring-2 ring-cyan-200 scale-105"
-                        : "border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-400"
+                        ? "border-brass shadow-hard-green-sm"
+                        : "border-line hover:border-ink-green opacity-70 hover:opacity-100"
                     }`}
                   >
                     <img
                       src={thumb.url}
                       alt={thumb.label}
-                      className="size-full object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 );
               })}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

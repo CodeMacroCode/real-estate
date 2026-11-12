@@ -2,17 +2,17 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Building2,
   MapPin,
-  CheckCircle2,
-  ShieldCheck,
-  ChevronRight,
-  Layers,
-  PhoneCall,
+  Check,
   Eye,
+  Mail,
+  ShieldCheck,
 } from "lucide-react";
 import { SanitizedPublicProject } from "@/services/publicPortalService";
+import { formatPrice } from "@/lib/portalUtils";
+import { motion, useReducedMotion } from "motion/react";
 
 interface ProjectCardProps {
   project: SanitizedPublicProject;
@@ -21,130 +21,118 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, agencySlug, onEnquireClick }: ProjectCardProps) {
+  const shouldReduceMotion = useReducedMotion();
   const activeAgencySlug = agencySlug || project.agency?.agencySlug;
   const projectUrl = activeAgencySlug
     ? `/portal-projects/${project.slug || project.id}?agency=${activeAgencySlug}`
     : `/portal-projects/${project.slug || project.id}`;
-  const totalPhotos =
-    (project.media?.coverImage ? 1 : 0) +
-    (Array.isArray(project.media?.images) ? project.media.images.length : 0);
+
+  const priceDisplay = "Price on Request";
 
   return (
-    <div className="premium-property-card group relative bg-white rounded-2xl border border-slate-200/90 overflow-hidden flex flex-col justify-between">
-      {/* =========================================================================
-          Cover Image Section with Zoom & Hover Overlay
-          ========================================================================= */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
-        <Link href={projectUrl} className="block w-full h-full cursor-pointer">
+    <motion.article
+      whileHover={shouldReduceMotion ? {} : { y: -4 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="group relative bg-card-white border border-line hover:border-ink-green hover:shadow-hard-green transition-shadow flex flex-col justify-between"
+    >
+      {/* 170px Image Area */}
+      <div className="relative h-[170px] w-full overflow-hidden bg-paper border-b border-line">
+        <Link href={projectUrl} className="block w-full h-full">
           {project.media?.coverImage ? (
-            <img
-              src={project.media.coverImage}
-              alt={project.name}
-              className="premium-property-card__image w-full h-full object-cover"
-              loading="lazy"
-            />
+            <div className="relative w-full h-full overflow-hidden">
+              <motion.div
+                whileHover={shouldReduceMotion ? {} : { scale: 1.04 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="w-full h-full"
+              >
+                <Image
+                  src={project.media.coverImage}
+                  alt={project.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                  unoptimized
+                />
+              </motion.div>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full text-slate-300 bg-slate-50">
-              <Building2 className="size-10 stroke-[1.2]" />
-              <span className="text-[11px] font-medium text-slate-400 mt-1">
-                Project image coming soon
+            <div className="w-full h-full bg-[#14503d]/10 flex flex-col items-center justify-center p-4 text-center">
+              <svg width="60" height="60" viewBox="0 0 64 64" fill="none" className="text-ink-green opacity-70">
+                <rect x="8" y="24" width="20" height="34" fill="#0e3b2e" />
+                <rect x="24" y="14" width="20" height="44" fill="#14503d" />
+                <rect x="40" y="8" width="16" height="50" fill="#0b2d22" />
+                <circle cx="50" cy="4" r="3" fill="#b5822c" />
+              </svg>
+              <span className="text-[10px] font-bold text-ink-green uppercase tracking-wider mt-1">
+                Master Plan Development
               </span>
             </div>
           )}
-
-          {/* Low-opacity Dark Overlay on hover */}
-          <div className="premium-property-card__overlay absolute inset-0 pointer-events-none" />
         </Link>
 
-        {/* Top Badges (Left) */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pointer-events-none">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase bg-indigo-600 text-white shadow-xs backdrop-blur-xs">
-            {project.projectType}
-          </span>
-
-          {project.featuredOnWebsite && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-400 text-amber-950 shadow-xs">
-              ★ Featured
-            </span>
-          )}
-        </div>
-
-        {/* Top-Right: Status Badge */}
-        <div className="absolute top-3 right-3 pointer-events-none">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-900/80 backdrop-blur-md text-white shadow-xs">
-            {project.constructionStatus}
+        {/* Top-left ribbon */}
+        <div className="absolute top-2 left-2 z-10">
+          <span className="px-2.5 py-0.5 bg-ink-green text-paper text-[10px] font-bold uppercase tracking-wider border border-brass">
+            {project.projectType || "Residential"}
           </span>
         </div>
 
-        {/* Bottom Badges */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between pointer-events-none">
-          <div className="bg-slate-900/85 backdrop-blur-md text-white px-3 py-1.5 rounded-lg shadow-md">
-            <span className="text-[10px] text-slate-300 block font-medium uppercase tracking-wider">
-              By {project.developerName}
-            </span>
-            <div className="text-sm font-extrabold tracking-tight">
-              {project.name}
-            </div>
-          </div>
-
-          {totalPhotos > 1 && (
-            <div className="bg-slate-900/70 backdrop-blur-md text-white px-2 py-1 rounded-md text-[10px] font-semibold tracking-wider">
-              {totalPhotos} Photos
-            </div>
-          )}
+        {/* Top-right Status stamp */}
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+          <span className="px-2 py-0.5 bg-card-white/95 text-ink-green text-[10px] font-bold uppercase tracking-wider border border-ink-green flex items-center gap-1">
+            <Check className="size-3 text-brass" strokeWidth={2.5} />
+            {project.constructionStatus || "New Launch"}
+          </span>
         </div>
       </div>
 
-      {/* =========================================================================
-          Information Section
-          ========================================================================= */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+      {/* Body */}
+      <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          {/* Location & RERA */}
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-            <span className="inline-flex items-center gap-1 text-slate-600 font-medium truncate">
-              <MapPin className="size-3 text-slate-400 shrink-0" />
-              {project.location.address ? `${project.location.address}, ` : ""}
-              {project.location.city}
+          {/* Price row */}
+          <div className="mb-1.5">
+            <span className="text-[10px] uppercase font-bold text-brass tracking-wider block">
+              Investment Tier
             </span>
+            <div className="font-serif text-[20px] font-bold text-ink-green leading-none mt-0.5">
+              {priceDisplay}
+            </div>
           </div>
 
-          {project.reraNumber && (
-            <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500 mt-1">
-              <ShieldCheck className="size-3.5 text-emerald-600 shrink-0" />
-              <span>RERA: {project.reraNumber}</span>
-            </div>
-          )}
+          {/* Project Name */}
+          <h3 className="font-semibold text-[15px] text-ink leading-snug line-clamp-1 group-hover:text-ink-green transition-colors">
+            <Link href={projectUrl}>{project.name}</Link>
+          </h3>
 
-          {/* Unit Counts Rollup */}
-          <div className="mt-4 grid grid-cols-2 gap-2 border-y border-slate-100 py-2.5 text-xs text-center">
-            <div className="border-r border-slate-100 pr-2">
-              <span className="text-[10px] text-slate-400 block font-medium">
-                Inventory
-              </span>
-              <span className="font-bold text-slate-800">
-                {project.totalUnits} Total Units
-              </span>
-            </div>
-            <div className="pl-2">
-              <span className="text-[10px] text-slate-400 block font-medium">
-                Availability
-              </span>
-              <span className="font-bold text-emerald-600">
-                {project.availableUnits} Available
-              </span>
-            </div>
+          {/* Locality */}
+          <p className="text-xs text-muted-ink mt-1 flex items-center gap-1 line-clamp-1">
+            <MapPin className="size-3 text-brass shrink-0" strokeWidth={1.5} />
+            <span>
+              {project.location?.address ? `${project.location.address}, ` : ""}
+              {project.location?.city || "Nagpur"}
+            </span>
+          </p>
+
+          {/* RERA Strip */}
+          <div className="mt-3 py-1.5 px-2 bg-paper border border-line text-[11px] flex items-center justify-between text-muted-ink">
+            <span className="flex items-center gap-1 font-medium truncate">
+              <ShieldCheck className="size-3.5 text-brass shrink-0" strokeWidth={1.5} />
+              <span className="truncate">RERA: {project.reraNumber || "Approved Phase I"}</span>
+            </span>
+            <span className="font-bold text-ink-green shrink-0">
+              {project.totalUnits ? `${project.totalUnits} Units` : "Master Plan"}
+            </span>
           </div>
         </div>
 
-        {/* Footer CTAs */}
-        <div className="mt-4 pt-1 flex items-center gap-2">
+        {/* Buttons */}
+        <div className="mt-4 pt-2 flex items-center gap-2">
           <Link
             href={projectUrl}
-            className="premium-property-card__cta flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold uppercase tracking-wider text-ink-green bg-card-white border border-ink-green hover:bg-paper transition-colors"
           >
-            <Eye className="size-3.5 text-slate-500" />
-            View Details
+            <Eye className="size-3.5" strokeWidth={1.5} />
+            Master plan
           </Link>
 
           <button
@@ -156,13 +144,13 @@ export function ProjectCard({ project, agencySlug, onEnquireClick }: ProjectCard
                 window.location.href = `${projectUrl}#enquire`;
               }
             }}
-            className="premium-property-card__cta flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold uppercase tracking-wider text-paper bg-brass hover:bg-brass-hover transition-colors shadow-hard-green-sm"
           >
-            <PhoneCall className="size-3.5" />
-            Enquire Now
+            <Mail className="size-3.5" strokeWidth={1.5} />
+            Enquire
           </button>
         </div>
       </div>
-    </div>
+    </motion.article>
   );
 }

@@ -2,142 +2,245 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  Building2,
-  Search,
-  Heart,
-  User,
   Menu,
   X,
-  PlusCircle,
-  Compass,
+  ChevronDown,
+  Building,
+  CheckCircle2,
 } from "lucide-react";
+import { appendTenantQuery } from "@/lib/portalUtils";
 
-export function PublicHeader() {
+interface PublicHeaderProps {
+  agencyName?: string;
+}
+
+export function PublicHeader({ agencyName }: PublicHeaderProps) {
+  const searchParams = useSearchParams();
+  const agency = searchParams.get("agency") || undefined;
+  const adminId = searchParams.get("adminId") || undefined;
+  const tenant = { agency, adminId };
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [buyDropdownOpen, setBuyDropdownOpen] = useState(false);
+  const [rentDropdownOpen, setRentDropdownOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-          <div className="size-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs group-hover:bg-blue-700 transition">
-            <Building2 className="size-5" />
-          </div>
-          <div>
-            <span className="text-base font-black tracking-tight text-slate-900 group-hover:text-blue-600 transition">
-              RealEstate<span className="text-blue-600">Portal</span>
-            </span>
-            <span className="hidden sm:block text-[9px] font-bold uppercase tracking-wider text-slate-400 -mt-1">
-              Verified Properties & Projects
-            </span>
-          </div>
-        </Link>
-
-        {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
+    <>
+      {/* PublicHeader (white, bottom border, sticky) */}
+      <header className="sticky top-0 z-40 bg-card-white border-b border-line shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          {/* Logo in Fraunces ("Apex" green + "Realty" brass, or agency name) */}
           <Link
-            href="/portal-properties?transactionType=Sale"
-            className="px-3 py-1.5 rounded-lg hover:text-blue-600 hover:bg-slate-50 transition"
+            href={appendTenantQuery("/portal-properties", tenant)}
+            className="flex items-center gap-2.5 shrink-0 group focus-visible:outline-2"
           >
-            Buy Properties
-          </Link>
-          <Link
-            href="/portal-properties?transactionType=Rent"
-            className="px-3 py-1.5 rounded-lg hover:text-blue-600 hover:bg-slate-50 transition"
-          >
-            Rent Properties
-          </Link>
-          <Link
-            href="/portal-projects"
-            className="px-3 py-1.5 rounded-lg hover:text-blue-600 hover:bg-slate-50 transition"
-          >
-            New Projects
-          </Link>
-          <Link
-            href="/portal-properties?category=Commercial"
-            className="px-3 py-1.5 rounded-lg hover:text-blue-600 hover:bg-slate-50 transition"
-          >
-            Commercial
-          </Link>
-        </nav>
-
-        {/* Right Action Buttons */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/login"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
-          >
-            <User className="size-3.5 text-slate-500" />
-            <span>CRM Staff Login</span>
+            <div className="size-9 bg-ink-green text-paper flex items-center justify-center border border-brass">
+              <Building className="size-5 text-brass" strokeWidth={1.5} />
+            </div>
+            <div>
+              {agencyName ? (
+                <span className="font-serif text-xl font-bold tracking-tight text-ink-green">
+                  {agencyName}
+                </span>
+              ) : (
+                <span className="font-serif text-xl font-bold tracking-tight text-ink-green">
+                  Real Estate Agency
+                </span>
+              )}
+              <div className="text-[9px] uppercase tracking-widest text-muted-ink font-semibold -mt-1">
+                Property Portal &bull; RERA Approved
+              </div>
+            </div>
           </Link>
 
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-          >
-            <PlusCircle className="size-3.5" />
-            <span>Post Property</span>
-          </Link>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1 text-sm font-semibold text-ink h-16">
+            {/* Buy Dropdown */}
+            <div
+              className="relative h-full flex items-center"
+              onMouseEnter={() => setBuyDropdownOpen(true)}
+              onMouseLeave={() => setBuyDropdownOpen(false)}
+            >
+              <button
+                type="button"
+                className={`flex items-center gap-1 px-3.5 h-full transition-colors border-b-3 ${
+                  buyDropdownOpen ? "border-brass text-ink-green" : "border-transparent text-ink hover:text-ink-green hover:border-brass"
+                }`}
+                aria-expanded={buyDropdownOpen}
+              >
+                <span>Buy</span>
+                <ChevronDown className="w-4 h-4 text-muted-ink" strokeWidth={1.5} />
+              </button>
 
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100"
-            aria-label="Toggle Navigation"
-          >
-            {mobileMenuOpen ? (
-              <X className="size-5" />
-            ) : (
-              <Menu className="size-5" />
-            )}
-          </button>
-        </div>
-      </div>
+              <AnimatePresence>
+                {buyDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute top-full left-0 w-48 bg-card-white border border-line shadow-hard-green py-2 z-50"
+                  >
+                    <Link
+                      href={appendTenantQuery("/portal-properties?transactionType=Sale", tenant)}
+                      className="block px-4 py-2 text-xs font-medium text-ink hover:bg-paper hover:text-ink-green"
+                    >
+                      For Sale
+                    </Link>
+                    <Link
+                      href={appendTenantQuery("/portal-projects", tenant)}
+                      className="block px-4 py-2 text-xs font-medium text-ink hover:bg-paper hover:text-ink-green"
+                    >
+                      New Projects
+                    </Link>
+                    <Link
+                      href={appendTenantQuery("/portal-properties?category=Commercial&transactionType=Sale", tenant)}
+                      className="block px-4 py-2 text-xs font-medium text-ink hover:bg-paper hover:text-ink-green"
+                    >
+                      Commercial Buy
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 animate-in slide-in-from-top-2 duration-150">
-          <Link
-            href="/portal-properties?transactionType=Sale"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Buy Properties
-          </Link>
-          <Link
-            href="/portal-properties?transactionType=Rent"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Rent Properties
-          </Link>
-          <Link
-            href="/portal-projects"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            New Projects & Townships
-          </Link>
-          <Link
-            href="/portal-properties?category=Commercial"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-800 hover:bg-slate-50"
-          >
-            Commercial Space
-          </Link>
-          <div className="pt-2 border-t border-slate-100">
+            {/* Rent Dropdown */}
+            <div
+              className="relative h-full flex items-center"
+              onMouseEnter={() => setRentDropdownOpen(true)}
+              onMouseLeave={() => setRentDropdownOpen(false)}
+            >
+              <button
+                type="button"
+                className={`flex items-center gap-1 px-3.5 h-full transition-colors border-b-3 ${
+                  rentDropdownOpen ? "border-brass text-ink-green" : "border-transparent text-ink hover:text-ink-green hover:border-brass"
+                }`}
+                aria-expanded={rentDropdownOpen}
+              >
+                <span>Rent</span>
+                <ChevronDown className="w-4 h-4 text-muted-ink" strokeWidth={1.5} />
+              </button>
+
+              <AnimatePresence>
+                {rentDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="absolute top-full left-0 w-48 bg-card-white border border-line shadow-hard-green py-2 z-50"
+                  >
+                    <Link
+                      href={appendTenantQuery("/portal-properties?transactionType=Rent", tenant)}
+                      className="block px-4 py-2 text-xs font-medium text-ink hover:bg-paper hover:text-ink-green"
+                    >
+                      Rental Homes &amp; Villas
+                    </Link>
+                    <Link
+                      href={appendTenantQuery("/portal-properties?category=Commercial&transactionType=Rent", tenant)}
+                      className="block px-4 py-2 text-xs font-medium text-ink hover:bg-paper hover:text-ink-green"
+                    >
+                      Commercial Lease
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Projects Link */}
+            <Link
+              href={appendTenantQuery("/portal-projects", tenant)}
+              className="px-3.5 h-full flex items-center border-b-3 border-transparent hover:border-brass hover:text-ink-green transition-colors"
+            >
+              Projects
+            </Link>
+
+            {/* Contact */}
+            <a
+              href="#contact"
+              className="px-3.5 h-full flex items-center border-b-3 border-transparent hover:border-brass hover:text-ink-green transition-colors"
+            >
+              Contact
+            </a>
+          </nav>
+
+          {/* Right Action */}
+          <div className="flex items-center gap-3">
             <Link
               href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50"
+              className="inline-flex items-center justify-center px-4 py-2 bg-ink-green text-paper text-xs font-bold uppercase tracking-wider border border-ink-green hover:bg-deep-green shadow-hard-brass-sm transition-all focus-visible:outline-2"
             >
-              CRM Staff Login
+              CRM Portal
             </Link>
+
+            {/* Mobile Hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="md:hidden p-2 text-ink hover:bg-paper border border-line"
+              aria-label="Toggle navigation"
+            >
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
           </div>
         </div>
-      )}
-    </header>
+
+        {/* Mobile Slide-down Panel */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-line bg-card-white overflow-hidden"
+            >
+              <div className="p-4 space-y-3">
+                <Link
+                  href={appendTenantQuery("/portal-properties?transactionType=Sale", tenant)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  Buy Properties
+                </Link>
+                <Link
+                  href={appendTenantQuery("/portal-properties?transactionType=Rent", tenant)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  Rent Properties
+                </Link>
+                <Link
+                  href={appendTenantQuery("/portal-projects", tenant)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  New Projects
+                </Link>
+                <Link
+                  href={appendTenantQuery("/portal-properties?category=Commercial", tenant)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  Commercial Spaces
+                </Link>
+                <div className="pt-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-center w-full py-2.5 bg-ink-green text-paper text-xs font-bold uppercase tracking-wider"
+                  >
+                    CRM Portal Login
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+    </>
   );
 }

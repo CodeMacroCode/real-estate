@@ -2,7 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb/db";
 import { Property, IPropertyDocument } from "@/models/Property";
 import { Project, IProjectDocument } from "@/models/Project";
 import { ProjectUnit } from "@/models/ProjectUnit";
-import { FilterQuery } from "mongoose";
+import mongoose, { FilterQuery } from "mongoose";
 
 export interface PublicPropertyFilterParams {
   adminId?: string;
@@ -660,5 +660,96 @@ export async function resolveAdminByHostOrSlug(
   }
 
   return null;
+}
+
+/**
+ * Fetch top 5 active cities/localities for an admin's published properties and projects.
+ */
+export async function getTopLocationsForTenant(adminId?: string): Promise<string[]> {
+  if (!adminId) return [];
+  try {
+    await connectToDatabase();
+    const adminObjectId = new mongoose.Types.ObjectId(adminId);
+
+    // 1. Distinct cities from properties
+    const propertyLocations = await Property.aggregate([
+      {
+        $match: {
+          adminId: adminObjectId,
+          "publishing.publishOnWebsite": true,
+          status: "Available",
+        },
+      },
+      {
+        $project: {
+          city: "$location.city",
+          landmark: "$location.landmark",
+        },
+      },
+      {
+        $facet: {
+          cities: [
+            { $match: { city: { $exists: true, $ne: "" } } },
+            { $group: { _id: "$city", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 },
+          ],
+          landmarks: [
+            { $match: { landmark: { $exists: true, $ne: "" } } },
+            { $group: { _id: "$landmark", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 },
+          ],
+        },
+      },
+    ]);
+
+    // 2. Distinct cities from projects
+    const projectCities = await Project.aggregate([
+      {
+        $match: {
+          adminId: adminObjectId,
+          isPublishedOnWebsite: true,
+          "location.city": { $exists: true, $ne: "" },
+        },
+      },
+      { $group: { _id: "$location.city", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+    ]);
+
+    const locationSet = new Set<string>();
+
+    if (propertyLocations?.[0]?.cities) {
+      for (const c of propertyLocations[0].cities) {
+        if (c._id && typeof c._id === "string" && c._id.trim()) {
+          locationSet.add(c._id.trim());
+        }
+      }
+    }
+
+    if (projectCities) {
+      for (const pc of projectCities) {
+        if (pc._id && typeof pc._id === "string" && pc._id.trim()) {
+          locationSet.add(pc._id.trim());
+        }
+      }
+    }
+
+    // If fewer than 5, add prominent landmarks/localities
+    if (locationSet.size < 5 && propertyLocations?.[0]?.landmarks) {
+      for (const lm of propertyLocations[0].landmarks) {
+        if (lm._id && typeof lm._id === "string" && lm._id.trim()) {
+          locationSet.add(lm._id.trim());
+          if (locationSet.size >= 5) break;
+        }
+      }
+    }
+
+    return Array.from(locationSet).slice(0, 5);
+  } catch (err) {
+    console.error("getTopLocationsForTenant error:", err);
+    return [];
+  }
 }
 

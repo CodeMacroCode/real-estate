@@ -1,7 +1,14 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { getPublicProjects, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
+import {
+  getPublicProjects,
+  resolveAdminByHostOrSlug,
+  getTopLocationsForTenant,
+} from "@/services/publicPortalService";
 import { PublicProjectsClient } from "./PublicProjectsClient";
+import { PublicHeader } from "@/components/layout/PublicHeader";
+import { PublicFooter } from "@/components/layout/PublicFooter";
 
 export const metadata = {
   title: "Approved Real Estate Projects & Townships",
@@ -43,6 +50,12 @@ export default async function PublicProjectsPage({
     resolvedSearchParams.adminId ||
     undefined;
 
+  // Strict tenant isolation: Global un-scoped portal is disabled.
+  // Must provide a valid agency slug or adminId (e.g. /portal-projects?agency=prasad)
+  if (!targetAdminId) {
+    notFound();
+  }
+
   const agencyBranding = tenantFromHost || tenantFromQuery || null;
 
   const data = await getPublicProjects({
@@ -53,13 +66,22 @@ export default async function PublicProjectsPage({
     limit: 20,
   });
 
+  const topLocations = await getTopLocationsForTenant(targetAdminId);
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 py-10 px-4 sm:px-6 lg:px-8">
-      <PublicProjectsClient
-        initialProjects={data.projects}
-        searchParams={resolvedSearchParams}
-        agencyBranding={agencyBranding}
+    <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
+      <PublicHeader agencyName={agencyBranding?.agencyName} />
+      <main className="flex-1">
+        <PublicProjectsClient
+          initialProjects={data.projects}
+          searchParams={resolvedSearchParams}
+          agencyBranding={agencyBranding}
+        />
+      </main>
+      <PublicFooter
+        agencyName={agencyBranding?.agencyName}
+        topLocations={topLocations}
       />
-    </main>
+    </div>
   );
 }

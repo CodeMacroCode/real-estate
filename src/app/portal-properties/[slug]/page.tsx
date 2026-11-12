@@ -4,6 +4,11 @@ import Link from "next/link";
 import { getPublicPropertyBySlug } from "@/services/publicPortalService";
 import { PropertyDetailInquiryForm } from "@/components/property/PropertyDetailInquiryForm";
 import { InteractiveFloorMapViewer } from "@/components/property/InteractiveFloorMapViewer";
+import { PropertyOverviewSpecs } from "@/components/property/PropertyOverviewSpecs";
+import { PublicHeader } from "@/components/layout/PublicHeader";
+import { PublicFooter } from "@/components/layout/PublicFooter";
+import { formatPrice, formatFloorOrdinal } from "@/lib/portalUtils";
+import { MapPin, ShieldCheck, Check, ArrowLeft, Building } from "lucide-react";
 
 interface PublicPropertyDetailPageProps {
   params: Promise<{
@@ -22,15 +27,11 @@ export async function generateMetadata({ params }: PublicPropertyDetailPageProps
     return { title: "Property Not Found" };
   }
   return {
-    title: `${property.title} - ${property.location.city}`,
-    description: `${property.propertyType} for ${property.transactionType} in ${property.location.city}.`,
+    title: `${property.title} | ${property.location.city}`,
+    description: `${property.propertyType} for ${property.transactionType} in ${property.location.city}. Verified listing dossier.`,
   };
 }
 
-/**
- * SSR Server Component for Property Detail Page.
- * Renders full sanitized public details with direct Lead Inquiry form.
- */
 export default async function PublicPropertyDetailPage({
   params,
   searchParams,
@@ -43,240 +44,275 @@ export default async function PublicPropertyDetailPage({
     notFound();
   }
 
-  // Determine agency slug or adminId to maintain tenant context on "Back to Listings"
-  const agencySlug =
-    resolvedSearchParams.agency ||
-    property.agency?.agencySlug ||
-    "";
+  const agencySlug = resolvedSearchParams.agency || property.agency?.agencySlug || "";
   const backToListingsHref = agencySlug
     ? `/portal-properties?agency=${agencySlug}`
     : resolvedSearchParams.adminId || property.agency?.adminId
     ? `/portal-properties?adminId=${resolvedSearchParams.adminId || property.agency?.adminId}`
     : "/portal-properties";
 
-  const formatPrice = () => {
-    if (property.transactionType === "Rent" && property.pricing.monthlyRent) {
-      return `₹${property.pricing.monthlyRent.toLocaleString("en-IN")}/month`;
-    }
-    if (property.pricing.price) {
-      if (property.pricing.price >= 10000000) {
-        return `₹${(property.pricing.price / 10000000).toFixed(2)} Cr`;
-      }
-      return `₹${(property.pricing.price / 100000).toFixed(2)} Lakh`;
-    }
-    return "Price on Request";
-  };
+  const displayPrice =
+    property.transactionType === "Rent" && property.pricing?.monthlyRent
+      ? `₹ ${property.pricing.monthlyRent.toLocaleString("en-IN")} / month`
+      : formatPrice(property.pricing?.price);
+
+  const mainImage =
+    property.media.featuredImage ||
+    property.media.images?.[0];
+
+  const galleryImages = [
+    ...(property.media.featuredImage ? [property.media.featuredImage] : []),
+    ...(Array.isArray(property.media.images) ? property.media.images : []),
+  ];
+  const uniqueImages = Array.from(new Set(galleryImages));
+
+  // Resolved floor plans with corrected ordinal labels and no debug filters
+  const resolvedFloorPlans = (
+    property.media.floorPlanMaps && property.media.floorPlanMaps.length > 0
+      ? property.media.floorPlanMaps
+      : property.media.floorPlans && property.media.floorPlans.length > 0
+      ? property.media.floorPlans.map((fpUrl, i) => ({
+          floorName: formatFloorOrdinal(i),
+          floorNumber: i,
+          planImageUrl: fpUrl,
+          roomTitle: property.title,
+          status: "Available",
+          hotspots: [],
+        }))
+      : [
+          {
+            floorName: "Unit Layout",
+            floorNumber: 1,
+            planImageUrl: mainImage || "",
+            roomTitle: property.title,
+            status: "Available",
+            hotspots: [],
+          },
+        ]
+  ).filter((fp: any) => Boolean(fp.planImageUrl));
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Navigation Breadcrumb */}
-        <div className="mb-6 flex items-center justify-between text-sm text-slate-500">
-          <div className="flex items-center space-x-2">
-            <Link href={backToListingsHref} className="hover:text-indigo-600 font-medium">
-              &larr; Back to Listings
-            </Link>
-            <span>/</span>
-            <span className="text-slate-900 font-medium">{property.title}</span>
+    <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
+      <PublicHeader agencyName={property.agency?.agencyName} />
+
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Breadcrumb row */}
+          <div className="flex items-center justify-between text-xs pb-3 border-b border-line text-muted-ink">
+            <div className="flex items-center gap-2">
+              <Link
+                href={backToListingsHref}
+                className="font-bold uppercase tracking-wider text-ink-green hover:text-brass flex items-center gap-1"
+              >
+                <ArrowLeft className="size-3.5" />
+                <span>Back to Listings</span>
+              </Link>
+              <span>/</span>
+              <span className="font-semibold text-ink truncate max-w-xs sm:max-w-md">
+                {property.title}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-card-white border border-line text-muted-ink">
+                ID: {property.propertyId}
+              </span>
+              <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-ink-green text-paper border border-brass">
+                For {property.transactionType}
+              </span>
+            </div>
           </div>
 
-          {property.agency?.agencyName && (
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold">
-              <span>Agency: {property.agency.agencyName}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content (Left 2 cols) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Header info */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
-                  {property.propertyCategory} &bull; {property.propertyType}
-                </span>
-                <span className="text-xs font-mono text-slate-400">ID: {property.propertyId}</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{property.title}</h1>
-              <p className="mt-2 text-sm text-slate-500">
-                {property.location.address}, {property.location.city}
-                {property.location.pincode && ` - ${property.location.pincode}`}
-              </p>
-
-              <div className="mt-6 flex flex-wrap items-baseline gap-4 pt-6 border-t border-slate-100">
-                <span className="text-3xl font-extrabold text-indigo-600">{formatPrice()}</span>
-                {property.pricing.isNegotiable && (
-                  <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                    Negotiable
+          {/* Main 2-column layout: Left details (8 cols) + Right sticky inquiry (4 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left 8 columns */}
+            <div className="lg:col-span-8 space-y-8">
+              {/* Header card with Fraunces title and large brass price */}
+              <div className="bg-card-white border-2 border-ink-green shadow-hard-brass p-6 sm:p-8">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass">
+                    {property.propertyCategory} &bull; {property.propertyType}
                   </span>
-                )}
-                {property.pricing.pricePerUnitArea && (
-                  <span className="text-xs text-slate-400">
-                    ₹{property.pricing.pricePerUnitArea.toLocaleString("en-IN")} / {property.areaDetails.areaUnit}
+                  <span className="text-xs font-mono text-muted-ink flex items-center gap-1">
+                    <ShieldCheck className="size-3.5 text-brass" strokeWidth={1.5} />
+                    Verified Title
                   </span>
-                )}
-              </div>
-            </div>
-
-            {/* Gallery / Images */}
-            {((property.media.featuredImage) || (property.media.images && property.media.images.length > 0)) && (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-slate-900">Property Photos &amp; Gallery</h2>
                 </div>
 
-                {/* Main Hero Photo (Displaying clean single image) */}
-                <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/60 shadow-xs relative group">
-                  <img
-                    src={property.media.featuredImage || property.media.images?.[0]}
-                    alt={property.title}
-                    className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-                  />
-                </div>
-              </div>
-            )}
+                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-ink-green tracking-tight">
+                  {property.title}
+                </h1>
 
-            {/* Specs & Configuration */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Property Overview</h2>
-              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <dt className="text-slate-400 text-xs">Carpet Area</dt>
-                  <dd className="font-semibold text-slate-800">
-                    {property.areaDetails.carpetArea ? `${property.areaDetails.carpetArea} ${property.areaDetails.areaUnit}` : "N/A"}
-                  </dd>
-                </div>
-                {property.residentialSpecs && (
-                  <>
-                    <div>
-                      <dt className="text-slate-400 text-xs">Bedrooms</dt>
-                      <dd className="font-semibold text-slate-800">{property.residentialSpecs.bedrooms} BHK</dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400 text-xs">Bathrooms</dt>
-                      <dd className="font-semibold text-slate-800">{property.residentialSpecs.bathrooms}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400 text-xs">Furnishing</dt>
-                      <dd className="font-semibold text-slate-800">{property.residentialSpecs.furnishing}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400 text-xs">Facing</dt>
-                      <dd className="font-semibold text-slate-800">{property.residentialSpecs.facing || "N/A"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400 text-xs">Possession</dt>
-                      <dd className="font-semibold text-slate-800">{property.residentialSpecs.possessionStatus || "Ready"}</dd>
-                    </div>
-                  </>
-                )}
-                {/* Investment Specs if applicable */}
-                {Boolean(property.investmentSpecs?.grossYieldPercent && property.investmentSpecs.grossYieldPercent > 0) && (
+                <p className="mt-2 text-xs sm:text-sm text-muted-ink flex items-center gap-1.5">
+                  <MapPin className="size-4 text-brass shrink-0" strokeWidth={1.5} />
+                  <span>
+                    {property.location.address ? `${property.location.address}, ` : ""}
+                    {property.location.city}
+                    {property.location.pincode ? ` - ${property.location.pincode}` : ""}
+                  </span>
+                </p>
+
+                <div className="mt-6 pt-6 border-t border-line flex flex-wrap items-baseline justify-between gap-4">
                   <div>
-                    <dt className="text-slate-400 text-xs">Annual Gross Yield</dt>
-                    <dd className="font-semibold text-emerald-600">{property.investmentSpecs?.grossYieldPercent}% p.a.</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-
-            {/* Amenities */}
-            {property.amenities.length > 0 && (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">Features & Amenities</h2>
-                <div className="flex flex-wrap gap-2">
-                  {property.amenities.map((amenity, idx) => (
-                    <span key={idx} className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium">
-                      ✓ {amenity}
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                      Asking Consideration
                     </span>
-                  ))}
+                    <div className="font-serif text-3xl sm:text-4xl font-bold text-brass mt-1">
+                      {displayPrice}
+                    </div>
+                  </div>
+
+                  {property.areaDetails?.carpetArea && property.pricing.price && (
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                        Unit Rate
+                      </span>
+                      <div className="font-mono text-xs sm:text-sm font-bold text-ink-green mt-1">
+                        ₹ {Math.round(property.pricing.price / property.areaDetails.carpetArea).toLocaleString("en-IN")} / {property.areaDetails.areaUnit || "Sq. Ft."}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Right Column: Lead Contact Box (Public Ingestion Hook) */}
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-1">Inquire About This Property</h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Schedule a private site visit or get verified documentation.
-              </p>
+              {/* Gallery with main image plus thumbnail strip */}
+              {mainImage && (
+                <div className="bg-card-white border border-line p-4 space-y-3">
+                  <div className="aspect-[16/9] w-full bg-paper border border-line overflow-hidden relative">
+                    <img
+                      src={mainImage}
+                      alt={property.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-ink-green text-paper text-[10px] font-bold uppercase tracking-wider border border-brass">
+                      Featured View
+                    </div>
+                  </div>
 
+                  {uniqueImages.length > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                      {uniqueImages.map((imgUrl, i) => (
+                        <div
+                          key={i}
+                          className="shrink-0 size-16 border border-line overflow-hidden bg-paper"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Gallery photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Specs as a ruled grid (PropertyOverviewSpecs) */}
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block mb-2">
+                  01 &mdash; Unit Specifications
+                </span>
+                <PropertyOverviewSpecs
+                  carpetArea={property.areaDetails?.carpetArea}
+                  areaUnit={property.areaDetails?.areaUnit}
+                  bedrooms={property.residentialSpecs?.bedrooms}
+                  bathrooms={property.residentialSpecs?.bathrooms}
+                  balconies={property.residentialSpecs?.balconies}
+                  furnishing={property.residentialSpecs?.furnishing}
+                  facing={property.residentialSpecs?.facing}
+                  floorNo={property.residentialSpecs?.floorNumber}
+                  totalFloors={property.residentialSpecs?.totalFloors}
+                  propertyType={property.propertyType}
+                  propertyCategory={property.propertyCategory}
+                />
+              </div>
+
+              {/* Overview Details */}
+              <div className="bg-card-white border border-line p-6 space-y-3">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
+                  02 &mdash; Editorial Summary
+                </span>
+                <h3 className="font-serif text-lg font-bold text-ink-green">
+                  Property Dossier &amp; Status
+                </h3>
+                <div className="text-xs sm:text-sm text-body-muted leading-relaxed">
+                  Verified {property.propertyCategory} {property.propertyType} located at {property.location.address}, {property.location.city}. Ready for immediate documentation inspection and title vetting.
+                </div>
+              </div>
+
+              {/* Amenities as square outlined chips with check icon */}
+              {property.amenities && property.amenities.length > 0 && (
+                <div className="bg-card-white border border-line p-6 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
+                    03 &mdash; Sanctioned Amenities
+                  </span>
+                  <h3 className="font-serif text-lg font-bold text-ink-green">
+                    Infrastructure &amp; Society Provisions
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {property.amenities.map((amenity, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 bg-paper border border-line flex items-center gap-2 text-xs font-semibold text-ink"
+                      >
+                        <Check className="size-3.5 text-brass shrink-0" strokeWidth={2} />
+                        <span className="truncate">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right 4 columns: sticky inquiry card */}
+            <div className="lg:col-span-4">
               <PropertyDetailInquiryForm
                 propertyId={property.id}
                 propertyTitle={property.title}
                 propertyCode={property.propertyId}
+                adminId={resolvedSearchParams.adminId || property.agency?.adminId}
               />
             </div>
           </div>
-        </div>
 
-        {/* Dedicated Full-Width Section for Interactive Floor Plan Maps & Blueprints */}
-        <div className="mt-12">
-          <div className="mb-4">
-            <span className="text-xs font-bold text-cyan-600 tracking-wider uppercase">
-              Architectural Blueprints &amp; Layout
-            </span>
-            <h2 className="text-2xl font-extrabold text-slate-900 mt-0.5">
-              Interactive Floor Maps &amp; Unit Inspection
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Explore individual room specifications, smart home devices, and blueprint dimensions.
-            </p>
-          </div>
+          {/* Blueprint Divider */}
+          <div className="blueprint-divider my-10" />
 
-          <InteractiveFloorMapViewer
-            floorPlans={
-              (property.media.floorPlanMaps && property.media.floorPlanMaps.length > 0
-                ? property.media.floorPlanMaps
-                : property.media.floorPlans && property.media.floorPlans.length > 0
-                ? property.media.floorPlans.map((fpUrl, i) => ({
-                    floorName: i === 0 ? "Ground Floor" : `${i}th Floor`,
-                    floorNumber: i + 1,
-                    planImageUrl: fpUrl,
-                    roomTitle: property.title,
-                    status: "Available",
-                    hotspots: [],
-                  }))
-                : [
-                    {
-                      floorName: "Main Layout",
-                      floorNumber: 1,
-                      planImageUrl:
-                        property.media.featuredImage ||
-                        property.media.images?.[0] ||
-                        "/uploads/invoices/kola_1793781763751_jej9fx.jpg",
-                      roomTitle: property.title,
-                      status: "Available",
-                      hotspots: [],
-                    },
-                  ]
-              ).map((fp: any) => ({
-                ...fp,
-                hotspots: (fp.hotspots || []).filter(
-                  (spot: any) => !spot.title?.includes("IOT TV") && !spot.subtitle?.includes("29489")
-                ),
-              }))
-            }
-            defaultPropertyTitle={property.title}
-            propertyCategory={property.propertyCategory}
-            propertyType={property.propertyType}
-            carpetArea={property.areaDetails.carpetArea}
-            areaUnit={property.areaDetails.areaUnit}
-            bedrooms={property.residentialSpecs?.bedrooms}
-            bathrooms={property.residentialSpecs?.bathrooms}
-            furnishing={property.residentialSpecs?.furnishing}
-            facing={property.residentialSpecs?.facing}
-            city={property.location.city}
-            address={property.location.address}
-            amenities={property.amenities}
-            propertyImages={property.media.images}
-          />
+          {/* Interactive Floor Map Viewer full-width below */}
+          {resolvedFloorPlans.length > 0 && (
+            <div className="space-y-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
+                  04 &mdash; Architectural Floor Plans
+                </span>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-ink-green mt-1">
+                  Blueprint Examination &amp; Spatial Inspection
+                </h2>
+              </div>
+
+              <InteractiveFloorMapViewer
+                floorPlans={resolvedFloorPlans}
+                defaultPropertyTitle={property.title}
+                propertyCategory={property.propertyCategory}
+                propertyType={property.propertyType}
+                carpetArea={property.areaDetails?.carpetArea}
+                areaUnit={property.areaDetails?.areaUnit}
+                bedrooms={property.residentialSpecs?.bedrooms}
+                bathrooms={property.residentialSpecs?.bathrooms}
+                furnishing={property.residentialSpecs?.furnishing}
+                facing={property.residentialSpecs?.facing}
+                city={property.location.city}
+                address={property.location.address}
+                amenities={property.amenities}
+                propertyImages={property.media.images}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      </main>
+
+      <PublicFooter agencyName={property.agency?.agencyName} />
     </div>
   );
 }
-

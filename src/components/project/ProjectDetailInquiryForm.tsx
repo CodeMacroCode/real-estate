@@ -2,17 +2,20 @@
 
 import React, { useState } from "react";
 import Swal from "sweetalert2";
+import { Mail, ShieldCheck } from "lucide-react";
 
 interface ProjectDetailInquiryFormProps {
   projectId: string;
   projectName: string;
-  projectCode: string;
+  projectCode?: string;
+  adminId?: string;
 }
 
 export function ProjectDetailInquiryForm({
   projectId,
   projectName,
   projectCode,
+  adminId,
 }: ProjectDetailInquiryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,13 +27,12 @@ export function ProjectDetailInquiryForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.name.trim() || !formData.phone.trim()) {
       Swal.fire({
         icon: "warning",
         title: "Required Fields",
         text: "Please provide your Full Name and Mobile Number.",
-        confirmButtonColor: "#4f46e5",
+        confirmButtonColor: "#0e3b2e",
       });
       return;
     }
@@ -41,6 +43,7 @@ export function ProjectDetailInquiryForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          adminId: adminId || undefined,
           projectId,
           inquiryType: "Project",
           name: formData.name.trim(),
@@ -52,33 +55,22 @@ export function ProjectDetailInquiryForm({
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || "Failed to submit inquiry");
+        throw new Error(json.error || "Failed to submit project inquiry");
       }
 
       setFormData({ name: "", phone: "", email: "", message: "" });
-
       Swal.fire({
         icon: "success",
-        title: "Inquiry Registered Successfully!",
-        html: `
-          <div style="font-size: 14px; color: #475569; text-align: left; padding: 4px 8px;">
-            <p><strong>Project:</strong> ${projectName} (${projectCode})</p>
-            <p><strong>Name:</strong> ${formData.name}</p>
-            <p><strong>Contact:</strong> ${formData.phone}</p>
-            <div style="margin-top: 10px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534;">
-              ✓ Your inquiry is registered directly with the agency. An agent will contact you shortly with the project brochure and unit details.
-            </div>
-          </div>
-        `,
-        confirmButtonText: "Done",
-        confirmButtonColor: "#4f46e5",
+        title: "Dossier Request Received",
+        text: `Your inquiry for "${projectName}" has been registered with the developer desk.`,
+        confirmButtonColor: "#0e3b2e",
       });
     } catch (err: any) {
       Swal.fire({
         icon: "error",
         title: "Submission Error",
-        text: err.message || "Could not register inquiry. Please try again.",
-        confirmButtonColor: "#dc2626",
+        text: err.message || "Failed to submit inquiry",
+        confirmButtonColor: "#0e3b2e",
       });
     } finally {
       setSubmitting(false);
@@ -86,70 +78,88 @@ export function ProjectDetailInquiryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1">
-          Your Full Name *
-        </label>
-        <input
-          type="text"
-          required
-          placeholder="e.g. Rahul Sharma"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none"
-        />
+    <div className="bg-card-white border-2 border-ink-green shadow-hard-brass p-6 sticky top-24">
+      <div className="border-b border-line pb-4 mb-5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-brass block">
+          04 &mdash; Developer Desk
+        </span>
+        <h3 className="font-serif text-lg font-bold text-ink-green mt-1">
+          Request Project Dossier
+        </h3>
+        <p className="text-xs text-muted-ink mt-1">
+          Receive floor layouts, sanction approvals, and payment milestone sheets.
+        </p>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1">
-          Mobile Number (10 digits) *
-        </label>
-        <input
-          type="tel"
-          required
-          pattern="[0-9]{10}"
-          placeholder="9876543210"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none"
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-ink mb-1">
+            Full Name *
+          </label>
+          <input
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="e.g. Rameshwar Deshmukh"
+            className="w-full bg-paper px-3 py-2 text-sm text-ink border-b-2 border-ink-green focus:border-brass focus:outline-none"
+          />
+        </div>
 
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1">
-          Email Address
-        </label>
-        <input
-          type="email"
-          placeholder="rahul@example.com"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none"
-        />
-      </div>
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-ink mb-1">
+            Mobile Number *
+          </label>
+          <input
+            type="tel"
+            required
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            placeholder="10-digit mobile"
+            className="w-full bg-paper px-3 py-2 text-sm text-ink border-b-2 border-ink-green focus:border-brass focus:outline-none"
+          />
+        </div>
 
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1">
-          Message or Queries
-        </label>
-        <textarea
-          rows={3}
-          placeholder="I am interested in this project and would like to receive the brochure & price sheet..."
-          value={formData.message}
-          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:outline-none resize-none"
-        />
-      </div>
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-ink mb-1">
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="rameshwar@example.com"
+            className="w-full bg-paper px-3 py-2 text-sm text-ink border-b-2 border-ink-green focus:border-brass focus:outline-none"
+          />
+        </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-      >
-        {submitting ? "Submitting Inquiry..." : "Send Inquiry / Request Brochure"}
-      </button>
-    </form>
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-ink mb-1">
+            Unit Requirements / Questions
+          </label>
+          <textarea
+            rows={3}
+            value={formData.message}
+            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+            placeholder="Looking for 3 BHK unit options in Phase 1 with east facing entrance..."
+            className="w-full bg-paper px-3 py-2 text-sm text-ink border-b-2 border-ink-green focus:border-brass focus:outline-none resize-none"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-3 bg-brass hover:bg-brass-hover text-paper text-xs font-bold uppercase tracking-wider border border-brass shadow-hard-green-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          <Mail className="size-3.5" strokeWidth={1.5} />
+          {submitting ? "Submitting..." : "Request Developer Dossier"}
+        </button>
+
+        <div className="pt-2 text-[10px] text-muted-ink flex items-center justify-center gap-1.5 border-t border-soft-line">
+          <ShieldCheck className="size-3.5 text-brass" strokeWidth={1.5} />
+          <span>RERA registered sales channel. Official partner.</span>
+        </div>
+      </form>
+    </div>
   );
 }
-

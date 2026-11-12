@@ -1,184 +1,183 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { Building2, Mail, Phone, MapPin, Heart, Shield } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Building, ShieldCheck, Mail, Phone, MapPin } from "lucide-react";
+import { appendTenantQuery } from "@/lib/portalUtils";
 
-export function PublicFooter() {
+interface PublicFooterProps {
+  agencyName?: string;
+  topLocations?: string[];
+}
+
+export function PublicFooter({ agencyName, topLocations = [] }: PublicFooterProps) {
+  const searchParams = useSearchParams();
+  const agency = searchParams.get("agency") || undefined;
+  const adminId = searchParams.get("adminId") || undefined;
+  const tenant = { agency, adminId };
+
+  // Fallback locations only if tenant has no active listings
+  const locationsToDisplay =
+    topLocations.length > 0
+      ? topLocations
+      : ["Wardha Road", "Dharampeth", "Besa", "Hingna Road", "Amravati Road"];
+
   return (
-    <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Col 1: Brand & Mission */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-white">
-              <div className="size-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-                <Building2 className="size-4" />
+    <footer
+      id="contact"
+      className="bg-deep-green text-paper text-xs border-t-2 border-ink-green"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-8">
+        {/* 4 Columns (brand blurb, Explore, Localities, Contact) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {/* Col 1: Brand blurb */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <div className="size-7 bg-ink-green text-brass border border-brass flex items-center justify-center font-bold">
+                <Building className="size-4" strokeWidth={1.5} />
               </div>
-              <span className="text-base font-black tracking-tight">
-                RealEstate<span className="text-blue-500">Portal</span>
-              </span>
+              <div className="font-serif text-lg font-bold tracking-tight text-paper">
+                {agencyName || "Real Estate Agency"}
+              </div>
             </div>
-            <p className="text-slate-400 text-[11px] leading-relaxed">
-              India&apos;s next-generation direct real estate marketplace.
-              Connecting genuine buyers directly to verified owners and
-              RERA-approved builders with zero broker markup.
+            <p className="text-paper/90 text-[11px] leading-relaxed">
+              {agencyName
+                ? `${agencyName} official verified customer property exchange. `
+                : "Official verified customer property exchange. "}
+              Curating 100% RERA-registered developments, clean-titled
+              freeholds, and verified residential plots with full documentation
+              scrutiny.
             </p>
-            <div className="flex items-center gap-3 text-slate-400 pt-2">
-              <span className="inline-flex items-center gap-1 text-[11px]">
-                <Shield className="size-3.5 text-blue-400" />
-                100% RERA & Title Verified
-              </span>
+            <div className="pt-1 flex items-center gap-1.5 text-brass text-[10px] font-semibold tracking-wider uppercase">
+              <ShieldCheck className="size-3.5" strokeWidth={1.5} />
+              <span>MahaRERA Approved Partner</span>
             </div>
           </div>
 
-          {/* Col 2: Residential Quick Links */}
+          {/* Col 2: Explore */}
           <div>
-            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-3">
-              Residential Listings
-            </h4>
-            <ul className="space-y-2">
+            <div className="text-brass font-bold text-[11px] uppercase tracking-widest mb-2.5">
+              Explore Catalog
+            </div>
+            <ul className="space-y-1.5 text-[11px] text-paper/90 font-medium">
               <li>
                 <Link
-                  href="/portal-properties?bedrooms=1"
-                  className="hover:text-white transition"
+                  href={appendTenantQuery(
+                    "/portal-properties?transactionType=Sale",
+                    tenant,
+                  )}
+                  className="hover:text-brass transition-colors"
                 >
-                  1 BHK Apartments for Sale
+                  Properties for Sale
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/portal-properties?bedrooms=2"
-                  className="hover:text-white transition"
+                  href={appendTenantQuery(
+                    "/portal-properties?transactionType=Rent",
+                    tenant,
+                  )}
+                  className="hover:text-brass transition-colors"
                 >
-                  2 BHK Flats in High-Demand Localities
+                  Rental Apartments &amp; Homes
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/portal-properties?bedrooms=3"
-                  className="hover:text-white transition"
+                  href={appendTenantQuery("/portal-projects", tenant)}
+                  className="hover:text-brass transition-colors"
                 >
-                  3 BHK Luxury Penthouses & Floors
+                  Townships &amp; New Launches
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/portal-properties?category=Residential&transactionType=Rent"
-                  className="hover:text-white transition"
+                  href={appendTenantQuery(
+                    "/portal-properties?category=Commercial",
+                    tenant,
+                  )}
+                  className="hover:text-brass transition-colors"
                 >
-                  Verified Rental Homes & Villas
+                  Commercial Offices &amp; Retail
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/portal-properties?category=Plot"
-                  className="hover:text-white transition"
+                  href={appendTenantQuery(
+                    "/portal-properties?category=Land",
+                    tenant,
+                  )}
+                  className="hover:text-brass transition-colors"
                 >
-                  Residential Plots & NA Land
+                  NA Sanctioned Plots &amp; Land
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Col 3: Projects & Commercial */}
+          {/* Col 3: Key Localities (Dynamic top 5 from admin's properties & projects) */}
           <div>
-            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-3">
-              Projects & Commercial
-            </h4>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/portal-projects"
-                  className="hover:text-white transition"
-                >
-                  Under Construction Projects
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/portal-projects"
-                  className="hover:text-white transition"
-                >
-                  Ready to Move Apartments
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/portal-properties?category=Commercial"
-                  className="hover:text-white transition"
-                >
-                  Commercial Offices & Retail Shops
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/portal-projects"
-                  className="hover:text-white transition"
-                >
-                  Townships & High-Rise Towers
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-white transition">
-                  Builder / Partner Portal
-                </Link>
-              </li>
+            <div className="text-brass font-bold text-[11px] uppercase tracking-widest mb-2.5">
+              Prime Localities
+            </div>
+            <ul className="space-y-1.5 text-[11px] text-paper/90 font-medium">
+              {locationsToDisplay.map((loc) => (
+                <li key={loc}>
+                  <Link
+                    href={appendTenantQuery(
+                      `/portal-properties?city=${encodeURIComponent(loc)}`,
+                      tenant,
+                    )}
+                    className="hover:text-brass transition-colors"
+                  >
+                    {loc}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Col 4: Reach Out & Portal CRM */}
+          {/* Col 4: Contact & Office */}
           <div>
-            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-3">
-              Customer Support & CRM
-            </h4>
-            <ul className="space-y-2.5 text-slate-400">
-              <li className="flex items-center gap-2">
-                <MapPin className="size-3.5 text-blue-500 shrink-0" />
-                <span>Nagpur, Maharashtra, India</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="size-3.5 text-blue-500 shrink-0" />
-                <span>support@realestateportal.com</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="size-3.5 text-blue-500 shrink-0" />
-                <span>+91 98765 43210 (Toll Free)</span>
-              </li>
-            </ul>
-
-            <div className="mt-5 p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-              <span className="block text-[11px] text-white font-bold">
-                Authorized Staff Access
-              </span>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                Manage CRM leads, inventory, and website CMS.
-              </p>
-              <Link
-                href="/login"
-                className="mt-2 inline-block px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] transition"
-              >
-                Go to Admin Dashboard &rarr;
-              </Link>
+            <div className="text-brass font-bold text-[11px] uppercase tracking-widest mb-2.5">
+              Registry &amp; Office
+            </div>
+            <div className="space-y-2 text-[11px] text-paper/90">
+              <div className="flex items-start gap-2">
+                <MapPin
+                  className="size-3.5 text-brass shrink-0 mt-0.5"
+                  strokeWidth={1.5}
+                />
+                <span>
+                  Civil Lines, Wardha Road Junction, Nagpur, Maharashtra 440001
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone
+                  className="size-3.5 text-brass shrink-0"
+                  strokeWidth={1.5}
+                />
+                <span>+91 (0712) 256-8900</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail
+                  className="size-3.5 text-brass shrink-0"
+                  strokeWidth={1.5}
+                />
+                <span>contact@propertyportal.in</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom copyright line */}
-        <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
-          <p>
-            © {new Date().getFullYear()} RealEstatePortal Inc. All rights
-            reserved.
-          </p>
-          <div className="flex items-center gap-4">
-            <Link href="/portal-properties" className="hover:text-slate-400">
-              Properties
-            </Link>
-            <Link href="/portal-projects" className="hover:text-slate-400">
-              Projects
-            </Link>
-            <Link href="/login" className="hover:text-slate-400">
-              Staff CRM
-            </Link>
-          </div>
+        {/* Legal, Copyright */}
+        <div className="pt-3 border-t border-ink-green/40 text-[10px] text-paper/70 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>
+            &copy; {new Date().getFullYear()}{" "}
+            {agencyName || "Real Estate Agency"}. All rights reserved.
+          </span>
+          <span>Nagpur &bull; Maharashtra &bull; MahaRERA Approved</span>
         </div>
       </div>
     </footer>

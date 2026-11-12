@@ -2,16 +2,17 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Heart,
   MapPin,
-  CheckCircle2,
-  Building,
+  Check,
   Eye,
-  PhoneCall,
-  Sparkles,
+  Mail,
+  Heart,
 } from "lucide-react";
 import { SanitizedPublicProperty } from "@/services/publicPortalService";
+import { formatPrice } from "@/lib/portalUtils";
+import { motion, useReducedMotion } from "motion/react";
 
 interface PropertyCardProps {
   property: SanitizedPublicProperty;
@@ -21,206 +22,174 @@ interface PropertyCardProps {
 
 export function PropertyCard({ property, onEnquireClick, agencySlug }: PropertyCardProps) {
   const [isFavourited, setIsFavourited] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
-  const formatPrice = (prop: SanitizedPublicProperty) => {
-    if (prop.transactionType === "Rent" && prop.pricing.monthlyRent) {
-      return `₹${prop.pricing.monthlyRent.toLocaleString("en-IN")}/mo`;
-    }
-    if (prop.pricing.price) {
-      if (prop.pricing.price >= 10000000) {
-        return `₹${(prop.pricing.price / 10000000).toFixed(2)} Cr`;
-      }
-      return `₹${(prop.pricing.price / 100000).toFixed(2)} Lakh`;
-    }
-    return "Price on Request";
-  };
-
-  const calculatePricePerSqFt = (prop: SanitizedPublicProperty) => {
-    const area = prop.areaDetails?.carpetArea || prop.areaDetails?.builtUpArea;
-    const price = prop.pricing?.price;
-    if (area && price && price > 0 && area > 0) {
-      const rate = Math.round(price / area);
-      return `₹${rate.toLocaleString("en-IN")}/sq.ft`;
-    }
-    return null;
-  };
-
-  const imageCount =
-    (property.media?.featuredImage ? 1 : 0) +
-    (Array.isArray(property.media?.images) ? property.media.images.length : 0);
-
-  const pricePerSqFt = calculatePricePerSqFt(property);
   const activeAgencySlug = agencySlug || property.agency?.agencySlug;
   const propertyUrl = activeAgencySlug
     ? `/portal-properties/${property.slug || property.id}?agency=${activeAgencySlug}`
     : `/portal-properties/${property.slug || property.id}`;
 
+  const displayPrice =
+    property.transactionType === "Rent" && property.pricing?.monthlyRent
+      ? `₹ ${(property.pricing.monthlyRent).toLocaleString("en-IN")}/mo`
+      : formatPrice(property.pricing?.price);
+
+  const calculatePricePerSqFt = () => {
+    const area = property.areaDetails?.carpetArea || property.areaDetails?.builtUpArea;
+    const price = property.pricing?.price;
+    if (area && price && price > 0 && area > 0) {
+      const rate = Math.round(price / area);
+      return `₹ ${rate.toLocaleString("en-IN")}/sq.ft`;
+    }
+    return null;
+  };
+  const pricePerSqFt = calculatePricePerSqFt();
+
+  const areaText = property.areaDetails?.carpetArea
+    ? `${property.areaDetails.carpetArea} ${property.areaDetails.areaUnit || "Sq. Ft."}`
+    : "On Request";
+
   return (
-    <div className="premium-property-card group relative bg-white rounded-2xl border border-slate-200/90 overflow-hidden flex flex-col justify-between">
-      {/* =========================================================================
-          A. Property Image Section
-          ========================================================================= */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
-        <Link href={propertyUrl} className="block w-full h-full cursor-pointer">
+    <motion.article
+      whileHover={shouldReduceMotion ? {} : { y: -4 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="group relative bg-card-white border border-line hover:border-ink-green hover:shadow-hard-green transition-shadow flex flex-col justify-between"
+    >
+      {/* 170px image area */}
+      <div className="relative h-[170px] w-full overflow-hidden bg-paper border-b border-line">
+        <Link href={propertyUrl} className="block w-full h-full">
           {property.media?.featuredImage ? (
-            <img
-              src={property.media.featuredImage}
-              alt={property.title}
-              className="premium-property-card__image w-full h-full object-cover"
-              loading="lazy"
-            />
+            <div className="relative w-full h-full overflow-hidden">
+              <motion.div
+                whileHover={shouldReduceMotion ? {} : { scale: 1.04 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="w-full h-full"
+              >
+                {/* next/image optimization with fallback */}
+                <Image
+                  src={property.media.featuredImage}
+                  alt={property.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                  unoptimized
+                />
+              </motion.div>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full text-slate-300 bg-slate-50">
-              <Building className="size-10 stroke-[1.2]" />
-              <span className="text-[11px] font-medium text-slate-400 mt-1">
-                Photo coming soon
+            <div className="w-full h-full bg-[#14503d]/10 flex flex-col items-center justify-center p-4 text-center">
+              {/* Flat building SVG illustration */}
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="text-ink-green opacity-70">
+                <rect x="12" y="20" width="22" height="38" fill="#0e3b2e" />
+                <rect x="30" y="10" width="22" height="48" fill="#14503d" />
+                <rect x="18" y="26" width="4" height="6" fill="#b5822c" />
+                <rect x="18" y="38" width="4" height="6" fill="#f6f2ea" />
+                <rect x="36" y="16" width="4" height="6" fill="#f6f2ea" />
+                <rect x="44" y="16" width="4" height="6" fill="#b5822c" />
+                <rect x="36" y="28" width="4" height="6" fill="#b5822c" />
+                <rect x="44" y="28" width="4" height="6" fill="#f6f2ea" />
+              </svg>
+              <span className="text-[10px] font-bold text-ink-green uppercase tracking-wider mt-1">
+                Verified Listing Blueprint
               </span>
             </div>
           )}
-
-          {/* Low-opacity Dark Overlay on hover */}
-          <div className="premium-property-card__overlay absolute inset-0 pointer-events-none" />
         </Link>
 
-        {/* Top Badges (Left) */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pointer-events-none">
-          <span
-            className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase shadow-xs backdrop-blur-xs ${
-              property.transactionType === "Rent"
-                ? "bg-amber-500 text-white"
-                : "bg-blue-600 text-white"
-            }`}
-          >
-            For {property.transactionType}
-          </span>
-
-          {property.featuredProperty && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-400 text-amber-950 shadow-xs">
-              <Sparkles className="size-3 fill-amber-950" />
-              Featured
-            </span>
-          )}
-
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/95 text-white shadow-xs backdrop-blur-xs">
-            <CheckCircle2 className="size-3" />
-            Verified
+        {/* Top-left ribbon tag */}
+        <div className="absolute top-2 left-2 z-10">
+          <span className="px-2.5 py-0.5 bg-ink-green text-paper text-[10px] font-bold uppercase tracking-wider border border-brass">
+            For {property.transactionType || "Sale"}
           </span>
         </div>
 
-        {/* Top-Right: Accessible Favourite Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsFavourited((prev) => !prev);
-          }}
-          aria-label={
-            isFavourited ? "Remove from favourites" : "Save to favourites"
-          }
-          className="premium-property-card__favourite absolute top-3 right-3 size-8.5 rounded-full bg-white/90 backdrop-blur-md shadow-md border border-slate-200/60 flex items-center justify-center text-slate-600 hover:text-red-500 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <Heart
-            className={`size-4 transition-colors ${
-              isFavourited ? "fill-red-500 text-red-500" : "text-slate-600"
-            }`}
-          />
-        </button>
+        {/* Top-right white outlined "Verified" stamp */}
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+          <span className="px-2 py-0.5 bg-card-white/95 text-ink-green text-[10px] font-bold uppercase tracking-wider border border-ink-green flex items-center gap-1">
+            <Check className="size-3 text-brass" strokeWidth={2.5} />
+            Verified
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsFavourited(!isFavourited);
+            }}
+            aria-label="Save listing"
+            className="p-1 bg-card-white border border-line text-ink hover:text-brass"
+          >
+            <Heart className={`size-3.5 ${isFavourited ? "fill-brass text-brass" : ""}`} strokeWidth={1.5} />
+          </button>
+        </div>
+      </div>
 
-        {/* Bottom Image Badges: Price & Photo Count */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between pointer-events-none">
-          <div className="bg-slate-900/85 backdrop-blur-md text-white px-3 py-1.5 rounded-lg shadow-md">
-            <div className="text-sm font-extrabold tracking-tight">
-              {formatPrice(property)}
+      {/* Body: price, title, locality */}
+      <div className="p-4 flex-1 flex flex-col justify-between">
+        <div>
+          {/* Price row */}
+          <div className="flex items-baseline justify-between gap-2 mb-1.5">
+            <div className="font-serif text-[22px] font-bold text-ink-green leading-none">
+              {displayPrice}
             </div>
             {pricePerSqFt && (
-              <div className="text-[10px] text-slate-300 font-medium">
+              <div className="text-[11px] text-muted-ink font-medium">
                 {pricePerSqFt}
               </div>
             )}
           </div>
 
-          {imageCount > 1 && (
-            <div className="bg-slate-900/70 backdrop-blur-md text-white px-2 py-1 rounded-md text-[10px] font-semibold tracking-wider">
-              1/{imageCount} Photos
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* =========================================================================
-          B. Property Information Section
-          ========================================================================= */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-        <div>
-          {/* Category & Locality */}
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-            <span className="font-semibold text-blue-600 uppercase tracking-wider text-[11px]">
-              {property.propertyType}
-            </span>
-            <span className="inline-flex items-center gap-1 text-slate-500 font-medium truncate max-w-[50%]">
-              <MapPin className="size-3 text-slate-400 shrink-0" />
-              {property.location?.city}
-            </span>
-          </div>
-
-          {/* Property Title */}
-          <h3 className="font-bold text-slate-900 text-base leading-snug line-clamp-1 group-hover:text-blue-600 transition-colors">
+          {/* Title */}
+          <h3 className="font-semibold text-[15px] text-ink leading-snug line-clamp-1 group-hover:text-ink-green transition-colors">
             <Link href={propertyUrl}>{property.title}</Link>
           </h3>
 
-          {/* Locality Address */}
-          <p className="text-xs text-slate-500 mt-1 line-clamp-1">
-            {property.location?.address}
-            {property.location?.landmark &&
-              `, near ${property.location.landmark}`}
+          {/* Locality */}
+          <p className="text-xs text-muted-ink mt-1 flex items-center gap-1 line-clamp-1">
+            <MapPin className="size-3 text-brass shrink-0" strokeWidth={1.5} />
+            <span>
+              {property.location?.address ? `${property.location.address}, ` : ""}
+              {property.location?.city || "Nagpur"}
+            </span>
           </p>
 
-          {/* Key Specifications (BHK, Area, Furnishing) */}
-          <div className="mt-4 grid grid-cols-3 gap-2 border-y border-slate-100 py-2.5 text-center text-xs">
-            <div className="border-r border-slate-100 pr-1">
-              <span className="text-[10px] text-slate-400 block font-medium">
+          {/* Spec strip: three equal cells separated by 1px lines (BHK | Bath | Area) */}
+          <div className="mt-3 grid grid-cols-3 border border-line text-center text-xs divide-x divide-line bg-paper/60">
+            <div className="py-2 px-1">
+              <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
                 Bedrooms
               </span>
-              <span className="font-bold text-slate-800">
-                {property.residentialSpecs?.bedrooms
-                  ? `${property.residentialSpecs.bedrooms} BHK`
-                  : "N/A"}
+              <span className="font-bold text-ink text-xs mt-0.5 block">
+                {property.residentialSpecs?.bedrooms ? `${property.residentialSpecs.bedrooms} BHK` : "N/A"}
               </span>
             </div>
-
-            <div className="border-r border-slate-100 px-1">
-              <span className="text-[10px] text-slate-400 block font-medium">
-                Carpet Area
+            <div className="py-2 px-1">
+              <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                Bath
               </span>
-              <span className="font-bold text-slate-800">
-                {property.areaDetails?.carpetArea
-                  ? `${property.areaDetails.carpetArea} ${property.areaDetails.areaUnit}`
-                  : "On Request"}
+              <span className="font-bold text-ink text-xs mt-0.5 block">
+                {property.residentialSpecs?.bathrooms ? `${property.residentialSpecs.bathrooms} Baths` : "1+"}
               </span>
             </div>
-
-            <div className="pl-1">
-              <span className="text-[10px] text-slate-400 block font-medium">
-                Furnishing
+            <div className="py-2 px-1">
+              <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                Area
               </span>
-              <span className="font-bold text-slate-800 truncate block">
-                {property.residentialSpecs?.furnishing || "Unfurnished"}
+              <span className="font-bold text-ink text-xs mt-0.5 block truncate">
+                {areaText}
               </span>
             </div>
           </div>
         </div>
 
-        {/* =========================================================================
-            C. Card Footer & CTAs
-            ========================================================================= */}
-        <div className="mt-4 pt-1 flex items-center gap-2">
+        {/* Buttons: "View details" (outlined green) and "Enquire" (solid brass) */}
+        <div className="mt-4 pt-2 flex items-center gap-2">
           <Link
             href={propertyUrl}
-            className="premium-property-card__cta flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold uppercase tracking-wider text-ink-green bg-card-white border border-ink-green hover:bg-paper transition-colors"
           >
-            <Eye className="size-3.5 text-slate-500" />
-            View Details
+            <Eye className="size-3.5" strokeWidth={1.5} />
+            View details
           </Link>
 
           <button
@@ -232,13 +201,13 @@ export function PropertyCard({ property, onEnquireClick, agencySlug }: PropertyC
                 window.location.href = `${propertyUrl}#enquire`;
               }
             }}
-            className="premium-property-card__cta flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold uppercase tracking-wider text-paper bg-brass hover:bg-brass-hover transition-colors shadow-hard-green-sm"
           >
-            <PhoneCall className="size-3.5" />
-            Enquire Now
+            <Mail className="size-3.5" strokeWidth={1.5} />
+            Enquire
           </button>
         </div>
       </div>
-    </div>
+    </motion.article>
   );
 }
