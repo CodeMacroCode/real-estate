@@ -49,6 +49,7 @@ export interface IWebsiteSettingDocument extends Document {
   footer: {
     aboutText?: string;
     copyrightText?: string;
+    logoUrl?: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -118,6 +119,7 @@ const WebsiteSettingSchema = new Schema<IWebsiteSettingDocument>(
     footer: {
       aboutText: { type: String, trim: true, default: "" },
       copyrightText: { type: String, trim: true, default: "" },
+      logoUrl: { type: String, trim: true, default: "" },
     },
   },
   {

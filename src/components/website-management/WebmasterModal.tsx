@@ -46,6 +46,7 @@ export function WebmasterModal({
   const [errorMsg, setErrorMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingFooterLogo, setUploadingFooterLogo] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geoResults, setGeoResults] = useState<any[]>([]);
   const [geoError, setGeoError] = useState("");
@@ -146,7 +147,7 @@ export function WebmasterModal({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "logo" | "banner",
+    type: "logo" | "banner" | "footerLogo",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -154,6 +155,7 @@ export function WebmasterModal({
     setErrorMsg("");
     if (type === "logo") setUploadingLogo(true);
     if (type === "banner") setUploadingBanner(true);
+    if (type === "footerLogo") setUploadingFooterLogo(true);
 
     try {
       const data = new FormData();
@@ -176,6 +178,8 @@ export function WebmasterModal({
 
       if (type === "logo") {
         handleChange("branding", "logoUrl", fileUrl);
+      } else if (type === "footerLogo") {
+        handleChange("footer", "logoUrl", fileUrl);
       } else {
         handleChange("hero", "customBannerUrl", fileUrl);
       }
@@ -184,6 +188,7 @@ export function WebmasterModal({
     } finally {
       if (type === "logo") setUploadingLogo(false);
       if (type === "banner") setUploadingBanner(false);
+      if (type === "footerLogo") setUploadingFooterLogo(false);
     }
   };
 
@@ -1236,6 +1241,53 @@ export function WebmasterModal({
           {activeTab === "footer" && (
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-900">Footer Text Customizer</h3>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Footer Brand Logo (Server Upload)
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition">
+                    <Upload className="size-4 text-blue-600" />
+                    <span>{uploadingFooterLogo ? "Uploading file..." : "Upload Footer Logo"}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      disabled={uploadingFooterLogo}
+                      onChange={(e) => handleFileUpload(e, "footerLogo")}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {formData.footer?.logoUrl || formData.branding?.logoUrl ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 px-2 border border-slate-200 rounded flex items-center bg-slate-900">
+                        <img
+                          src={formData.footer?.logoUrl || formData.branding?.logoUrl}
+                          alt="Footer Logo Preview"
+                          className="max-h-8 max-w-[120px] object-contain"
+                        />
+                      </div>
+                      {formData.footer?.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => handleChange("footer", "logoUrl", "")}
+                          className="text-xs text-rose-600 hover:underline font-semibold"
+                        >
+                          Reset to Main Logo
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-slate-500">
+                      If left empty, your main Brand Logo is automatically used in the footer.
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Custom footer logo (e.g. white or light variation for dark footers).
+                </p>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">

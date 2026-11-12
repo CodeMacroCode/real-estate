@@ -52,6 +52,7 @@ export function PublicFooter({ agencyName, topLocations = [], settings }: Public
   const contactPhone = settings?.contact?.phone || "+91 (0712) 256-8900";
   const contactEmail = settings?.contact?.email || "contact@propertyportal.in";
   const socialLinks = settings?.socialLinks || {};
+  const footerLogo = settings?.footer?.logoUrl || settings?.branding?.logoUrl;
 
   return (
     <footer
@@ -69,9 +70,19 @@ export function PublicFooter({ agencyName, topLocations = [], settings }: Public
           {/* Col 1: Brand blurb */}
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
-              <div className="size-7 bg-ink-green text-brass border border-brass flex items-center justify-center font-bold">
-                <Building className="size-4" strokeWidth={1.5} />
-              </div>
+              {footerLogo ? (
+                <div className="h-9 max-w-[150px] flex items-center">
+                  <img
+                    src={footerLogo}
+                    alt={displayName}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="size-7 bg-ink-green text-brass border border-brass flex items-center justify-center font-bold">
+                  <Building className="size-4" strokeWidth={1.5} />
+                </div>
+              )}
               <div className="font-serif text-lg font-bold tracking-tight text-paper">
                 {displayName}
               </div>
