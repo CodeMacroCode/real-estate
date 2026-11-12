@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPublicPropertyBySlug } from "@/services/publicPortalService";
+import { getPublicPropertyBySlug, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
 import { PropertyDetailInquiryForm } from "@/components/property/PropertyDetailInquiryForm";
 import { InteractiveFloorMapViewer } from "@/components/property/InteractiveFloorMapViewer";
 import { PropertyOverviewSpecs } from "@/components/property/PropertyOverviewSpecs";
@@ -45,10 +45,19 @@ export default async function PublicPropertyDetailPage({
   }
 
   const agencySlug = resolvedSearchParams.agency || property.agency?.agencySlug || "";
+  const targetAdminId = resolvedSearchParams.adminId || property.agency?.adminId;
+
+  // Fetch agency branding and custom theme settings
+  const agencyBranding = agencySlug
+    ? await resolveAdminByHostOrSlug(agencySlug)
+    : targetAdminId
+    ? await resolveAdminByHostOrSlug(targetAdminId)
+    : null;
+
   const backToListingsHref = agencySlug
     ? `/portal-properties?agency=${agencySlug}`
-    : resolvedSearchParams.adminId || property.agency?.adminId
-    ? `/portal-properties?adminId=${resolvedSearchParams.adminId || property.agency?.adminId}`
+    : targetAdminId
+    ? `/portal-properties?adminId=${targetAdminId}`
     : "/portal-properties";
 
   const displayPrice =
@@ -92,8 +101,29 @@ export default async function PublicPropertyDetailPage({
   ).filter((fp: any) => Boolean(fp.planImageUrl));
 
   return (
-    <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
-      <PublicHeader agencyName={property.agency?.agencyName} />
+    <div
+      className="min-h-screen bg-paper text-ink flex flex-col justify-between"
+      style={
+        {
+          ...(agencyBranding?.settings?.theme?.primaryColor
+            ? { "--ink-green": agencyBranding.settings.theme.primaryColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.deepColor
+            ? { "--deep-green": agencyBranding.settings.theme.deepColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.accentColor
+            ? { "--brass": agencyBranding.settings.theme.accentColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.paperColor
+            ? { "--paper": agencyBranding.settings.theme.paperColor }
+            : {}),
+        } as React.CSSProperties
+      }
+    >
+      <PublicHeader
+        agencyName={agencyBranding?.agencyName || property.agency?.agencyName}
+        settings={agencyBranding?.settings}
+      />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -312,7 +342,10 @@ export default async function PublicPropertyDetailPage({
         </div>
       </main>
 
-      <PublicFooter agencyName={property.agency?.agencyName} />
+      <PublicFooter
+        agencyName={agencyBranding?.agencyName || property.agency?.agencyName}
+        settings={agencyBranding?.settings}
+      />
     </div>
   );
 }

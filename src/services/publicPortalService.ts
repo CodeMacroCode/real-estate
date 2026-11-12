@@ -595,10 +595,17 @@ export async function getPublicProjectBySlug(
  */
 export async function resolveAdminByHostOrSlug(
   hostOrSlug: string,
-): Promise<{ adminId: string; agencyName: string; agencySlug: string; customDomain?: string } | null> {
+): Promise<{
+  adminId: string;
+  agencyName: string;
+  agencySlug: string;
+  customDomain?: string;
+  settings?: any;
+} | null> {
   if (!hostOrSlug) return null;
   await connectToDatabase();
   const { User } = await import("@/models/User");
+  const { getWebsiteSettingsByAdminId } = await import("@/services/websiteSettingService");
 
   const cleanHost = hostOrSlug.split(":")[0].toLowerCase().trim();
 
@@ -611,11 +618,14 @@ export async function resolveAdminByHostOrSlug(
     .lean();
 
   if (byCustomDomain) {
+    const adminId = byCustomDomain._id.toString();
+    const settings = await getWebsiteSettingsByAdminId(adminId);
     return {
-      adminId: byCustomDomain._id.toString(),
-      agencyName: byCustomDomain.agencyName || byCustomDomain.name,
+      adminId,
+      agencyName: settings?.branding?.companyName || byCustomDomain.agencyName || byCustomDomain.name,
       agencySlug: byCustomDomain.agencySlug || "",
       customDomain: byCustomDomain.customDomain,
+      settings,
     };
   }
 
@@ -632,11 +642,14 @@ export async function resolveAdminByHostOrSlug(
         .lean();
 
       if (bySubdomain) {
+        const adminId = bySubdomain._id.toString();
+        const settings = await getWebsiteSettingsByAdminId(adminId);
         return {
-          adminId: bySubdomain._id.toString(),
-          agencyName: bySubdomain.agencyName || bySubdomain.name,
+          adminId,
+          agencyName: settings?.branding?.companyName || bySubdomain.agencyName || bySubdomain.name,
           agencySlug: bySubdomain.agencySlug || candidateSubdomain,
           customDomain: bySubdomain.customDomain,
+          settings,
         };
       }
     }
@@ -651,11 +664,14 @@ export async function resolveAdminByHostOrSlug(
     .lean();
 
   if (bySlug) {
+    const adminId = bySlug._id.toString();
+    const settings = await getWebsiteSettingsByAdminId(adminId);
     return {
-      adminId: bySlug._id.toString(),
-      agencyName: bySlug.agencyName || bySlug.name,
+      adminId,
+      agencyName: settings?.branding?.companyName || bySlug.agencyName || bySlug.name,
       agencySlug: bySlug.agencySlug || cleanHost,
       customDomain: bySlug.customDomain,
+      settings,
     };
   }
 

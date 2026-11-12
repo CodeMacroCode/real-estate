@@ -34,6 +34,7 @@ interface PublicPortalClientProps {
     agencyName: string;
     agencySlug: string;
     customDomain?: string;
+    settings?: any;
   } | null;
 }
 
@@ -123,154 +124,277 @@ export default function PublicPortalClient({
             {/* Left 7 cols: brass label, Fraunces headline, subtext */}
             <div className="lg:col-span-7 space-y-4">
               <span className="text-xs uppercase tracking-[0.14em] font-bold text-brass block">
-                Official Real Estate Gazette &bull; Nagpur Central
+                {agencyBranding?.settings?.hero?.eyebrowText ||
+                  "Official Real Estate Gazette • Nagpur Central"}
               </span>
               <h1 className="font-serif text-3xl sm:text-4xl lg:text-[52px] font-bold text-paper leading-[1.15] tracking-tight">
-                Find a home with the paperwork already in order.
+                {agencyBranding?.settings?.hero?.headline ||
+                  "Find a home with the paperwork already in order."}
               </h1>
               <p className="text-line/80 text-sm sm:text-base leading-relaxed max-w-xl">
-                Direct buyer exchange featuring RERA-sanctioned apartments,
-                clear-title agricultural &amp; NA layouts, and verified freehold
-                residences across the Vidarbha region.
+                {agencyBranding?.settings?.hero?.subheadline ||
+                  "Direct buyer exchange featuring RERA-sanctioned apartments, clear-title agricultural & NA layouts, and verified freehold residences across the Vidarbha region."}
               </p>
               <div className="flex flex-wrap items-center gap-6 pt-2 text-xs font-semibold text-brass">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="size-4" strokeWidth={1.5} />
-                  MahaRERA Registered Listings
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Building className="size-4" strokeWidth={1.5} />
-                  Zero Phantom Listings
+                  {agencyBranding?.settings?.regulatory?.badgeText ||
+                    "MahaRERA Registered Listings"}
                 </span>
               </div>
             </div>
 
-            {/* Right 5 cols: 520x300 flat SVG skyline inside 2px brass border */}
+            {/* Right 5 cols: 520x300 flat SVG skyline or Custom Banner inside 2px brass border */}
             <div className="lg:col-span-5 flex justify-center lg:justify-end">
-              <div className="w-full max-w-[520px] aspect-[520/300] bg-deep-green border-2 border-brass p-4 relative overflow-hidden shadow-hard-brass">
-                <svg
-                  viewBox="0 0 520 300"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-full h-full"
-                >
-                  {/* Sky background */}
-                  <rect width="520" height="300" fill="#0b2d22" />
+              <div
+                className="w-full max-w-[520px] aspect-[520/300] border-2 p-4 relative overflow-hidden shadow-hard-brass"
+                style={{
+                  backgroundColor: "var(--deep-green, #0b2d22)",
+                  borderColor: "var(--brass, #b5822c)",
+                }}
+              >
+                {agencyBranding?.settings?.hero?.bannerType ===
+                  "custom_image" &&
+                agencyBranding?.settings?.hero?.customBannerUrl ? (
+                  <img
+                    src={agencyBranding.settings.hero.customBannerUrl}
+                    alt={agencyBranding?.agencyName || "Agency Banner"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <svg
+                    viewBox="0 0 520 300"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-full h-full"
+                  >
+                    {/* Sky background */}
+                    <rect width="520" height="300" fill="var(--deep-green, #0b2d22)" />
 
-                  {/* Brass sun circle */}
-                  <circle cx="410" cy="80" r="42" fill="#b5822c" />
+                    {/* Brass sun circle */}
+                    <circle cx="410" cy="80" r="42" fill="var(--brass, #b5822c)" />
 
-                  {/* Distant skyline (mid-green) */}
-                  <polygon
-                    points="40,300 40,180 80,180 80,300"
-                    fill="#14503d"
-                  />
-                  <polygon
-                    points="70,300 70,140 120,140 120,300"
-                    fill="#14503d"
-                  />
-                  <polygon
-                    points="110,300 110,165 170,165 170,300"
-                    fill="#14503d"
-                  />
-                  <polygon
-                    points="200,300 200,120 250,120 250,300"
-                    fill="#14503d"
-                  />
-                  <polygon
-                    points="280,300 280,150 340,150 340,300"
-                    fill="#14503d"
-                  />
-                  <polygon
-                    points="360,300 360,110 420,110 420,300"
-                    fill="#14503d"
-                  />
-                  <polygon
-                    points="430,300 430,170 490,170 490,300"
-                    fill="#14503d"
-                  />
+                    {/* Distant skyline */}
+                    <polygon
+                      points="40,300 40,180 80,180 80,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
+                    <polygon
+                      points="70,300 70,140 120,140 120,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
+                    <polygon
+                      points="110,300 110,165 170,165 170,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
+                    <polygon
+                      points="200,300 200,120 250,120 250,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
+                    <polygon
+                      points="280,300 280,150 340,150 340,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
+                    <polygon
+                      points="360,300 360,110 420,110 420,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
+                    <polygon
+                      points="430,300 430,170 490,170 490,300"
+                      fill="var(--deep-green, #14503d)"
+                      opacity="0.8"
+                    />
 
-                  {/* Foreground Buildings (ink-green) */}
-                  <rect
-                    x="20"
-                    y="160"
-                    width="60"
-                    height="140"
-                    fill="#0e3b2e"
-                    stroke="#0b2d22"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="70"
-                    y="110"
-                    width="75"
-                    height="190"
-                    fill="#0e3b2e"
-                    stroke="#0b2d22"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="155"
-                    y="80"
-                    width="85"
-                    height="220"
-                    fill="#0e3b2e"
-                    stroke="#0b2d22"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="250"
-                    y="130"
-                    width="70"
-                    height="170"
-                    fill="#0e3b2e"
-                    stroke="#0b2d22"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="330"
-                    y="70"
-                    width="90"
-                    height="230"
-                    fill="#0e3b2e"
-                    stroke="#0b2d22"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="430"
-                    y="140"
-                    width="70"
-                    height="160"
-                    fill="#0e3b2e"
-                    stroke="#0b2d22"
-                    strokeWidth="2"
-                  />
+                    {/* Foreground Buildings */}
+                    <rect
+                      x="20"
+                      y="160"
+                      width="60"
+                      height="140"
+                      fill="var(--ink-green, #0e3b2e)"
+                      stroke="var(--deep-green, #0b2d22)"
+                      strokeWidth="2"
+                    />
+                    <rect
+                      x="70"
+                      y="110"
+                      width="75"
+                      height="190"
+                      fill="var(--ink-green, #0e3b2e)"
+                      stroke="var(--deep-green, #0b2d22)"
+                      strokeWidth="2"
+                    />
+                    <rect
+                      x="155"
+                      y="80"
+                      width="85"
+                      height="220"
+                      fill="var(--ink-green, #0e3b2e)"
+                      stroke="var(--deep-green, #0b2d22)"
+                      strokeWidth="2"
+                    />
+                    <rect
+                      x="250"
+                      y="130"
+                      width="70"
+                      height="170"
+                      fill="var(--ink-green, #0e3b2e)"
+                      stroke="var(--deep-green, #0b2d22)"
+                      strokeWidth="2"
+                    />
+                    <rect
+                      x="330"
+                      y="70"
+                      width="90"
+                      height="230"
+                      fill="var(--ink-green, #0e3b2e)"
+                      stroke="var(--deep-green, #0b2d22)"
+                      strokeWidth="2"
+                    />
+                    <rect
+                      x="430"
+                      y="140"
+                      width="70"
+                      height="160"
+                      fill="var(--ink-green, #0e3b2e)"
+                      stroke="var(--deep-green, #0b2d22)"
+                      strokeWidth="2"
+                    />
 
-                  {/* Lit Windows (Brass and Paper) */}
-                  <rect x="35" y="180" width="8" height="12" fill="#b5822c" />
-                  <rect x="55" y="180" width="8" height="12" fill="#f6f2ea" />
-                  <rect x="35" y="210" width="8" height="12" fill="#f6f2ea" />
-                  <rect x="85" y="130" width="10" height="16" fill="#b5822c" />
-                  <rect x="115" y="130" width="10" height="16" fill="#f6f2ea" />
-                  <rect x="85" y="170" width="10" height="16" fill="#f6f2ea" />
-                  <rect x="115" y="170" width="10" height="16" fill="#b5822c" />
-                  <rect x="175" y="100" width="12" height="18" fill="#b5822c" />
-                  <rect x="205" y="100" width="12" height="18" fill="#f6f2ea" />
-                  <rect x="175" y="140" width="12" height="18" fill="#f6f2ea" />
-                  <rect x="205" y="140" width="12" height="18" fill="#b5822c" />
-                  <rect x="175" y="180" width="12" height="18" fill="#b5822c" />
-                  <rect x="270" y="150" width="10" height="14" fill="#b5822c" />
-                  <rect x="295" y="150" width="10" height="14" fill="#f6f2ea" />
-                  <rect x="350" y="90" width="12" height="18" fill="#f6f2ea" />
-                  <rect x="385" y="90" width="12" height="18" fill="#b5822c" />
-                  <rect x="350" y="130" width="12" height="18" fill="#b5822c" />
-                  <rect x="385" y="130" width="12" height="18" fill="#f6f2ea" />
-                  <rect x="450" y="160" width="10" height="14" fill="#b5822c" />
-                  <rect x="475" y="160" width="10" height="14" fill="#f6f2ea" />
+                    {/* Lit Windows */}
+                    <rect x="35" y="180" width="8" height="12" fill="var(--brass, #b5822c)" />
+                    <rect x="55" y="180" width="8" height="12" fill="var(--paper, #f6f2ea)" />
+                    <rect x="35" y="210" width="8" height="12" fill="var(--paper, #f6f2ea)" />
+                    <rect
+                      x="85"
+                      y="130"
+                      width="10"
+                      height="16"
+                      fill="var(--brass, #b5822c)"
+                    />
+                    <rect
+                      x="115"
+                      y="130"
+                      width="10"
+                      height="16"
+                      fill="var(--paper, #f6f2ea)"
+                    />
+                    <rect
+                      x="85"
+                      y="170"
+                      width="10"
+                      height="16"
+                      fill="var(--paper, #f6f2ea)"
+                    />
+                    <rect
+                      x="115"
+                      y="170"
+                      width="10"
+                      height="16"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="175"
+                      y="100"
+                      width="12"
+                      height="18"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="205"
+                      y="100"
+                      width="12"
+                      height="18"
+                      fill="#f6f2ea"
+                    />
+                    <rect
+                      x="175"
+                      y="140"
+                      width="12"
+                      height="18"
+                      fill="#f6f2ea"
+                    />
+                    <rect
+                      x="205"
+                      y="140"
+                      width="12"
+                      height="18"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="175"
+                      y="180"
+                      width="12"
+                      height="18"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="270"
+                      y="150"
+                      width="10"
+                      height="14"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="295"
+                      y="150"
+                      width="10"
+                      height="14"
+                      fill="#f6f2ea"
+                    />
+                    <rect
+                      x="350"
+                      y="90"
+                      width="12"
+                      height="18"
+                      fill="#f6f2ea"
+                    />
+                    <rect
+                      x="385"
+                      y="90"
+                      width="12"
+                      height="18"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="350"
+                      y="130"
+                      width="12"
+                      height="18"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="385"
+                      y="130"
+                      width="12"
+                      height="18"
+                      fill="#f6f2ea"
+                    />
+                    <rect
+                      x="450"
+                      y="160"
+                      width="10"
+                      height="14"
+                      fill="#b5822c"
+                    />
+                    <rect
+                      x="475"
+                      y="160"
+                      width="10"
+                      height="14"
+                      fill="#f6f2ea"
+                    />
 
-                  {/* Waterline reflection base */}
-                  <rect x="0" y="292" width="520" height="8" fill="#b5822c" />
-                </svg>
+                    {/* Waterline reflection base */}
+                    <rect x="0" y="292" width="520" height="8" fill="#b5822c" />
+                  </svg>
+                )}
 
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-ink-green text-brass text-[9px] font-mono uppercase tracking-widest border border-brass">
                   Property Architectural Survey

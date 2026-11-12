@@ -83,8 +83,29 @@ export default async function PublicPropertiesPage({
   const topLocations = await getTopLocationsForTenant(targetAdminId);
 
   return (
-    <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
-      <PublicHeader agencyName={agencyBranding?.agencyName} />
+    <div
+      className="min-h-screen bg-paper text-ink flex flex-col justify-between"
+      style={
+        {
+          ...(agencyBranding?.settings?.theme?.primaryColor
+            ? { "--ink-green": agencyBranding.settings.theme.primaryColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.deepColor
+            ? { "--deep-green": agencyBranding.settings.theme.deepColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.accentColor
+            ? { "--brass": agencyBranding.settings.theme.accentColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.paperColor
+            ? { "--paper": agencyBranding.settings.theme.paperColor }
+            : {}),
+        } as React.CSSProperties
+      }
+    >
+      <PublicHeader
+        agencyName={agencyBranding?.agencyName}
+        settings={agencyBranding?.settings}
+      />
       <main className="flex-1">
         <PublicPortalClient
           initialProperties={initialData.properties}
@@ -96,6 +117,7 @@ export default async function PublicPropertiesPage({
       <PublicFooter
         agencyName={agencyBranding?.agencyName}
         topLocations={topLocations}
+        settings={agencyBranding?.settings}
       />
     </div>
   );

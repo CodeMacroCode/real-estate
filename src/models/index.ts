@@ -17,3 +17,4 @@ export * from './ProjectUnit';
 export * from './Property';
 export * from './PublicInquiry';
 export * from './Booking';
+export * from './WebsiteSetting';

@@ -89,15 +89,35 @@ export function InteractiveFloorMapViewer({
   ];
 
   return (
-    <div className="bg-card-white border-2 border-ink-green shadow-hard-brass my-6">
+    <div
+      className="bg-card-white border-2 shadow-hard-brass my-6"
+      style={{ borderColor: "var(--ink-green, #0e3b2e)" }}
+    >
       {/* Top Header with Multi-Floor Tabs */}
-      <div className="bg-deep-green text-paper px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-ink-green">
+      <div
+        className="text-paper px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b"
+        style={{
+          backgroundColor: "var(--deep-green, #0b2d22)",
+          borderColor: "var(--ink-green, #0e3b2e)",
+          color: "var(--paper, #f6f2ea)",
+        }}
+      >
         <div className="flex items-center gap-3">
-          <div className="size-8 bg-ink-green text-brass border border-brass flex items-center justify-center font-bold">
+          <div
+            className="size-8 flex items-center justify-center font-bold border"
+            style={{
+              backgroundColor: "var(--ink-green, #0e3b2e)",
+              borderColor: "var(--brass, #b5822c)",
+              color: "var(--brass, #b5822c)",
+            }}
+          >
             <Layers className="w-4 h-4" strokeWidth={1.5} />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-brass block">
+            <span
+              className="text-[10px] font-bold uppercase tracking-widest block"
+              style={{ color: "var(--brass, #b5822c)" }}
+            >
               03 &mdash; Architectural Blueprint
             </span>
             <h3 className="font-serif font-bold text-base sm:text-lg text-paper">
@@ -108,7 +128,13 @@ export function InteractiveFloorMapViewer({
 
         {/* Floor Switcher Tabs */}
         {floorPlans.length > 1 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-ink-green border border-line/20">
+          <div
+            className="flex items-center gap-1.5 overflow-x-auto p-1 border"
+            style={{
+              backgroundColor: "var(--ink-green, #0e3b2e)",
+              borderColor: "rgba(255,255,255,0.2)",
+            }}
+          >
             {floorPlans.map((floor, idx) => {
               const isActive = idx === activeFloorIndex;
               return (

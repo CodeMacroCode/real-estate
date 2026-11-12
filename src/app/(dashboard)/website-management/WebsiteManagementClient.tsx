@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SsrWebsiteManagementPortalItem } from "@/services/websiteManagementService";
+import { WebmasterModal } from "@/components/website-management/WebmasterModal";
+import { Sliders } from "lucide-react";
 
 interface WebsiteManagementClientProps {
   initialData: {
@@ -58,6 +60,32 @@ export function WebsiteManagementClient({
   });
   const [savingConfig, setSavingConfig] = useState(false);
   const [resettingAdminId, setResettingAdminId] = useState<string | null>(null);
+
+  // Webmaster customizer modal
+  const [isWebmasterModalOpen, setIsWebmasterModalOpen] = useState(false);
+  const [webmasterAdmin, setWebmasterAdmin] = useState<SsrWebsiteManagementPortalItem | null>(null);
+  const [webmasterSettings, setWebmasterSettings] = useState<any>(null);
+  const [loadingAdminId, setLoadingAdminId] = useState<string | null>(null);
+
+  const handleOpenWebmaster = async (portal: SsrWebsiteManagementPortalItem) => {
+    setLoadingAdminId(portal.adminId);
+    try {
+      const res = await fetch(`/api/website-management/settings?adminId=${portal.adminId}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setWebmasterSettings(json.data);
+      } else {
+        setWebmasterSettings(null);
+      }
+      setWebmasterAdmin(portal);
+      setIsWebmasterModalOpen(true);
+    } catch (e) {
+      console.error("Failed to load settings:", e);
+      toast.error("Failed to fetch agency settings");
+    } finally {
+      setLoadingAdminId(null);
+    }
+  };
 
   const { adminPortals, pagination, meta } = initialData;
   const isSuperAdmin = meta.isSuperAdmin;
@@ -258,6 +286,19 @@ export function WebsiteManagementClient({
                       >
                         <RotateCcw className={`size-3.5 ${resettingAdminId === portal.adminId ? "animate-spin" : ""}`} />
                         <span>{resettingAdminId === portal.adminId ? "Resetting..." : "Reset URL"}</span>
+                      </button>
+                    )}
+
+                    {(isSuperAdmin || meta.isAdmin) && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWebmaster(portal)}
+                        disabled={loadingAdminId === portal.adminId}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition shadow-2xs cursor-pointer disabled:opacity-50"
+                        title="Customize website branding, colors, hero and contact info"
+                      >
+                        <Sliders className={`size-3.5 ${loadingAdminId === portal.adminId ? "animate-spin" : ""}`} />
+                        <span>{loadingAdminId === portal.adminId ? "Loading..." : "Customize Website"}</span>
                       </button>
                     )}
 
@@ -505,6 +546,25 @@ export function WebsiteManagementClient({
             </form>
           </div>
         </div>
+      )}
+      {/* Webmaster Customizer Modal */}
+      {isWebmasterModalOpen && webmasterAdmin && (
+        <WebmasterModal
+          isOpen={isWebmasterModalOpen}
+          onClose={() => {
+            setIsWebmasterModalOpen(false);
+            setWebmasterAdmin(null);
+            setWebmasterSettings(null);
+          }}
+          adminId={webmasterAdmin.adminId}
+          agencySlug={webmasterAdmin.agencySlug || ""}
+          initialSettings={webmasterSettings}
+          onSaved={() => {
+            startTransition(() => {
+              router.refresh();
+            });
+          }}
+        />
       )}
     </div>
   );

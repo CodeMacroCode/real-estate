@@ -15,9 +15,10 @@ import { appendTenantQuery } from "@/lib/portalUtils";
 
 interface PublicHeaderProps {
   agencyName?: string;
+  settings?: any;
 }
 
-export function PublicHeader({ agencyName }: PublicHeaderProps) {
+export function PublicHeader({ agencyName, settings }: PublicHeaderProps) {
   const searchParams = useSearchParams();
   const agency = searchParams.get("agency") || undefined;
   const adminId = searchParams.get("adminId") || undefined;
@@ -27,31 +28,39 @@ export function PublicHeader({ agencyName }: PublicHeaderProps) {
   const [buyDropdownOpen, setBuyDropdownOpen] = useState(false);
   const [rentDropdownOpen, setRentDropdownOpen] = useState(false);
 
+  const displayName = settings?.branding?.companyName || agencyName || "Real Estate Agency";
+  const displayTagline = settings?.branding?.tagline || "Property Portal • RERA Approved";
+  const logoUrl = settings?.branding?.logoUrl;
+
   return (
     <>
       {/* PublicHeader (white, bottom border, sticky) */}
       <header className="sticky top-0 z-40 bg-card-white border-b border-line shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Logo in Fraunces ("Apex" green + "Realty" brass, or agency name) */}
+          {/* Logo or Brand */}
           <Link
             href={appendTenantQuery("/portal-properties", tenant)}
             className="flex items-center gap-2.5 shrink-0 group focus-visible:outline-2"
           >
-            <div className="size-9 bg-ink-green text-paper flex items-center justify-center border border-brass">
-              <Building className="size-5 text-brass" strokeWidth={1.5} />
-            </div>
+            {logoUrl ? (
+              <div className="h-10 max-w-[140px] flex items-center">
+                <img
+                  src={logoUrl}
+                  alt={displayName}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="size-9 bg-ink-green text-paper flex items-center justify-center border border-brass">
+                <Building className="size-5 text-brass" strokeWidth={1.5} />
+              </div>
+            )}
             <div>
-              {agencyName ? (
-                <span className="font-serif text-xl font-bold tracking-tight text-ink-green">
-                  {agencyName}
-                </span>
-              ) : (
-                <span className="font-serif text-xl font-bold tracking-tight text-ink-green">
-                  Real Estate Agency
-                </span>
-              )}
-              <div className="text-[9px] uppercase tracking-widest text-muted-ink font-semibold -mt-1">
-                Property Portal &bull; RERA Approved
+              <span className="font-serif text-xl font-bold tracking-tight text-ink-green block leading-tight">
+                {displayName}
+              </span>
+              <div className="text-[9px] uppercase tracking-widest text-muted-ink font-semibold mt-0.5">
+                {displayTagline}
               </div>
             </div>
           </Link>
@@ -158,13 +167,13 @@ export function PublicHeader({ agencyName }: PublicHeaderProps) {
               Projects
             </Link>
 
-            {/* Contact */}
-            <a
-              href="#contact"
+            {/* Contact - Points to dedicated page */}
+            <Link
+              href={appendTenantQuery("/portal-contact", tenant)}
               className="px-3.5 h-full flex items-center border-b-3 border-transparent hover:border-brass hover:text-ink-green transition-colors"
             >
               Contact
-            </a>
+            </Link>
           </nav>
 
           {/* Right Action */}
