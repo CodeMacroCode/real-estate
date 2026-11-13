@@ -49,6 +49,13 @@ export function Sidebar({ user }: SidebarProps) {
       visible: true,
     },
     {
+      name: "Dynamic Forms",
+      href: "/custom-forms",
+      icon: FileSpreadsheet,
+      active: pathname.startsWith("/custom-forms"),
+      visible: isSuperAdmin, // Form Builder owned exclusively by SuperAdmin
+    },
+    {
       name: "Users (Admins)",
       href: "/users",
       icon: Users,
@@ -88,13 +95,6 @@ export function Sidebar({ user }: SidebarProps) {
   // Leads & CRM Modules
   const leadCrmItems = [
     {
-      name: "Dynamic Forms",
-      href: "/custom-forms",
-      icon: FileSpreadsheet,
-      active: pathname.startsWith("/custom-forms"),
-      visible: isSuperAdmin, // Form Builder owned exclusively by SuperAdmin
-    },
-    {
       name: "Leads & Enquiries",
       href: "/leads",
       icon: PhoneIncoming,
@@ -131,35 +131,35 @@ export function Sidebar({ user }: SidebarProps) {
     },
   ].filter((item) => item.visible);
 
-  // Properties & Real Estate Engine Modules
+  // Properties & Real Estate Engine Modules (for Agency Admin & Staff)
   const propertiesCrmItems = [
     {
       name: "Properties Inventory",
       href: "/properties",
       icon: Building2,
       active: pathname.startsWith("/properties"),
-      visible: true,
+      visible: !isSuperAdmin,
     },
     {
       name: "Projects & Units",
       href: "/projects",
       icon: Layers,
       active: pathname.startsWith("/projects"),
-      visible: true,
+      visible: !isSuperAdmin,
     },
     {
       name: "Client Track Record",
       href: "/bookings",
       icon: FolderLock,
       active: pathname.startsWith("/bookings"),
-      visible: true,
+      visible: !isSuperAdmin,
     },
     {
       name: "Property Owners",
       href: "/owners",
       icon: Briefcase,
       active: pathname.startsWith("/owners"),
-      visible: true,
+      visible: !isSuperAdmin,
     },
     {
       name: "Website Inquiries",
@@ -228,66 +228,70 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
 
         {/* Leads & CRM Navigation */}
-        <div>
-          <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            <span>Leads & CRM</span>
-            <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">
-              Leads
-            </span>
+        {leadCrmItems.length > 0 && (
+          <div>
+            <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <span>Leads & CRM</span>
+              <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">
+                Leads
+              </span>
+            </div>
+            <nav className="space-y-1">
+              {leadCrmItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      item.active
+                        ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
+                    />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-1">
-            {leadCrmItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                    item.active
-                      ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
-                  />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+        )}
 
         {/* Properties & Real Estate Engine Navigation */}
-        <div>
-          <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            <span>Properties & Inventory</span>
-            <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
-              Properties
-            </span>
+        {propertiesCrmItems.length > 0 && (
+          <div>
+            <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <span>Properties & Inventory</span>
+              <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
+                Properties
+              </span>
+            </div>
+            <nav className="space-y-1">
+              {propertiesCrmItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      item.active
+                        ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
+                    />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-1">
-            {propertiesCrmItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                    item.active
-                      ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
-                  />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+        )}
       </div>
 
       {/* User Footer Summary */}
