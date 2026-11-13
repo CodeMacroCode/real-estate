@@ -633,9 +633,9 @@ export default function ClientProfileDetailPage() {
                       </TableCell>
                     )}
                     {visibleColumns.status && (
-                      <TableCell className="text-center py-3">
+                      <TableCell className="text-center py-3 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          className={`inline-block whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                             lead.status === "Completed"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : lead.status === "Rejected"

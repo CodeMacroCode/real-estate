@@ -708,37 +708,37 @@ export function LeadsClient({
     switch (status) {
       case "Pending":
         return (
-          <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
+          <span className="inline-block whitespace-nowrap bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
             Pending
           </span>
         );
       case "Assigned":
         return (
-          <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
+          <span className="inline-block whitespace-nowrap bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
             Assigned
           </span>
         );
       case "In-Progress":
         return (
-          <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
+          <span className="inline-block whitespace-nowrap bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
             In-Progress
           </span>
         );
       case "Completed":
         return (
-          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
+          <span className="inline-block whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
             Completed
           </span>
         );
       case "Rejected":
         return (
-          <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
+          <span className="inline-block whitespace-nowrap bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
             Rejected
           </span>
         );
       default:
         return (
-          <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs">
+          <span className="inline-block whitespace-nowrap bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs">
             {status}
           </span>
         );
@@ -1062,7 +1062,7 @@ export function LeadsClient({
                       )}
                     </TableCell>
 
-                    <TableCell>{getStatusBadge(lead.status)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{getStatusBadge(lead.status)}</TableCell>
 
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1.5">
