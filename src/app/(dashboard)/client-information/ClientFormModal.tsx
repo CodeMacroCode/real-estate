@@ -28,16 +28,35 @@ export default function ClientFormModal({
   client,
   onSuccess,
 }: ClientModalProps) {
-  const [clientName, setClientName] = useState(client?.clientName || "");
-  const [phone, setPhone] = useState(client?.phone || "");
-  const [email, setEmail] = useState(client?.email || "");
-  const [address, setAddress] = useState(client?.address || "");
-  const [companyName, setCompanyName] = useState(client?.companyName || "");
-  const [status, setStatus] = useState<"Active" | "Inactive" | "VIP">(
-    client?.status || "Active"
-  );
-  const [notes, setNotes] = useState(client?.notes || "");
+  const [clientName, setClientName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [status, setStatus] = useState<"Active" | "Inactive" | "VIP">("Active");
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync state whenever client changes or modal opens
+  React.useEffect(() => {
+    if (client && mode === "edit") {
+      setClientName(client.clientName || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
+      setAddress(client.address || "");
+      setCompanyName(client.companyName || "");
+      setStatus(client.status || "Active");
+      setNotes(client.notes || "");
+    } else {
+      setClientName("");
+      setPhone("");
+      setEmail("");
+      setAddress("");
+      setCompanyName("");
+      setStatus("Active");
+      setNotes("");
+    }
+  }, [client, mode, isOpen]);
 
   if (!isOpen) return null;
 
