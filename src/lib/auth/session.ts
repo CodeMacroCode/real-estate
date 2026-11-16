@@ -13,6 +13,7 @@ export { SESSION_COOKIE_NAME };
 export interface AuthenticatedContext {
   user: SafeUser;
   role: IRoleDocument;
+  sessionId?: string;
 }
 
 export function extractTokenFromRequest(req: NextRequest): string | null {
@@ -74,7 +75,16 @@ export async function verifySessionToken(
   }
 
   // Session Revocation Check:
-  // If user logged out after this token was issued, reject the session token
+  // 1. If individual session was deactivated, reject
+  if (payload.sessionId && user.sessions && user.sessions.length > 0) {
+    const session = user.sessions.find((s: any) => s.sessionId === payload.sessionId);
+    if (session && !session.isActive) {
+      console.warn(`[auth] Session verification failed: Session ${payload.sessionId} for ${user.email} is inactive/revoked.`);
+      return null;
+    }
+  }
+
+  // 2. If user logged out all devices after this token was issued, reject
   if (user.lastLogoutAt && payload.iat) {
     const tokenIssuedMs = payload.iat * 1000;
     const logoutMs = new Date(user.lastLogoutAt).getTime();
@@ -108,12 +118,14 @@ export async function verifySessionToken(
     return {
       user: safeUser,
       role: effectiveRole,
+      sessionId: payload.sessionId,
     };
   }
 
   return {
     user: safeUser,
     role: safeUser.role as any,
+    sessionId: payload.sessionId,
   };
 }
 

@@ -147,6 +147,24 @@ const UserSchema = new Schema<IUserDocument>(
       default: null,
       index: true,
     },
+    sessions: [
+      {
+        sessionId: { type: String, required: true },
+        deviceName: { type: String, default: 'Web Browser' },
+        browser: { type: String, default: 'Browser' },
+        os: { type: String, default: 'Unknown OS' },
+        deviceType: {
+          type: String,
+          enum: ['desktop', 'mobile', 'tablet'],
+          default: 'desktop',
+        },
+        ipAddress: { type: String, default: '' },
+        userAgent: { type: String, default: '' },
+        lastActiveAt: { type: Date, default: Date.now },
+        createdAt: { type: Date, default: Date.now },
+        isActive: { type: Boolean, default: true },
+      },
+    ],
     lastLoginAt: {
       type: Date,
       default: null,

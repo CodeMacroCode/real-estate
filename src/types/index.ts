@@ -139,6 +139,20 @@ export interface IRole {
   updatedAt?: string | Date;
 }
 
+export interface IUserSession {
+  sessionId: string;
+  deviceName: string;
+  browser: string;
+  os: string;
+  deviceType: 'desktop' | 'mobile' | 'tablet';
+  ipAddress: string;
+  userAgent?: string;
+  lastActiveAt: string | Date;
+  createdAt: string | Date;
+  isActive: boolean;
+  isCurrentDevice?: boolean;
+}
+
 export interface IUser {
   _id?: string | any;
   employeeId?: string;
@@ -166,6 +180,7 @@ export interface IUser {
   parentAdminId?: string | IUser;
   customPermissions?: ModulePermissionConfig[];
   createdBy?: string | IUser;
+  sessions?: IUserSession[];
   lastLoginAt?: string | Date;
   lastLogoutAt?: string | Date;
   createdAt?: string | Date;
@@ -223,6 +238,7 @@ export type WebsiteContentPublicationStatus = 'draft' | 'review' | 'published';
 
 export interface AuthTokenPayload {
   userId: string;
+  sessionId?: string;
   employeeId?: string;
   username?: string;
   email: string;
