@@ -187,7 +187,7 @@ export const AlertDialogAction = React.forwardRef<
         props.onClick?.(e);
         onOpenChange(false);
       }}
-      className={`inline-flex h-9 items-center justify-center rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition ${className}`}
+      className={`inline-flex h-9 items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition ${className || "bg-slate-900 hover:bg-slate-800"}`}
       {...props}
     />
   );

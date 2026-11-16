@@ -26,6 +26,7 @@ import {
   FolderLock,
   UserCheck,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { SsrPropertyItem } from "@/services/propertyService";
 import { SsrMasterOption } from "@/services/masterService";
@@ -317,6 +318,7 @@ export function PropertiesClient({
     null,
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [togglingPublishPropertyId, setTogglingPublishPropertyId] = useState<string | null>(null);
 
   // Image Preview Modal State
   const [previewMedia, setPreviewMedia] = useState<{
@@ -775,6 +777,7 @@ export function PropertiesClient({
 
   const handleTogglePublish = async (p: SsrPropertyItem) => {
     const nextState = !p.publishing?.publishOnWebsite;
+    setTogglingPublishPropertyId(p._id);
     try {
       const res = await fetch(`/api/properties/${p._id}/publish`, {
         method: "PATCH",
@@ -797,6 +800,8 @@ export function PropertiesClient({
       });
     } catch (err: any) {
       toast.error(err.message || "Publishing toggle failed");
+    } finally {
+      setTogglingPublishPropertyId(null);
     }
   };
 
@@ -1087,8 +1092,9 @@ export function PropertiesClient({
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
+                          disabled={togglingPublishPropertyId === p._id}
                           onClick={() => handleTogglePublish(p)}
-                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition cursor-pointer ${
+                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                             p.publishing?.publishOnWebsite
                               ? "text-emerald-700 bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
                               : "text-slate-500 bg-slate-50 border-slate-200 hover:bg-slate-100"
@@ -1099,12 +1105,18 @@ export function PropertiesClient({
                               : "Click to publish on website"
                           }
                         >
-                          <Globe
-                            className={`size-3 ${p.publishing?.publishOnWebsite ? "text-emerald-600" : "text-slate-400"}`}
-                          />
-                          {p.publishing?.publishOnWebsite
-                            ? "Live (Publish)"
-                            : "Offline"}
+                          {togglingPublishPropertyId === p._id ? (
+                            <Loader2 className="size-3 animate-spin text-current" />
+                          ) : (
+                            <Globe
+                              className={`size-3 ${p.publishing?.publishOnWebsite ? "text-emerald-600" : "text-slate-400"}`}
+                            />
+                          )}
+                          {togglingPublishPropertyId === p._id
+                            ? "Updating..."
+                            : p.publishing?.publishOnWebsite
+                              ? "Live (Publish)"
+                              : "Offline"}
                         </button>
 
                         {p.publishing?.publishOnWebsite && (

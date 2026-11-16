@@ -28,6 +28,7 @@ import {
   Building2,
   X,
   ChevronLeft,
+  Loader2,
 } from "lucide-react";
 import { SsrProjectItem } from "@/services/projectService";
 import { SsrMasterOption } from "@/services/masterService";
@@ -196,6 +197,7 @@ export function ProjectsClient({
   const [editCoverImage, setEditCoverImage] = useState<string>("");
   const [editProjectImages, setEditProjectImages] = useState<string[]>([]);
   const [isUploadingEditImage, setIsUploadingEditImage] = useState(false);
+  const [togglingPublishProjectId, setTogglingPublishProjectId] = useState<string | null>(null);
 
   // Unit Status & Transaction Management Modal State
   const [selectedUnitForDetail, setSelectedUnitForDetail] = useState<any>(null);
@@ -300,6 +302,7 @@ export function ProjectsClient({
   };
 
   const handleTogglePublish = async (project: SsrProjectItem) => {
+    setTogglingPublishProjectId(project._id);
     try {
       const nextState = !project.isPublishedOnWebsite;
       const res = await fetch(`/api/projects/${project._id}`, {
@@ -321,6 +324,8 @@ export function ProjectsClient({
       });
     } catch (err: any) {
       toast.error(err.message || "Could not update publish state");
+    } finally {
+      setTogglingPublishProjectId(null);
     }
   };
 
@@ -790,16 +795,25 @@ export function ProjectsClient({
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         type="button"
+                        disabled={togglingPublishProjectId === p._id}
                         onClick={() => handleTogglePublish(p)}
-                        className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition cursor-pointer ${
+                        className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                           p.isPublishedOnWebsite
                             ? "text-emerald-700 bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
                             : "text-slate-500 bg-slate-50 border-slate-200 hover:bg-slate-100"
                         }`}
                         title={p.isPublishedOnWebsite ? "Click to take project offline" : "Click to publish project to website portal"}
                       >
-                        <Globe className={`size-3 ${p.isPublishedOnWebsite ? "text-emerald-600" : "text-slate-400"}`} />
-                        {p.isPublishedOnWebsite ? "Live on Web" : "Offline"}
+                        {togglingPublishProjectId === p._id ? (
+                          <Loader2 className="size-3 animate-spin text-current" />
+                        ) : (
+                          <Globe className={`size-3 ${p.isPublishedOnWebsite ? "text-emerald-600" : "text-slate-400"}`} />
+                        )}
+                        {togglingPublishProjectId === p._id
+                          ? "Updating..."
+                          : p.isPublishedOnWebsite
+                            ? "Live on Web"
+                            : "Offline"}
                       </button>
 
                       {p.isPublishedOnWebsite && (

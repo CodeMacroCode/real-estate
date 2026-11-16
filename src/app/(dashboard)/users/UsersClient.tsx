@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Users,
@@ -30,6 +32,16 @@ import {
   LoginStatusBadge,
   RoleBadge,
 } from "@/components/ui/Badge";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Modal } from "@/components/ui/Modal";
 import { Alert } from "@/components/ui/Alert";
 import {
@@ -94,6 +106,8 @@ export function UsersClient({
   >({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+  const [impersonateTargetUser, setImpersonateTargetUser] = useState<SafeUser | null>(null);
+  const [isImpersonateDialogOpen, setIsImpersonateDialogOpen] = useState(false);
   const [superAdminPassword, setSuperAdminPassword] = useState("");
   const [showSuperAdminPassword, setShowSuperAdminPassword] = useState(false);
 
@@ -111,14 +125,7 @@ export function UsersClient({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleLoginAsAdmin = async (targetUser: SafeUser) => {
-    if (
-      !confirm(
-        `Are you sure you want to log in as ${targetUser.name}? You will switch to their session and can return anytime.`,
-      )
-    ) {
-      return;
-    }
+  const executeImpersonation = async (targetUser: SafeUser) => {
     setImpersonatingId(targetUser._id);
     setError(null);
     try {
@@ -131,11 +138,19 @@ export function UsersClient({
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to switch session");
       }
+      toast.success(`Switched session to ${targetUser.name}`);
       window.location.href = "/dashboard";
     } catch (err: any) {
-      setError(err.message || "Error logging in as admin");
+      const msg = err.message || "Error logging in as admin";
+      setError(msg);
+      toast.error(msg);
       setImpersonatingId(null);
     }
+  };
+
+  const handleLoginAsAdmin = (targetUser: SafeUser) => {
+    setImpersonateTargetUser(targetUser);
+    setIsImpersonateDialogOpen(true);
   };
 
   // Form State
@@ -1541,6 +1556,60 @@ export function UsersClient({
           </div>
         </div>
       </Modal>
+
+      {/* Impersonation Confirmation Dialog */}
+      <AlertDialog
+        open={isImpersonateDialogOpen}
+        onOpenChange={setIsImpersonateDialogOpen}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <LogIn className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-center text-lg font-bold text-slate-900">
+              Log in as {impersonateTargetUser?.name || "Admin"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-xs text-slate-500">
+              Are you sure you want to log in as{" "}
+              <span className="font-semibold text-slate-700">
+                {impersonateTargetUser?.name}
+              </span>
+              ? You will switch to their session and can return anytime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex sm:justify-center gap-2">
+            <AlertDialogCancel
+              disabled={impersonatingId !== null}
+              onClick={() => {
+                setIsImpersonateDialogOpen(false);
+                setImpersonateTargetUser(null);
+              }}
+              className="text-xs font-semibold px-4 py-2 bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 transition"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={impersonatingId !== null || !impersonateTargetUser}
+              onClick={() => {
+                if (impersonateTargetUser) {
+                  executeImpersonation(impersonateTargetUser);
+                }
+              }}
+              className="text-xs font-semibold px-5 py-2 bg-black hover:bg-slate-800 text-white shadow-sm transition"
+            >
+              {impersonatingId ? (
+                <>
+                  <Spinner size="sm" className="text-white mr-1.5" />
+                  <span>Switching...</span>
+                </>
+              ) : (
+                <span>Confirm & Log In</span>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
