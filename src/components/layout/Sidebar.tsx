@@ -123,10 +123,10 @@ export function Sidebar({ user }: SidebarProps) {
       visible: !isSuperAdmin, // Admin & Sub-Roles
     },
     {
-      name: "Connect Social Media",
-      href: "/connect-social-media",
+      name: "Lead Social Media",
+      href: "/lead-social-media",
       icon: Share2,
-      active: pathname.startsWith("/connect-social-media"),
+      active: pathname.startsWith("/lead-social-media"),
       visible: isAdmin, // Connected at Admin organization level
     },
   ].filter((item) => item.visible);

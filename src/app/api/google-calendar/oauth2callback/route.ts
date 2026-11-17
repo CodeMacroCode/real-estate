@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       req.nextUrl.origin ||
       "http://localhost:3000";
 
-    const redirectTarget = new URL("/connect-social-media", appBaseUrl);
+    const redirectTarget = new URL("/lead-social-media", appBaseUrl);
 
     if (error) {
       console.error("[Google Calendar OAuth Error callback]:", error);
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       process.env.FRONTEND_URL ||
       req.nextUrl.origin ||
       "http://localhost:3000";
-    const redirectTarget = new URL("/connect-social-media", appBaseUrl);
+    const redirectTarget = new URL("/lead-social-media", appBaseUrl);
     redirectTarget.searchParams.set(
       "gcal_error",
       encodeURIComponent(err.message || "Failed to exchange Google OAuth tokens"),
