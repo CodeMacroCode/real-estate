@@ -9,6 +9,8 @@ import {
   Eye,
   Mail,
   ShieldCheck,
+  Phone,
+  Building2,
 } from "lucide-react";
 import { SanitizedPublicProject } from "@/services/publicPortalService";
 import { formatPrice } from "@/lib/portalUtils";
@@ -113,16 +115,57 @@ export function ProjectCard({ project, agencySlug, onEnquireClick }: ProjectCard
             </span>
           </p>
 
-          {/* RERA Strip */}
+          {/* RERA & Area Strip */}
           <div className="mt-3 py-1.5 px-2 bg-paper border border-line text-[11px] flex items-center justify-between text-muted-ink">
             <span className="flex items-center gap-1 font-medium truncate">
               <ShieldCheck className="size-3.5 text-brass shrink-0" strokeWidth={1.5} />
               <span className="truncate">RERA: {project.reraNumber || "Approved Phase I"}</span>
             </span>
-            <span className="font-bold text-ink-green shrink-0">
-              {project.totalUnits ? `${project.totalUnits} Units` : "Master Plan"}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              {project.carpetArea ? (
+                <span className="font-semibold text-ink-green">
+                  {project.carpetArea.toLocaleString()} <span className="font-normal text-[10px] text-muted-ink">Sq. Ft.</span>
+                </span>
+              ) : null}
+              <span className="font-bold text-ink-green">
+                {project.totalUnits ? `${project.totalUnits} Units` : "Master Plan"}
+              </span>
+            </div>
           </div>
+
+          {/* Admin Agency Contact Details */}
+          {(project.agency?.agencyName || project.agency?.phone || project.agency?.email) && (
+            <div className="mt-2.5 pt-2 border-t border-line/60 flex items-center justify-between gap-2 text-[11px] text-muted-ink">
+              <div className="flex items-center gap-1 min-w-0 truncate">
+                <Building2 className="size-3 text-brass shrink-0" strokeWidth={1.5} />
+                <span className="font-semibold text-ink truncate">
+                  {project.agency.agencyName || "Agency Verified"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                {project.agency.phone && (
+                  <a
+                    href={`tel:${project.agency.phone}`}
+                    className="flex items-center gap-1 text-ink-green hover:text-brass font-bold transition-colors"
+                    title={`Call: ${project.agency.phone}`}
+                  >
+                    <Phone className="size-3 shrink-0" strokeWidth={1.5} />
+                    <span className="font-mono text-[11px]">{project.agency.phone}</span>
+                  </a>
+                )}
+                {project.agency.email && !project.agency.phone && (
+                  <a
+                    href={`mailto:${project.agency.email}`}
+                    className="flex items-center gap-1 text-ink-green hover:text-brass font-medium transition-colors truncate max-w-[140px]"
+                    title={`Email: ${project.agency.email}`}
+                  >
+                    <Mail className="size-3 shrink-0" strokeWidth={1.5} />
+                    <span className="truncate">{project.agency.email}</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Buttons */}

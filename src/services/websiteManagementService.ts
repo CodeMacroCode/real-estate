@@ -4,6 +4,7 @@ import { User } from "@/models/User";
 import { Role } from "@/models/Role";
 import { Property } from "@/models/Property";
 import { Project } from "@/models/Project";
+import { WebsiteSetting } from "@/models/WebsiteSetting";
 
 export interface SsrWebsiteManagementPortalItem {
   adminId: string;
@@ -12,6 +13,13 @@ export interface SsrWebsiteManagementPortalItem {
   agencySlug: string;
   email: string;
   mobile: string;
+  contact?: {
+    phone?: string;
+    email?: string;
+    whatsappNumber?: string;
+    address?: string;
+    city?: string;
+  };
   customDomain: string | null;
   publishedPropertiesCount: number;
   publishedProjectsCount: number;
@@ -105,8 +113,8 @@ export async function getSsrWebsitePortals({
 
   const targetAdminIds = adminDocs.map((a: any) => a._id);
 
-  // Aggregation counts for properties & projects
-  const [propertyCounts, projectCounts] = await Promise.all([
+  // Aggregation counts for properties & projects and website settings
+  const [propertyCounts, projectCounts, websiteSettingsDocs] = await Promise.all([
     Property.aggregate([
       {
         $match: {
@@ -125,6 +133,9 @@ export async function getSsrWebsitePortals({
       },
       { $group: { _id: "$adminId", count: { $sum: 1 } } },
     ]),
+    WebsiteSetting.find({ adminId: { $in: targetAdminIds } })
+      .select("adminId contact branding")
+      .lean(),
   ]);
 
   const propertyCountMap = new Map(
@@ -132,6 +143,9 @@ export async function getSsrWebsitePortals({
   );
   const projectCountMap = new Map(
     projectCounts.map((p) => [p._id.toString(), p.count]),
+  );
+  const settingsMap = new Map(
+    websiteSettingsDocs.map((s: any) => [s.adminId.toString(), s]),
   );
 
   const adminPortals: SsrWebsiteManagementPortalItem[] = adminDocs.map(
@@ -157,13 +171,22 @@ export async function getSsrWebsitePortals({
         subdomainUrl = `${protocol}://${admin.agencySlug}.${domainParts[0]}${port}/portal-properties`;
       }
 
+      const adminSetting = settingsMap.get(adminId);
+
       return {
         adminId,
         adminName: admin.name,
-        agencyName: admin.agencyName || admin.name,
+        agencyName: adminSetting?.branding?.companyName || admin.agencyName || admin.name,
         agencySlug: admin.agencySlug || slug,
         email: admin.email,
         mobile: admin.mobile,
+        contact: {
+          phone: adminSetting?.contact?.phone || admin.mobile,
+          email: adminSetting?.contact?.email || admin.email,
+          whatsappNumber: adminSetting?.contact?.whatsappNumber || admin.mobile,
+          address: adminSetting?.contact?.address,
+          city: adminSetting?.contact?.city,
+        },
         customDomain: admin.customDomain || null,
         publishedPropertiesCount: propertyCountMap.get(adminId) || 0,
         publishedProjectsCount: projectCountMap.get(adminId) || 0,

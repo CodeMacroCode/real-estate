@@ -15,6 +15,10 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  Phone,
+  Mail,
+  MapPin,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SsrWebsiteManagementPortalItem } from "@/services/websiteManagementService";
@@ -270,7 +274,7 @@ export function WebsiteManagementClient({
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Admin: <span className="font-semibold text-slate-700">{portal.adminName}</span> • {portal.email}
+                      Company: <span className="font-semibold text-slate-700">{portal.agencyName}</span>
                     </p>
                   </div>
 
@@ -313,6 +317,31 @@ export function WebsiteManagementClient({
                       </button>
                     )}
                   </div>
+                </div>
+
+                {/* Admin Contact Information Strip */}
+                <div className="mt-3 pt-3 border-t border-slate-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Phone className="size-3 text-blue-600 shrink-0" />
+                    <span className="font-semibold text-slate-700 truncate">
+                      {portal.contact?.phone || portal.mobile || "No phone"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Mail className="size-3 text-blue-600 shrink-0" />
+                    <span className="font-medium text-slate-600 truncate">
+                      {portal.contact?.email || portal.email}
+                    </span>
+                  </div>
+                  {portal.contact?.address && (
+                    <div className="flex items-center gap-1.5 sm:col-span-2 text-slate-500 truncate">
+                      <MapPin className="size-3 text-slate-400 shrink-0" />
+                      <span className="truncate">
+                        {portal.contact.address}
+                        {portal.contact.city ? `, ${portal.contact.city}` : ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Published Inventory Counters */}

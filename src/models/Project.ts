@@ -19,6 +19,7 @@ export interface IProjectDocument extends Document {
   constructionStatus: string;
   launchDate?: Date;
   possessionDate?: Date;
+  carpetArea?: number;
   amenities: string[];
   description?: string;
   media: {
@@ -88,6 +89,7 @@ const ProjectSchema = new Schema<IProjectDocument>(
     },
     launchDate: { type: Date },
     possessionDate: { type: Date },
+    carpetArea: { type: Number },
     amenities: [{ type: String, trim: true }],
     description: { type: String, default: "" },
     media: {

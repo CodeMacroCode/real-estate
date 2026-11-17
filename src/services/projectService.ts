@@ -19,6 +19,7 @@ export interface SsrProjectItem {
     lng?: number;
   };
   reraNumber?: string;
+  carpetArea?: number;
   constructionStatus: string;
   totalUnits: number;
   availableUnits: number;
@@ -177,6 +178,7 @@ export async function getSsrProjects({
     projectType: doc.projectType,
     location: doc.location || { address: "", city: "" },
     reraNumber: doc.reraNumber || "",
+    carpetArea: doc.carpetArea,
     constructionStatus: doc.constructionStatus,
     totalUnits: doc.totalUnits || 0,
     availableUnits: doc.availableUnits || 0,

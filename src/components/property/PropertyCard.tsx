@@ -9,6 +9,8 @@ import {
   Eye,
   Mail,
   Heart,
+  Phone,
+  Building2,
 } from "lucide-react";
 import { SanitizedPublicProperty } from "@/services/publicPortalService";
 import { formatPrice } from "@/lib/portalUtils";
@@ -180,6 +182,40 @@ export function PropertyCard({ property, onEnquireClick, agencySlug }: PropertyC
               </span>
             </div>
           </div>
+
+          {/* Admin Agency Contact Details */}
+          {(property.agency?.agencyName || property.agency?.phone || property.agency?.email) && (
+            <div className="mt-2.5 pt-2 border-t border-line/60 flex items-center justify-between gap-2 text-[11px] text-muted-ink">
+              <div className="flex items-center gap-1 min-w-0 truncate">
+                <Building2 className="size-3 text-brass shrink-0" strokeWidth={1.5} />
+                <span className="font-semibold text-ink truncate">
+                  {property.agency.agencyName || "Agency Verified"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                {property.agency.phone && (
+                  <a
+                    href={`tel:${property.agency.phone}`}
+                    className="flex items-center gap-1 text-ink-green hover:text-brass font-bold transition-colors"
+                    title={`Call: ${property.agency.phone}`}
+                  >
+                    <Phone className="size-3 shrink-0" strokeWidth={1.5} />
+                    <span className="font-mono text-[11px]">{property.agency.phone}</span>
+                  </a>
+                )}
+                {property.agency.email && !property.agency.phone && (
+                  <a
+                    href={`mailto:${property.agency.email}`}
+                    className="flex items-center gap-1 text-ink-green hover:text-brass font-medium transition-colors truncate max-w-[140px]"
+                    title={`Email: ${property.agency.email}`}
+                  >
+                    <Mail className="size-3 shrink-0" strokeWidth={1.5} />
+                    <span className="truncate">{property.agency.email}</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Buttons: "View details" (outlined green) and "Enquire" (solid brass) */}

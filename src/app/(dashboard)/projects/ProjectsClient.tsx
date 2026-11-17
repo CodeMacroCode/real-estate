@@ -170,6 +170,7 @@ export function ProjectsClient({
     city: "Bengaluru",
     address: "",
     reraNumber: "",
+    carpetArea: "",
     furnishing: "Unfurnished",
     amenities: [] as string[],
     isPublishedOnWebsite: true,
@@ -190,6 +191,7 @@ export function ProjectsClient({
     city: "Bengaluru",
     address: "",
     reraNumber: "",
+    carpetArea: "",
     furnishing: "Unfurnished",
     amenities: [] as string[],
     isPublishedOnWebsite: true,
@@ -339,6 +341,7 @@ export function ProjectsClient({
       city: p.location?.city || "Bengaluru",
       address: p.location?.address || "",
       reraNumber: p.reraNumber || "",
+      carpetArea: (p as any).carpetArea ? String((p as any).carpetArea) : "",
       furnishing: (p as any).furnishing || "Unfurnished",
       amenities: Array.isArray(p.amenities) ? p.amenities : [],
       isPublishedOnWebsite: p.isPublishedOnWebsite,
@@ -393,6 +396,7 @@ export function ProjectsClient({
           projectType: editFormData.projectType,
           constructionStatus: editFormData.constructionStatus,
           reraNumber: editFormData.reraNumber,
+          carpetArea: editFormData.carpetArea ? Number(editFormData.carpetArea) : undefined,
           amenities: editFormData.amenities,
           furnishing: editFormData.furnishing,
           isPublishedOnWebsite: editFormData.isPublishedOnWebsite,
@@ -511,6 +515,7 @@ export function ProjectsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          carpetArea: formData.carpetArea ? Number(formData.carpetArea) : undefined,
           location: { address: formData.address, city: formData.city },
           amenities: formData.amenities,
           furnishing: formData.furnishing,
@@ -536,6 +541,7 @@ export function ProjectsClient({
         city: "Bengaluru",
         address: "",
         reraNumber: "",
+        carpetArea: "",
         furnishing: "Unfurnished",
         amenities: [],
         isPublishedOnWebsite: true,
@@ -697,6 +703,7 @@ export function ProjectsClient({
               <TableHead className="whitespace-nowrap">Project ID</TableHead>
               <TableHead className="min-w-[180px]">Project & Developer</TableHead>
               <TableHead className="whitespace-nowrap">Type & Status</TableHead>
+              <TableHead className="whitespace-nowrap">Carpet Area</TableHead>
               <TableHead className="whitespace-nowrap">City & Location</TableHead>
               <TableHead className="text-center whitespace-nowrap">Live Units Rollup</TableHead>
               <TableHead className="text-center whitespace-nowrap">Website Display</TableHead>
@@ -707,7 +714,7 @@ export function ProjectsClient({
           <TableBody>
             {initialProjects.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="h-32 text-center text-xs text-slate-400">
+                <TableCell colSpan={10} className="h-32 text-center text-xs text-slate-400">
                   No projects found. Create your first real estate project above.
                 </TableCell>
               </TableRow>
@@ -763,6 +770,15 @@ export function ProjectsClient({
                   <TableCell className="whitespace-nowrap">
                     <div className="font-medium text-slate-800">{p.projectType}</div>
                     <div className="text-[10px] text-slate-400">{p.constructionStatus}</div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {p.carpetArea ? (
+                      <span className="font-semibold text-slate-800">
+                        {p.carpetArea.toLocaleString()} <span className="text-[11px] font-normal text-slate-500">Sq. Ft.</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <div className="flex items-center gap-1 text-slate-700 font-medium">
@@ -1312,7 +1328,7 @@ export function ProjectsClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     City *
@@ -1336,6 +1352,19 @@ export function ProjectsClient({
                     value={formData.reraNumber}
                     onChange={(e) => setFormData({ ...formData, reraNumber: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Carpet Area (Sq. Ft.)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 1250"
+                    value={formData.carpetArea}
+                    onChange={(e) => setFormData({ ...formData, carpetArea: e.target.value })}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1574,7 +1603,7 @@ export function ProjectsClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     City *
@@ -1596,6 +1625,19 @@ export function ProjectsClient({
                     value={editFormData.reraNumber}
                     onChange={(e) => setEditFormData({ ...editFormData, reraNumber: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Carpet Area (Sq. Ft.)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 1250"
+                    value={editFormData.carpetArea}
+                    onChange={(e) => setEditFormData({ ...editFormData, carpetArea: e.target.value })}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>

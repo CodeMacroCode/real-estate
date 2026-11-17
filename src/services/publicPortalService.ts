@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb/db";
 import { Property, IPropertyDocument } from "@/models/Property";
 import { Project, IProjectDocument } from "@/models/Project";
 import { ProjectUnit } from "@/models/ProjectUnit";
+import { WebsiteSetting } from "@/models/WebsiteSetting";
 import mongoose, { FilterQuery } from "mongoose";
 
 export interface PublicPropertyFilterParams {
@@ -114,6 +115,8 @@ export interface SanitizedPublicProperty {
     adminId: string;
     agencySlug: string;
     agencyName: string;
+    phone?: string;
+    email?: string;
   } | null;
   createdAt: string;
 }
@@ -149,11 +152,14 @@ export interface SanitizedPublicProject {
   };
   totalUnits: number;
   availableUnits: number;
+  carpetArea?: number;
   featuredOnWebsite: boolean;
   agency?: {
     adminId: string;
     agencySlug: string;
     agencyName: string;
+    phone?: string;
+    email?: string;
   } | null;
   createdAt: string;
 }
@@ -277,6 +283,8 @@ export function sanitizePublicProperty(doc: any): SanitizedPublicProperty {
           adminId: property.adminId._id ? property.adminId._id.toString() : property.adminId.toString(),
           agencySlug: property.adminId.agencySlug || "",
           agencyName: property.adminId.agencyName || property.adminId.name || "",
+          phone: property.adminId.mobile || "",
+          email: property.adminId.email || "",
         }
       : property.adminId
       ? {
@@ -332,12 +340,15 @@ export function sanitizePublicProject(doc: any): SanitizedPublicProject {
     },
     totalUnits: project.totalUnits || 0,
     availableUnits: project.availableUnits || 0,
+    carpetArea: project.carpetArea ? Number(project.carpetArea) : undefined,
     featuredOnWebsite: Boolean(project.featuredOnWebsite),
     agency: project.adminId && typeof project.adminId === "object"
       ? {
           adminId: project.adminId._id ? project.adminId._id.toString() : project.adminId.toString(),
           agencySlug: project.adminId.agencySlug || "",
           agencyName: project.adminId.agencyName || project.adminId.name || "",
+          phone: project.adminId.mobile || "",
+          email: project.adminId.email || "",
         }
       : project.adminId
       ? {
@@ -431,13 +442,43 @@ export async function getPublicProperties(
   const [docs, total] = await Promise.all([
     Property.find(query)
       .populate("projectId", "name developerName reraNumber")
-      .populate("adminId", "name agencySlug agencyName")
+      .populate("adminId", "name agencySlug agencyName mobile email")
       .sort(sortOption)
       .skip(skip)
       .limit(limit)
       .lean(),
     Property.countDocuments(query),
   ]);
+
+  // Enrich with official company/branding name from WebsiteSetting if available
+  const adminIds = Array.from(
+    new Set(
+      docs
+        .map((d: any) => d.adminId?._id?.toString() || d.adminId?.toString())
+        .filter(Boolean),
+    ),
+  );
+  if (adminIds.length > 0) {
+    const settings = await WebsiteSetting.find({ adminId: { $in: adminIds } })
+      .select("adminId branding.companyName contact.phone contact.email")
+      .lean();
+    const settingsMap = new Map(
+      settings.map((s: any) => [s.adminId.toString(), s]),
+    );
+    for (const d of docs as any[]) {
+      const aId = d.adminId?._id?.toString() || d.adminId?.toString();
+      const s = settingsMap.get(aId);
+      if (s?.branding?.companyName && d.adminId && typeof d.adminId === "object") {
+        d.adminId.agencyName = s.branding.companyName;
+      }
+      if (s?.contact?.phone && d.adminId && typeof d.adminId === "object") {
+        d.adminId.mobile = s.contact.phone;
+      }
+      if (s?.contact?.email && d.adminId && typeof d.adminId === "object") {
+        d.adminId.email = s.contact.email;
+      }
+    }
+  }
 
   const sanitized = docs.map((doc) => sanitizePublicProperty(doc));
 
@@ -481,7 +522,7 @@ export async function getPublicPropertyBySlug(
 
   const doc = await Property.findOne(query)
     .populate("projectId", "name developerName reraNumber")
-    .populate("adminId", "name agencySlug agencyName")
+    .populate("adminId", "name agencySlug agencyName mobile email")
     .lean();
 
   if (!doc) {
@@ -530,13 +571,43 @@ export async function getPublicProjects(
 
   const [docs, total] = await Promise.all([
     Project.find(query)
-      .populate("adminId", "name agencySlug agencyName")
+      .populate("adminId", "name agencySlug agencyName mobile email")
       .sort({ featuredOnWebsite: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
     Project.countDocuments(query),
   ]);
+
+  // Enrich with official company/branding name from WebsiteSetting if available
+  const adminIds = Array.from(
+    new Set(
+      docs
+        .map((d: any) => d.adminId?._id?.toString() || d.adminId?.toString())
+        .filter(Boolean),
+    ),
+  );
+  if (adminIds.length > 0) {
+    const settings = await WebsiteSetting.find({ adminId: { $in: adminIds } })
+      .select("adminId branding.companyName contact.phone contact.email")
+      .lean();
+    const settingsMap = new Map(
+      settings.map((s: any) => [s.adminId.toString(), s]),
+    );
+    for (const d of docs as any[]) {
+      const aId = d.adminId?._id?.toString() || d.adminId?.toString();
+      const s = settingsMap.get(aId);
+      if (s?.branding?.companyName && d.adminId && typeof d.adminId === "object") {
+        d.adminId.agencyName = s.branding.companyName;
+      }
+      if (s?.contact?.phone && d.adminId && typeof d.adminId === "object") {
+        d.adminId.mobile = s.contact.phone;
+      }
+      if (s?.contact?.email && d.adminId && typeof d.adminId === "object") {
+        d.adminId.email = s.contact.email;
+      }
+    }
+  }
 
   const sanitized = docs.map((doc) => sanitizePublicProject(doc));
 
@@ -576,7 +647,7 @@ export async function getPublicProjectBySlug(
   }
 
   const doc = await Project.findOne(query)
-    .populate("adminId", "name agencySlug agencyName")
+    .populate("adminId", "name agencySlug agencyName mobile email")
     .lean();
 
   if (!doc) {

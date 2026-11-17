@@ -111,6 +111,7 @@ export async function PATCH(
     if (body.projectType) updateFields.projectType = body.projectType;
     if (body.constructionStatus) updateFields.constructionStatus = body.constructionStatus;
     if (body.reraNumber !== undefined) updateFields.reraNumber = body.reraNumber;
+    if (body.carpetArea !== undefined) updateFields.carpetArea = body.carpetArea ? Number(body.carpetArea) : undefined;
     if (body.amenities) updateFields.amenities = body.amenities;
     if (body.description !== undefined) updateFields.description = body.description;
     if (body.isPublishedOnWebsite !== undefined) updateFields.isPublishedOnWebsite = body.isPublishedOnWebsite;

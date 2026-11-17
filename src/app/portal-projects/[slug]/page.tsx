@@ -131,12 +131,25 @@ export default async function PublicProjectDetailPage({
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
-                      Construction Phasing
-                    </span>
-                    <div className="font-mono text-xs sm:text-sm font-bold text-ink-green mt-1">
-                      {project.totalUnits ? `${project.totalUnits} Total Units` : "Master Sanction Layout"}
+                  <div className="flex items-baseline gap-6">
+                    {project.carpetArea ? (
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                          Carpet Area
+                        </span>
+                        <div className="font-mono text-xs sm:text-sm font-bold text-ink-green mt-1">
+                          {project.carpetArea.toLocaleString()} Sq. Ft.
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                        Construction Phasing
+                      </span>
+                      <div className="font-mono text-xs sm:text-sm font-bold text-ink-green mt-1">
+                        {project.totalUnits ? `${project.totalUnits} Total Units` : "Master Sanction Layout"}
+                      </div>
                     </div>
                   </div>
                 </div>
