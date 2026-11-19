@@ -21,6 +21,7 @@ import {
   Share2,
   FolderLock,
   BadgeCheck,
+  LucideSparkles,
 } from "lucide-react";
 import { SafeUser } from "@/types";
 
@@ -131,6 +132,17 @@ export function Sidebar({ user }: SidebarProps) {
     },
   ].filter((item) => item.visible);
 
+  // Social media like Publier section
+  const socialMediaItems = [
+    {
+      name: "Content Social Media",
+      href: "/content-social-media",
+      icon: LucideSparkles,
+      active: pathname.startsWith("/content-social-media"),
+      visible: true,
+    },
+  ].filter((item) => item.visible);
+
   // Properties & Real Estate Engine Modules (for Agency Admin & Staff)
   const propertiesCrmItems = [
     {
@@ -238,6 +250,39 @@ export function Sidebar({ user }: SidebarProps) {
             </div>
             <nav className="space-y-1">
               {leadCrmItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      item.active
+                        ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${item.active ? "text-blue-600" : "text-slate-400"}`}
+                    />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
+
+        {/* Social Media Content Navigation */}
+        {socialMediaItems.length > 0 && (
+          <div>
+            <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <span>Social Media Content</span>
+              <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">
+                Social
+              </span>
+            </div>
+            <nav className="space-y-1">
+              {socialMediaItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
