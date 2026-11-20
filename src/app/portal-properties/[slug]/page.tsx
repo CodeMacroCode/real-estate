@@ -8,7 +8,7 @@ import { PropertyOverviewSpecs } from "@/components/property/PropertyOverviewSpe
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 import { formatPrice, formatFloorOrdinal } from "@/lib/portalUtils";
-import { MapPin, ShieldCheck, Check, ArrowLeft, Building } from "lucide-react";
+import { MapPin, ShieldCheck, Check, ArrowLeft, Building, Navigation, ExternalLink } from "lucide-react";
 
 interface PublicPropertyDetailPageProps {
   params: Promise<{
@@ -99,6 +99,55 @@ export default async function PublicPropertyDetailPage({
           },
         ]
   ).filter((fp: any) => Boolean(fp.planImageUrl));
+
+  // Location & Google Map Configuration
+  const latitude = property.location?.lat;
+  const longitude = property.location?.lng;
+
+  const addressParts = [
+    property.location?.address,
+    property.location?.landmark,
+    property.location?.city,
+    property.location?.state,
+    property.location?.pincode,
+  ].filter(Boolean);
+  const fullAddress = addressParts.join(", ");
+
+  const hasCoordinates =
+    typeof latitude === "number" &&
+    typeof longitude === "number" &&
+    !isNaN(latitude) &&
+    !isNaN(longitude) &&
+    latitude !== 0 &&
+    longitude !== 0;
+
+  const targetQuery = hasCoordinates
+    ? `${latitude},${longitude}`
+    : encodeURIComponent(fullAddress || `${property.title}, ${property.location?.city || ""}`);
+
+  // Resolve custom Google Maps Embed URL or extract src from <iframe> code if provided
+  const rawEmbedInput = property.location?.googleMapsEmbedUrl?.trim();
+  let customEmbedSrc = "";
+  if (rawEmbedInput) {
+    if (rawEmbedInput.includes("<iframe")) {
+      const match = rawEmbedInput.match(/src=["'](.*?)["']/);
+      customEmbedSrc = match ? match[1] : "";
+    } else if (rawEmbedInput.startsWith("http://") || rawEmbedInput.startsWith("https://")) {
+      customEmbedSrc = rawEmbedInput;
+    }
+  }
+
+  const mapEmbedUrl = customEmbedSrc || `https://maps.google.com/maps?q=${targetQuery}&z=15&output=embed`;
+
+  const externalMapUrl = hasCoordinates
+    ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress || property.location?.city || property.title)}`;
+
+  const directionsUrl = hasCoordinates
+    ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress || property.location?.city || property.title)}`;
+
+  const floorPlanSectionNumber = property.amenities && property.amenities.length > 0 ? "04" : "03";
 
   return (
     <div
@@ -295,14 +344,96 @@ export default async function PublicPropertyDetailPage({
               )}
             </div>
 
-            {/* Right 4 columns: sticky inquiry card */}
-            <div className="lg:col-span-4">
+            {/* Right 4 columns: sticky inquiry card + Property Location Map */}
+            <div className="lg:col-span-4 space-y-6">
               <PropertyDetailInquiryForm
                 propertyId={property.id}
                 propertyTitle={property.title}
                 propertyCode={property.propertyId}
                 adminId={resolvedSearchParams.adminId || property.agency?.adminId}
               />
+
+              {/* Geographic Location & Embedded Google Map in Sidebar */}
+              <div className="bg-card-white border border-line p-5 space-y-3.5 shadow-xs">
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-line">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-ink-green uppercase tracking-wider">
+                    <MapPin className="size-4 text-brass shrink-0" />
+                    <span>Property Location</span>
+                  </div>
+                  <a
+                    href={externalMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold tracking-wider uppercase text-brass hover:text-brass/80 flex items-center gap-1"
+                  >
+                    <span>Open in Maps</span>
+                    <ExternalLink className="size-3" />
+                  </a>
+                </div>
+
+                {/* Location Meta Details */}
+                <div className="p-3 bg-paper border border-line space-y-1.5 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                      Address
+                    </span>
+                    <span className="font-semibold text-ink block mt-0.5 leading-snug">
+                      {property.location?.address || "Available on verified inquiry"}
+                    </span>
+                  </div>
+                  {property.location?.landmark && (
+                    <div className="pt-1.5 border-t border-line/60">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                        Landmark / Sector
+                      </span>
+                      <span className="font-semibold text-ink block mt-0.5">
+                        {property.location.landmark}
+                      </span>
+                    </div>
+                  )}
+                  <div className="pt-1.5 border-t border-line/60">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-ink block">
+                      City &amp; Postal District
+                    </span>
+                    <span className="font-semibold text-ink block mt-0.5">
+                      {property.location?.city}
+                      {property.location?.state ? `, ${property.location.state}` : ""}
+                      {property.location?.pincode ? ` - ${property.location.pincode}` : ""}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Embedded Google Map */}
+                <div className="w-full h-64 sm:h-72 bg-paper border border-line relative overflow-hidden">
+                  <iframe
+                    src={mapEmbedUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title={`Google Map location of ${property.title}`}
+                    className="w-full h-full"
+                  />
+                </div>
+
+                {/* Directions Button */}
+                <div className="pt-1">
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 text-center text-xs font-bold tracking-wider uppercase bg-ink-green text-paper border border-brass hover:bg-brass hover:text-ink-green transition flex items-center justify-center gap-1.5"
+                  >
+                    <Navigation className="size-3.5" />
+                    <span>Get Directions</span>
+                  </a>
+                </div>
+
+                <div className="text-[10px] text-muted-ink text-center pt-1">
+                  Interactive Map &bull; Pan and zoom to inspect nearby roads &amp; surroundings
+                </div>
+              </div>
             </div>
           </div>
 
@@ -314,7 +445,7 @@ export default async function PublicPropertyDetailPage({
             <div className="space-y-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
-                  04 &mdash; Architectural Floor Plans
+                  {floorPlanSectionNumber} &mdash; Architectural Floor Plans
                 </span>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-ink-green mt-1">
                   Blueprint Examination &amp; Spatial Inspection

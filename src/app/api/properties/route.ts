@@ -174,6 +174,14 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    let cleanEmbedUrl = location.googleMapsEmbedUrl?.trim() || "";
+    if (cleanEmbedUrl.includes("<iframe")) {
+      const match = cleanEmbedUrl.match(/src=["'](.*?)["']/);
+      if (match && match[1]) {
+        cleanEmbedUrl = match[1].trim();
+      }
+    }
+
     const newProperty = await Property.create({
       adminId: targetAdminId,
       propertyId,
@@ -196,6 +204,7 @@ export async function POST(req: NextRequest) {
         pincode: location.pincode || "",
         lat: location.lat,
         lng: location.lng,
+        googleMapsEmbedUrl: cleanEmbedUrl || undefined,
       },
       residentialSpecs: finalResidentialSpecs || undefined,
       commercialSpecs: commercialSpecs || undefined,

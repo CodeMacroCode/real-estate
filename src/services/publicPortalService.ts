@@ -52,6 +52,7 @@ export interface SanitizedPublicProperty {
     pincode?: string;
     lat?: number;
     lng?: number;
+    googleMapsEmbedUrl?: string;
   };
   residentialSpecs?: {
     bedrooms: number;
@@ -135,6 +136,7 @@ export interface SanitizedPublicProject {
     pincode?: string;
     lat?: number;
     lng?: number;
+    googleMapsEmbedUrl?: string;
   };
   reraNumber?: string;
   constructionStatus: string;
@@ -204,6 +206,7 @@ export function sanitizePublicProperty(doc: any): SanitizedPublicProperty {
       pincode: property.location?.pincode,
       lat: property.location?.lat,
       lng: property.location?.lng,
+      googleMapsEmbedUrl: property.location?.googleMapsEmbedUrl,
     },
     residentialSpecs: property.residentialSpecs
       ? {

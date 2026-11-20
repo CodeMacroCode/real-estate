@@ -9,6 +9,7 @@ interface PropertyDetailInquiryFormProps {
   propertyTitle: string;
   propertyCode?: string;
   adminId?: string;
+  className?: string;
 }
 
 export function PropertyDetailInquiryForm({
@@ -16,6 +17,7 @@ export function PropertyDetailInquiryForm({
   propertyTitle,
   propertyCode,
   adminId,
+  className = "",
 }: PropertyDetailInquiryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -78,7 +80,7 @@ export function PropertyDetailInquiryForm({
   };
 
   return (
-    <div className="bg-card-white border-2 border-ink-green shadow-hard-brass p-6 sticky top-24">
+    <div className={`bg-card-white border-2 border-ink-green shadow-hard-brass p-6 relative ${className}`}>
       <div className="border-b border-line pb-4 mb-5">
         <span className="text-[10px] font-bold uppercase tracking-widest text-brass block">
           04 &mdash; Inspection Registry

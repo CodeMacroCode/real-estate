@@ -109,7 +109,30 @@ export async function PATCH(
     }
     if (body.pricing) updateFields.pricing = { ...property.pricing, ...body.pricing };
     if (body.areaDetails) updateFields.areaDetails = { ...property.areaDetails, ...body.areaDetails };
-    if (body.location) updateFields.location = { ...property.location, ...body.location };
+    if (body.location) {
+      const existingLoc = (property.location as any)?.toObject
+        ? (property.location as any).toObject()
+        : property.location || {};
+      const embedInput = body.location.googleMapsEmbedUrl !== undefined
+        ? body.location.googleMapsEmbedUrl
+        : existingLoc.googleMapsEmbedUrl;
+
+      let cleanEmbedUrl = embedInput?.trim() || "";
+      if (cleanEmbedUrl.includes("<iframe")) {
+        const match = cleanEmbedUrl.match(/src=["'](.*?)["']/);
+        if (match && match[1]) {
+          cleanEmbedUrl = match[1].trim();
+        }
+      }
+
+      updateFields.location = {
+        ...existingLoc,
+        ...body.location,
+        address: (body.location.address !== undefined ? body.location.address : existingLoc.address)?.trim() || "",
+        city: (body.location.city !== undefined ? body.location.city : existingLoc.city)?.trim() || "",
+        googleMapsEmbedUrl: cleanEmbedUrl,
+      };
+    }
     if (body.amenities) updateFields.amenities = body.amenities;
     if (body.residentialSpecs) {
       const mergedSpecs = { ...property.residentialSpecs, ...body.residentialSpecs };
