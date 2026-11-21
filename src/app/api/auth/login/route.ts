@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { username, email, password } = parseResult.data as any;
-    const loginIdentifier = (username || email || '').trim().toLowerCase();
+    const loginIdentifier: string = String(username || email || '').trim().toLowerCase();
 
     await connectToDatabase();
 
