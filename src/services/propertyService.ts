@@ -41,6 +41,7 @@ export interface SsrPropertyItem {
     city: string;
     address: string;
     landmark?: string;
+    googleMapsEmbedUrl?: string;
   };
   investmentSpecs?: {
     expectedAnnualRent?: number;

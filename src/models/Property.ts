@@ -71,6 +71,7 @@ export interface IPropertyDocument extends Document {
     pincode?: string;
     lat?: number;
     lng?: number;
+    googleMapsEmbedUrl?: string;
   };
 
   // Specific Category Specs
@@ -267,6 +268,7 @@ const PropertySchema = new Schema<IPropertyDocument>(
       pincode: { type: String },
       lat: { type: Number },
       lng: { type: Number },
+      googleMapsEmbedUrl: { type: String, trim: true },
     },
 
     residentialSpecs: {
@@ -380,6 +382,10 @@ PropertySchema.index({
 PropertySchema.index({ adminId: 1, "publishing.seo.slug": 1 });
 PropertySchema.index({ ownerId: 1, status: 1 });
 
+if (process.env.NODE_ENV !== "production" && mongoose.models && mongoose.models.Property) {
+  delete mongoose.models.Property;
+}
+
 export const Property: Model<IPropertyDocument> =
-  mongoose.models.Property ||
+  (mongoose.models.Property as Model<IPropertyDocument>) ||
   mongoose.model<IPropertyDocument>("Property", PropertySchema);
