@@ -1,14 +1,14 @@
-import { NextRequest } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb/db';
-import { User } from '@/models/User';
-import { Role } from '@/models/Role';
-import { verifyPassword } from '@/lib/auth/password';
-import { signAuthToken } from '@/lib/auth/jwt';
-import { setSessionCookie } from '@/lib/auth/session';
-import { loginSchema, formatZodError } from '@/lib/validation/schemas';
-import { jsonResponse, errorResponse } from '@/lib/apiResponse';
-import { recordAuditEvent } from '@/services/auditService';
-import { parseUserAgent } from '@/lib/auth/deviceParser';
+import { NextRequest } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb/db";
+import { User } from "@/models/User";
+import { Role } from "@/models/Role";
+import { verifyPassword } from "@/lib/auth/password";
+import { signAuthToken } from "@/lib/auth/jwt";
+import { setSessionCookie } from "@/lib/auth/session";
+import { loginSchema, formatZodError } from "@/lib/validation/schemas";
+import { jsonResponse, errorResponse } from "@/lib/apiResponse";
+import { recordAuditEvent } from "@/services/auditService";
+import { parseUserAgent } from "@/lib/auth/deviceParser";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,41 +21,45 @@ export async function POST(req: NextRequest) {
     }
 
     const { username, email, password } = parseResult.data as any;
-    const loginIdentifier: string = String(username || email || '').trim().toLowerCase();
+    const loginIdentifier: string = String(username || email || "")
+      .trim()
+      .toLowerCase();
 
     await connectToDatabase();
 
     const user = await User.findOne({
-      $or: [
-        { username: loginIdentifier },
-        { email: loginIdentifier },
-      ],
-    }).select('+passwordHash').populate('roleId');
+      $or: [{ username: loginIdentifier }, { email: loginIdentifier }],
+    })
+      .select("+passwordHash")
+      .populate("roleId");
 
     if (!user || !user.passwordHash) {
-      return errorResponse('Invalid username or password', 401);
+      return errorResponse("Invalid username or password", 401);
     }
 
     const isValidPassword = await verifyPassword(password, user.passwordHash);
     if (!isValidPassword) {
-      return errorResponse('Invalid username or password', 401);
+      return errorResponse("Invalid username or password", 401);
     }
 
     // Check account status
-    if (user.status !== 'active') {
-      return errorResponse('Account is deactivated. Please contact your system administrator.', 403);
+    if (user.status !== "active") {
+      return errorResponse(
+        "Account is deactivated. Please contact your system administrator.",
+        403,
+      );
     }
 
     const role = user.roleId as any;
     if (!role) {
-      return errorResponse('User has no valid role assigned', 403);
+      return errorResponse("User has no valid role assigned", 403);
     }
 
     const ipAddress =
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-      req.headers.get('x-real-ip') ||
-      '127.0.0.1';
-    const userAgent = req.headers.get('user-agent') || '';
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      req.headers.get("x-real-ip") ||
+      "127.0.0.1";
+    const userAgent = req.headers.get("user-agent") || "";
     const deviceInfo = parseUserAgent(userAgent);
 
     const sessionId = crypto.randomUUID();
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update login status and lastLoginAt
-    user.loginStatus = 'online';
+    user.loginStatus = "online";
     user.lastLoginAt = new Date();
     await user.save();
 
@@ -114,10 +118,10 @@ export async function POST(req: NextRequest) {
         email: user.email,
         roleSlug: role.slug,
       },
-      action: 'login',
-      entity: 'session',
+      action: "login",
+      entity: "session",
       entityId: user._id.toString(),
-      source: 'web_app',
+      source: "web_app",
       ipAddress,
       userAgent,
     });
@@ -131,7 +135,10 @@ export async function POST(req: NextRequest) {
     setSessionCookie(response, token);
     return response;
   } catch (error: any) {
-    console.error('Login error:', error);
-    return errorResponse(error.message || 'An unexpected error occurred during login', 500);
+    console.error("Login error:", error);
+    return errorResponse(
+      error.message || "An unexpected error occurred during login",
+      500,
+    );
   }
 }
