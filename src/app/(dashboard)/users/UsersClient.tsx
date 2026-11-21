@@ -292,19 +292,22 @@ export function UsersClient({
 
   const handleOpenEditModal = (user: SafeUser) => {
     setSelectedUser(user);
+    const resolvedRoleId: string = String(user.role?._id || user.roleId || "");
     setFormData({
-      name: user.name,
-      username: (user as any).username || "",
-      email: user.email,
-      password: user.plainPassword || "",
-      mobile: user.mobile,
-      department: user.department,
-      designation: user.designation,
-      branch: user.branch,
-      roleId: (user.role?._id || user.roleId) as string,
-      joiningDate: new Date(user.joiningDate).toISOString().split("T")[0],
-      team: user.team || "",
-      profilePhoto: user.profilePhoto || "",
+      name: String(user.name || ""),
+      username: String((user as any).username || ""),
+      email: String(user.email || ""),
+      password: String(user.plainPassword || ""),
+      mobile: String(user.mobile || ""),
+      department: String(user.department || ""),
+      designation: String(user.designation || ""),
+      branch: String(user.branch || ""),
+      roleId: resolvedRoleId,
+      joiningDate: user.joiningDate
+        ? new Date(user.joiningDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      team: String(user.team || ""),
+      profilePhoto: String(user.profilePhoto || ""),
       allowedSubRoles: (user as any).allowedSubRoles || [],
     });
     setError(null);

@@ -25,6 +25,10 @@ export async function POST(req: NextRequest) {
       .trim()
       .toLowerCase();
 
+    if (!loginIdentifier) {
+      return errorResponse("Username or email is required", 400);
+    }
+
     await connectToDatabase();
 
     const user = await User.findOne({
