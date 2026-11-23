@@ -10,8 +10,6 @@ const UserSchema = new Schema<IUserDocument>(
   {
     employeeId: {
       type: String,
-      unique: true,
-      sparse: true,
       trim: true,
       uppercase: true,
       maxlength: [50, 'Employee ID cannot exceed 50 characters'],
@@ -24,8 +22,6 @@ const UserSchema = new Schema<IUserDocument>(
     },
     username: {
       type: String,
-      unique: true,
-      sparse: true,
       trim: true,
       lowercase: true,
       maxlength: [50, 'Username cannot exceed 50 characters'],
@@ -190,7 +186,23 @@ const UserSchema = new Schema<IUserDocument>(
   }
 );
 
-// Indexes for performance (employeeId and email unique constraints defined on field schema)
+// Indexes for performance (employeeId and username use partialFilterExpression so null/absent values never conflict)
+UserSchema.index(
+  { employeeId: 1 },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: { employeeId: { $type: 'string' } },
+  }
+);
+UserSchema.index(
+  { username: 1 },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: { username: { $type: 'string' } },
+  }
+);
 UserSchema.index({ roleId: 1 });
 UserSchema.index({ status: 1 });
 UserSchema.index({ department: 1 });

@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "seed:roles": "tsx scripts/seed-roles.ts",
     "bootstrap:admin": "tsx scripts/bootstrap-admin.ts",
+    "fix:indexes": "tsx scripts/fix-employeeid-index.ts",
     "storybook": "STORYBOOK_DISABLE_TELEMETRY=1 storybook dev -p 6006",
     "build-storybook": "STORYBOOK_DISABLE_TELEMETRY=1 storybook build"
   },

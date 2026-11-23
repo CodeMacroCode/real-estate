@@ -247,8 +247,7 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
   const passwordHash = await hashPassword(data.password);
   const encryptedPassword = encryptPassword(data.password);
 
-  const newUser = await User.create({
-    ...(employeeId ? { employeeId } : {}),
+  const createPayload: any = {
     username,
     name: data.name,
     email: data.email.toLowerCase(),
@@ -268,7 +267,49 @@ export async function createUser(data: any, actor: { userId?: string; employeeId
     allowedSubRoles: data.allowedSubRoles || [],
     parentAdminId: data.parentAdminId || (actor.roleSlug === 'admin' ? actor.userId : null),
     createdBy: actor.userId || null,
-  });
+  };
+
+  if (employeeId) {
+    createPayload.employeeId = employeeId;
+  }
+
+  let newUser: any;
+  try {
+    newUser = await User.create(createPayload);
+  } catch (createErr: any) {
+    if (
+      createErr?.code === 11000 &&
+      (createErr?.message?.includes('employeeId') || createErr?.keyPattern?.employeeId)
+    ) {
+      console.warn('[userService] Caught duplicate key error on employeeId. Healing index and unsetting null values...');
+      await User.updateMany(
+        { employeeId: { $in: [null, ''] } },
+        { $unset: { employeeId: 1 } }
+      ).catch(() => {});
+
+      const indexes = await User.collection.indexes().catch(() => []);
+      for (const idx of indexes) {
+        if ((idx.name === 'employeeId_1' || (idx.key && idx.key.employeeId)) && idx.name) {
+          await User.collection.dropIndex(idx.name).catch(() => {});
+        }
+      }
+
+      await User.collection.createIndex(
+        { employeeId: 1 },
+        {
+          unique: true,
+          sparse: true,
+          partialFilterExpression: { employeeId: { $type: 'string' } },
+          background: true,
+        }
+      ).catch(() => {});
+
+      // Retry creation after index repair
+      newUser = await User.create(createPayload);
+    } else {
+      throw createErr;
+    }
+  }
 
   // Record audit log
   await recordAuditEvent({

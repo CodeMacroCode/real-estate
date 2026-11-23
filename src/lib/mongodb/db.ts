@@ -14,6 +14,7 @@ if (!MONGODB_URI) {
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
+  indexesRepaired?: boolean;
 }
 
 declare global {
@@ -25,6 +26,52 @@ let cached: MongooseCache = global.mongooseCache || { conn: null, promise: null 
 
 if (!global.mongooseCache) {
   global.mongooseCache = cached;
+}
+
+export async function repairUserIndexes(): Promise<void> {
+  if (cached.indexesRepaired) return;
+  try {
+    const { User } = require('@/models/User');
+    if (!User || !User.collection) return;
+
+    // 1. Unset null or empty employeeId / username from existing records
+    await User.updateMany(
+      { employeeId: { $in: [null, ''] } },
+      { $unset: { employeeId: 1 } }
+    ).catch(() => {});
+
+    await User.updateMany(
+      { username: { $in: [null, ''] } },
+      { $unset: { username: 1 } }
+    ).catch(() => {});
+
+    // 2. Inspect collection indexes in MongoDB
+    const indexes = await User.collection.indexes();
+    for (const idx of indexes) {
+      if ((idx.name === 'employeeId_1' || (idx.key && idx.key.employeeId)) && idx.name) {
+        const isSparse = Boolean(idx.sparse);
+        const hasPartial = Boolean(idx.partialFilterExpression?.employeeId);
+        if (!isSparse || !hasPartial) {
+          console.log(`[DB] Dropping legacy employeeId index '${idx.name}'...`);
+          await User.collection.dropIndex(idx.name).catch(() => {});
+          await User.collection.createIndex(
+            { employeeId: 1 },
+            {
+              unique: true,
+              sparse: true,
+              partialFilterExpression: { employeeId: { $type: 'string' } },
+              background: true,
+            }
+          );
+          console.log('[DB] Recreated employeeId_1 with unique, sparse & partialFilterExpression');
+        }
+      }
+    }
+
+    cached.indexesRepaired = true;
+  } catch (err: any) {
+    console.warn('[DB] repairUserIndexes warning:', err?.message || err);
+  }
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
@@ -53,6 +100,12 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       require("@/models/ProjectUnit");
       require("@/models/Booking");
       require("@/models/StoredFile");
+
+      // Self-heal user indexes safely in background
+      repairUserIndexes().catch((err) => {
+        console.warn('[DB] Self-heal user indexes notice:', err?.message || err);
+      });
+
       return mongooseInstance;
     });
   }
