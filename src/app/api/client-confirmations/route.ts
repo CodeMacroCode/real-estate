@@ -120,6 +120,11 @@ export async function POST(req: NextRequest) {
     appointment.outcome = clientConfirmation;
     appointment.status = 'Completed';
     appointment.confirmationId = confirmation._id;
+    if (invoiceUrl) {
+      appointment.invoiceUrl = invoiceUrl;
+      appointment.invoiceName = 'Invoice Receipt';
+      appointment.invoiceUploadedAt = new Date();
+    }
 
     // Follow-up Chaining if MAYBE
     let nextAppointment = null;

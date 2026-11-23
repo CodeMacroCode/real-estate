@@ -169,6 +169,7 @@ export function ProjectsClient({
     constructionStatus: "Under Construction",
     city: "Bengaluru",
     address: "",
+    googleMapsEmbedUrl: "",
     reraNumber: "",
     carpetArea: "",
     furnishing: "Unfurnished",
@@ -190,6 +191,7 @@ export function ProjectsClient({
     constructionStatus: "Under Construction",
     city: "Bengaluru",
     address: "",
+    googleMapsEmbedUrl: "",
     reraNumber: "",
     carpetArea: "",
     furnishing: "Unfurnished",
@@ -340,6 +342,7 @@ export function ProjectsClient({
       constructionStatus: p.constructionStatus,
       city: p.location?.city || "Bengaluru",
       address: p.location?.address || "",
+      googleMapsEmbedUrl: (p.location as any)?.googleMapsEmbedUrl || "",
       reraNumber: p.reraNumber || "",
       carpetArea: (p as any).carpetArea ? String((p as any).carpetArea) : "",
       furnishing: (p as any).furnishing || "Unfurnished",
@@ -403,6 +406,7 @@ export function ProjectsClient({
           location: {
             city: editFormData.city,
             address: editFormData.address,
+            googleMapsEmbedUrl: editFormData.googleMapsEmbedUrl?.trim() || "",
           },
           media: {
             coverImage: editCoverImage || editProjectImages[0] || "",
@@ -516,7 +520,11 @@ export function ProjectsClient({
         body: JSON.stringify({
           ...formData,
           carpetArea: formData.carpetArea ? Number(formData.carpetArea) : undefined,
-          location: { address: formData.address, city: formData.city },
+          location: {
+            address: formData.address,
+            city: formData.city,
+            googleMapsEmbedUrl: formData.googleMapsEmbedUrl?.trim() || "",
+          },
           amenities: formData.amenities,
           furnishing: formData.furnishing,
           media: {
@@ -540,6 +548,7 @@ export function ProjectsClient({
         constructionStatus: projectStatusSelectOptions[0]?.label || "Under Construction",
         city: "Bengaluru",
         address: "",
+        googleMapsEmbedUrl: "",
         reraNumber: "",
         carpetArea: "",
         furnishing: "Unfurnished",
@@ -1382,6 +1391,53 @@ export function ProjectsClient({
                 />
               </div>
 
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Google Maps Embed Location (Optional)
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Embed URL or &lt;iframe&gt; code
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  placeholder='e.g. https://www.google.com/maps/embed?pb=... or <iframe src="..."></iframe>'
+                  value={formData.googleMapsEmbedUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, googleMapsEmbedUrl: e.target.value })
+                  }
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-[11px]"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  In Google Maps: search location &rarr; click <strong>Share</strong> &rarr; <strong>Embed a map</strong> &rarr; copy &amp; paste code here. If left blank, the portal automatically generates a pin from your address &amp; city.
+                </p>
+                {formData.googleMapsEmbedUrl && (
+                  <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 p-1.5">
+                    <div className="text-[10px] font-semibold text-slate-600 px-1.5 py-0.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
+                        <span>Map Embed Live Preview</span>
+                      </span>
+                    </div>
+                    <div className="w-full h-36 rounded border border-slate-200 overflow-hidden bg-slate-100 mt-1">
+                      <iframe
+                        src={
+                          formData.googleMapsEmbedUrl.includes("<iframe")
+                            ? formData.googleMapsEmbedUrl.match(/src=["'](.*?)["']/)?.[1] || ""
+                            : formData.googleMapsEmbedUrl
+                        }
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        title="Project Location Map Preview"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Project Images Uploader */}
               <div className="space-y-1.5 pt-1">
                 <label className="block text-xs font-semibold text-slate-700">
@@ -1652,6 +1708,53 @@ export function ProjectsClient({
                   onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
                   className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Google Maps Embed Location (Optional)
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Embed URL or &lt;iframe&gt; code
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  placeholder='e.g. https://www.google.com/maps/embed?pb=... or <iframe src="..."></iframe>'
+                  value={editFormData.googleMapsEmbedUrl}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, googleMapsEmbedUrl: e.target.value })
+                  }
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-[11px]"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  In Google Maps: search location &rarr; click <strong>Share</strong> &rarr; <strong>Embed a map</strong> &rarr; copy &amp; paste code here. If left blank, the portal automatically generates a pin from your address &amp; city.
+                </p>
+                {editFormData.googleMapsEmbedUrl && (
+                  <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 p-1.5">
+                    <div className="text-[10px] font-semibold text-slate-600 px-1.5 py-0.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
+                        <span>Map Embed Live Preview</span>
+                      </span>
+                    </div>
+                    <div className="w-full h-36 rounded border border-slate-200 overflow-hidden bg-slate-100 mt-1">
+                      <iframe
+                        src={
+                          editFormData.googleMapsEmbedUrl.includes("<iframe")
+                            ? editFormData.googleMapsEmbedUrl.match(/src=["'](.*?)["']/)?.[1] || ""
+                            : editFormData.googleMapsEmbedUrl
+                        }
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        title="Project Location Map Preview"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Edit Project Images Uploader */}

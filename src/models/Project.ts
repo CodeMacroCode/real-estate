@@ -14,6 +14,7 @@ export interface IProjectDocument extends Document {
     pincode?: string;
     lat?: number;
     lng?: number;
+    googleMapsEmbedUrl?: string;
   };
   reraNumber?: string;
   constructionStatus: string;
@@ -81,6 +82,7 @@ const ProjectSchema = new Schema<IProjectDocument>(
       pincode: { type: String },
       lat: { type: Number },
       lng: { type: Number },
+      googleMapsEmbedUrl: { type: String, trim: true },
     },
     reraNumber: { type: String, trim: true },
     constructionStatus: {

@@ -229,7 +229,7 @@ export function StaffClient({
     currentUserAllowedSubRoles,
   ]);
 
-  // When available subroles change, keep roleId valid
+  // When available subroles change or modal opens, keep roleId valid
   useEffect(() => {
     if (availableSubRoles.length > 0) {
       setFormData((prev) => {
@@ -244,14 +244,30 @@ export function StaffClient({
     } else {
       setFormData((prev) => (prev.roleId ? { ...prev, roleId: "" } : prev));
     }
-  }, [availableSubRoles]);
+  }, [availableSubRoles, isAddModalOpen]);
 
   const handleOpenAddModal = () => {
     const defaultAdminId = admins[0]?._id || selectedAdminId || "";
+    let initialRoleId = "";
+    if (currentUserRoleSlug === "super_admin") {
+      const selectedAdmin = admins.find((a) => a._id === defaultAdminId);
+      const allowedSlugs = selectedAdmin?.allowedSubRoles || [];
+      const permitted = roles.filter((r) => allowedSlugs.includes(r.slug));
+      initialRoleId = permitted[0]?._id || "";
+    } else {
+      const permitted = roles.filter((r) =>
+        currentUserAllowedSubRoles.length > 0
+          ? currentUserAllowedSubRoles.includes(r.slug)
+          : false,
+      );
+      initialRoleId = permitted[0]?._id || "";
+    }
+
     setFormData({
       ...initialForm,
       parentAdminId:
         currentUserRoleSlug === "super_admin" ? defaultAdminId : "",
+      roleId: initialRoleId,
     });
     setError(null);
     setIsAddModalOpen(true);
@@ -716,9 +732,17 @@ export function StaffClient({
               <select
                 required
                 value={formData.parentAdminId}
-                onChange={(e) =>
-                  setFormData({ ...formData, parentAdminId: e.target.value })
-                }
+                onChange={(e) => {
+                  const newAdminId = e.target.value;
+                  const selectedAdmin = admins.find((a) => a._id === newAdminId);
+                  const allowedSlugs = selectedAdmin?.allowedSubRoles || [];
+                  const permitted = roles.filter((r) => allowedSlugs.includes(r.slug));
+                  setFormData((prev) => ({
+                    ...prev,
+                    parentAdminId: newAdminId,
+                    roleId: permitted[0]?._id || "",
+                  }));
+                }}
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               >
                 <option value="">-- Choose Admin --</option>
@@ -749,11 +773,14 @@ export function StaffClient({
                   No permitted sub-roles found for selected admin
                 </option>
               ) : (
-                availableSubRoles.map((r) => (
-                  <option key={r._id} value={r._id}>
-                    {r.name}
-                  </option>
-                ))
+                <>
+                  <option value="">-- Select Sub-Role Category --</option>
+                  {availableSubRoles.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
             {currentUserRoleSlug === "super_admin" &&
@@ -938,9 +965,19 @@ export function StaffClient({
               <select
                 required
                 value={formData.parentAdminId}
-                onChange={(e) =>
-                  setFormData({ ...formData, parentAdminId: e.target.value })
-                }
+                onChange={(e) => {
+                  const newAdminId = e.target.value;
+                  const selectedAdmin = admins.find((a) => a._id === newAdminId);
+                  const allowedSlugs = selectedAdmin?.allowedSubRoles || [];
+                  const permitted = roles.filter((r) => allowedSlugs.includes(r.slug));
+                  setFormData((prev) => ({
+                    ...prev,
+                    parentAdminId: newAdminId,
+                    roleId: permitted.some((r) => r._id === prev.roleId)
+                      ? prev.roleId
+                      : permitted[0]?._id || "",
+                  }));
+                }}
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               >
                 <option value="">-- Choose Admin --</option>
@@ -966,11 +1003,20 @@ export function StaffClient({
               }
               className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
             >
-              {availableSubRoles.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.name}
+              {availableSubRoles.length === 0 ? (
+                <option value="">
+                  No permitted sub-roles found for selected admin
                 </option>
-              ))}
+              ) : (
+                <>
+                  <option value="">-- Select Sub-Role Category --</option>
+                  {availableSubRoles.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
 

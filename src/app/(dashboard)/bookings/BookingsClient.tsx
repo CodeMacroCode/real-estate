@@ -22,7 +22,6 @@ import {
   Trash2,
   ExternalLink,
   ShieldAlert,
-  Landmark,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "sonner";
@@ -97,7 +96,7 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
   // Modal: View / Manage Booking (Documents & Payments Drawer)
   const [selectedBooking, setSelectedBooking] = useState<BookingItem | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "payments" | "documents" | "loan">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "payments" | "documents">("overview");
 
   // Form: Record New Payment
   const [isAddingPayment, setIsAddingPayment] = useState(false);
@@ -115,17 +114,6 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [docTitle, setDocTitle] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
-
-  // Form: Bank Loan Details
-  const [isUpdatingLoan, setIsUpdatingLoan] = useState(false);
-  const [loanForm, setLoanForm] = useState({
-    isLoanRequired: false,
-    bankName: "",
-    sanctionedAmount: 0,
-    disbursedAmount: 0,
-    loanAccountNumber: "",
-    loanStatus: "Not Applied",
-  });
 
   // Fetch Bookings
   const fetchBookings = useCallback(async () => {
@@ -244,30 +232,6 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
     }
   };
 
-  // Handle Loan Details Update
-  const handleUpdateLoanDetails = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBooking) return;
-    try {
-      setIsUpdatingLoan(true);
-      const res = await fetch(`/api/bookings/${selectedBooking._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loanDetails: loanForm }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to update loan record");
-
-      toast.success("Bank loan & financing details updated!");
-      setSelectedBooking(json.data);
-      await fetchBookings();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update loan details");
-    } finally {
-      setIsUpdatingLoan(false);
-    }
-  };
-
   // Quick Status Transition
   const handleUpdateBookingStatus = async (newStatus: "Hold" | "Booked" | "Sold" | "Cancelled") => {
     if (!selectedBooking) return;
@@ -298,7 +262,7 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
             <span>Client Track Record & Document Locker</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Track all property & project unit bookings, payment milestone installments, bank loans, and secure client document lockers.
+            Track all property & project unit bookings, payment milestone installments, and secure client document lockers.
           </p>
         </div>
       </div>
@@ -382,7 +346,6 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
                     <TableHead className="py-2.5 text-white font-bold text-xs">Property / Unit</TableHead>
                     <TableHead className="py-2.5 text-white font-bold text-xs">Agreement Value</TableHead>
                     <TableHead className="py-2.5 text-white font-bold text-xs">Paid / Pending</TableHead>
-                    <TableHead className="py-2.5 text-white font-bold text-xs">Bank Loan</TableHead>
                     <TableHead className="py-2.5 text-white font-bold text-xs">Status</TableHead>
                     <TableHead className="py-2.5 text-white font-bold text-xs">Locker</TableHead>
                     <TableHead className="py-2.5 text-white font-bold text-xs text-right">Actions</TableHead>
@@ -429,16 +392,6 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
                           <div className="text-rose-600 font-medium text-[11px]">
                             Pending: ₹{Number(b.balanceAmount || 0).toLocaleString("en-IN")}
                           </div>
-                        </TableCell>
-                        <TableCell className="py-3">
-                          {b.loanDetails?.isLoanRequired ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              <Landmark className="size-3 text-indigo-500" />
-                              <span>{b.loanDetails.loanStatus || "Applied"}</span>
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 text-[11px]">Self-Financed</span>
-                          )}
                         </TableCell>
                         <TableCell className="py-3">
                           <span
@@ -609,34 +562,6 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
                 <span className="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]">
                   {selectedBooking.documents?.length || 0}
                 </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("loan");
-                  if (selectedBooking.loanDetails) {
-                    setLoanForm({
-                      isLoanRequired: Boolean(selectedBooking.loanDetails.isLoanRequired),
-                      bankName: selectedBooking.loanDetails.bankName || "",
-                      sanctionedAmount: selectedBooking.loanDetails.sanctionedAmount || 0,
-                      disbursedAmount: selectedBooking.loanDetails.disbursedAmount || 0,
-                      loanAccountNumber: selectedBooking.loanDetails.loanAccountNumber || "",
-                      loanStatus: selectedBooking.loanDetails.loanStatus || "Not Applied",
-                    });
-                  }
-                }}
-                className={`py-3 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "loan"
-                    ? "border-blue-600 text-blue-700 font-bold"
-                    : "border-transparent text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                <span>Bank Loan & Financing</span>
-                {selectedBooking.loanDetails?.isLoanRequired && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                    Loan Active
-                  </span>
-                )}
               </button>
             </div>
 
@@ -1010,123 +935,7 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
                 </div>
               )}
 
-              {/* TAB 4: BANK LOAN & FINANCING TRACKER */}
-              {activeTab === "loan" && (
-                <div className="space-y-6">
-                  <form onSubmit={handleUpdateLoanDetails} className="p-5 rounded-xl border border-slate-200 bg-slate-50 space-y-4">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-800">Bank Loan Application & Sanction Record</h4>
-                        <p className="text-[11px] text-slate-500">
-                          Track financial institution status, sanctioned limit, disbursed amount, and loan account number.
-                        </p>
-                      </div>
 
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={loanForm.isLoanRequired}
-                          onChange={(e) => setLoanForm({ ...loanForm, isLoanRequired: e.target.checked })}
-                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 size-4"
-                        />
-                        <span className="text-xs font-bold text-slate-700">Bank Loan Required / Active</span>
-                      </label>
-                    </div>
-
-                    {loanForm.isLoanRequired ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                          <div>
-                            <label className="block font-semibold text-slate-700 mb-1">Financing Bank / Institution</label>
-                            <input
-                              type="text"
-                              placeholder="e.g. HDFC Bank, SBI Home Loans, ICICI Bank"
-                              value={loanForm.bankName}
-                              onChange={(e) => setLoanForm({ ...loanForm, bankName: e.target.value })}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-semibold text-slate-700 mb-1">Loan Processing Status</label>
-                            <select
-                              value={loanForm.loanStatus}
-                              onChange={(e) => setLoanForm({ ...loanForm, loanStatus: e.target.value as any })}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                            >
-                              <option value="Not Applied">Not Applied</option>
-                              <option value="Applied">Applied (Documents Submitted)</option>
-                              <option value="In Process">In Process / Verification</option>
-                              <option value="Sanctioned">Sanctioned (Offer Letter Issued)</option>
-                              <option value="Disbursed">Disbursed (Funds Received)</option>
-                              <option value="Rejected">Rejected</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                          <div>
-                            <label className="block font-semibold text-slate-700 mb-1">Sanctioned Amount (₹)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              placeholder="e.g. 5000000"
-                              value={loanForm.sanctionedAmount || ""}
-                              onChange={(e) => setLoanForm({ ...loanForm, sanctionedAmount: Number(e.target.value) })}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-semibold text-slate-700 mb-1">Disbursed to Builder (₹)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              placeholder="e.g. 2500000"
-                              value={loanForm.disbursedAmount || ""}
-                              onChange={(e) => setLoanForm({ ...loanForm, disbursedAmount: Number(e.target.value) })}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-mono"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-semibold text-slate-700 mb-1">Loan Account / Application #</label>
-                            <input
-                              type="text"
-                              placeholder="e.g. LAN-98124912"
-                              value={loanForm.loanAccountNumber}
-                              onChange={(e) => setLoanForm({ ...loanForm, loanAccountNumber: e.target.value })}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Loan Overview Calculation */}
-                        <div className="p-3 bg-blue-50/60 rounded-lg border border-blue-200 text-xs flex items-center justify-between">
-                          <span className="text-slate-600">Pending Loan Disbursement to Builder:</span>
-                          <span className="font-bold text-blue-900 font-mono">
-                            ₹{Math.max(0, (loanForm.sanctionedAmount || 0) - (loanForm.disbursedAmount || 0)).toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center text-xs text-slate-400 bg-white rounded-lg border border-slate-200">
-                        No bank loan required for this booking (Self-financed / Direct Client Payment). Check the box above if the buyer seeks bank financing.
-                      </div>
-                    )}
-
-                    <div className="flex justify-end pt-2">
-                      <button
-                        type="submit"
-                        disabled={isUpdatingLoan}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-black rounded-lg transition disabled:opacity-50 cursor-pointer shadow-xs"
-                      >
-                        {isUpdatingLoan ? "Saving Loan Details..." : "Save Loan Record"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
             </div>
           </div>
         </div>

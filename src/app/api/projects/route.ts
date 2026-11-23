@@ -111,6 +111,14 @@ export async function POST(req: NextRequest) {
     const year = new Date().getFullYear();
     const projectId = `PRJ-${year}-${String(count + 1).padStart(4, "0")}`;
 
+    let cleanEmbedUrl = location?.googleMapsEmbedUrl?.trim() || "";
+    if (cleanEmbedUrl.includes("<iframe")) {
+      const match = cleanEmbedUrl.match(/src=["'](.*?)["']/);
+      if (match && match[1]) {
+        cleanEmbedUrl = match[1];
+      }
+    }
+
     const newProject = await Project.create({
       adminId: targetAdminId,
       projectId,
@@ -124,6 +132,7 @@ export async function POST(req: NextRequest) {
         pincode: location.pincode || "",
         lat: location.lat,
         lng: location.lng,
+        googleMapsEmbedUrl: cleanEmbedUrl || undefined,
       },
       reraNumber: reraNumber?.trim() || "",
       carpetArea: carpetArea ? Number(carpetArea) : undefined,

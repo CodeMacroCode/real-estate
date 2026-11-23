@@ -225,6 +225,48 @@ export default async function PublicProjectDetailPage({
                   </div>
                 </div>
               )}
+
+              {/* Strategic Project Location & Google Map */}
+              {(project.location?.googleMapsEmbedUrl || project.location?.address || project.location?.city) && (
+                <div className="bg-card-white border border-line p-6 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
+                    Strategic Project Location &amp; Map
+                  </span>
+                  <div className="flex items-center gap-2 text-xs text-ink font-semibold">
+                    <MapPin className="size-4 text-brass shrink-0" />
+                    <span>
+                      {project.location?.address ? `${project.location.address}, ` : ""}
+                      {project.location?.city}
+                    </span>
+                  </div>
+                  <div className="w-full h-64 sm:h-72 bg-paper border border-line relative overflow-hidden">
+                    <iframe
+                      src={
+                        (() => {
+                          const raw = project.location?.googleMapsEmbedUrl?.trim();
+                          if (raw) {
+                            if (raw.includes("<iframe")) {
+                              const match = raw.match(/src=["'](.*?)["']/);
+                              if (match && match[1]) return match[1];
+                            } else if (raw.startsWith("http://") || raw.startsWith("https://")) {
+                              return raw;
+                            }
+                          }
+                          const query = encodeURIComponent(`${project.location?.address || ""}, ${project.location?.city || project.name}`);
+                          return `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
+                        })()
+                      }
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title={`Google Map location of ${project.name}`}
+                      className="w-full h-full"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right 4 columns: sticky inquiry card */}

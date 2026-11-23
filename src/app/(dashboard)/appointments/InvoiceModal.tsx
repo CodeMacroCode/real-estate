@@ -57,6 +57,22 @@ export default function InvoiceModal({
     };
   }, [isOpen]);
 
+  // Sync state whenever appointment or modal open state changes
+  useEffect(() => {
+    if (appointment && isOpen) {
+      const activeUrl =
+        appointment.invoiceUrl ||
+        (appointment as any).confirmationId?.invoiceUrl ||
+        "";
+      setInvoiceUrl(activeUrl);
+      setInvoiceName(
+        appointment.invoiceName ||
+          (activeUrl ? "Invoice Receipt" : `Invoice - ${appointment.clientName || "Client"}`)
+      );
+      setSelectedFile(null);
+    }
+  }, [appointment, isOpen]);
+
   if (!isOpen || !appointment) return null;
 
   // Handles direct file upload to backend disk server
@@ -199,7 +215,7 @@ export default function InvoiceModal({
         <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div className="p-6 space-y-4 overflow-y-auto flex-1">
             {/* Existing Active Invoice Badge */}
-            {appointment.invoiceUrl && (
+            {(invoiceUrl || appointment.invoiceUrl || (appointment as any).confirmationId?.invoiceUrl) && (
               <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50/60 to-emerald-50 border border-emerald-200/90 rounded-xl shadow-xs space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2 text-emerald-900 font-bold truncate mr-2">
@@ -209,7 +225,7 @@ export default function InvoiceModal({
                     </span>
                   </div>
                   <a
-                    href={appointment.invoiceUrl}
+                    href={invoiceUrl || appointment.invoiceUrl || (appointment as any).confirmationId?.invoiceUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-white hover:bg-emerald-100/70 border border-emerald-300 shadow-2xs hover:shadow-xs transition shrink-0"
@@ -221,16 +237,16 @@ export default function InvoiceModal({
                 </div>
 
                 {/* If the current invoice file is an image, display a clean highlighted preview thumbnail */}
-                {/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(appointment.invoiceUrl) && (
+                {/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(invoiceUrl || appointment.invoiceUrl || (appointment as any).confirmationId?.invoiceUrl || "") && (
                   <div className="relative rounded-lg overflow-hidden border border-emerald-200/80 bg-white shadow-2xs group flex items-center justify-center p-1">
                     <a
-                      href={appointment.invoiceUrl}
+                      href={invoiceUrl || appointment.invoiceUrl || (appointment as any).confirmationId?.invoiceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="block relative overflow-hidden max-h-36 w-full cursor-pointer text-center"
                     >
                       <img
-                        src={appointment.invoiceUrl}
+                        src={invoiceUrl || appointment.invoiceUrl || (appointment as any).confirmationId?.invoiceUrl}
                         alt="Invoice preview"
                         className="mx-auto h-36 w-full object-contain bg-slate-900/5 rounded group-hover:scale-[1.02] transition duration-200"
                       />
@@ -333,7 +349,7 @@ export default function InvoiceModal({
 
           {/* Actions Footer (Pinned at bottom) */}
           <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 shrink-0">
-            {appointment.invoiceUrl ? (
+            {(invoiceUrl || appointment.invoiceUrl || (appointment as any).confirmationId?.invoiceUrl) ? (
               <button
                 type="button"
                 onClick={handleDelete}

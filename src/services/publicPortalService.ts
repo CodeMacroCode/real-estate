@@ -322,6 +322,7 @@ export function sanitizePublicProject(doc: any): SanitizedPublicProject {
       pincode: project.location?.pincode,
       lat: project.location?.lat,
       lng: project.location?.lng,
+      googleMapsEmbedUrl: project.location?.googleMapsEmbedUrl,
     },
     reraNumber: project.reraNumber,
     constructionStatus: project.constructionStatus,
@@ -729,12 +730,20 @@ export async function resolveAdminByHostOrSlug(
     }
   }
 
-  // 3. Fallback direct agency slug match
+  // 3. Fallback direct match: agencySlug, username, name, email prefix, agencyName, or _id
+  const isObjectId = mongoose.Types.ObjectId.isValid(cleanHost);
   const bySlug = await User.findOne({
-    agencySlug: cleanHost,
+    $or: [
+      { agencySlug: cleanHost },
+      { username: cleanHost },
+      ...(isObjectId ? [{ _id: new mongoose.Types.ObjectId(cleanHost) }] : []),
+      { name: { $regex: `^${cleanHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } },
+      { email: { $regex: `^${cleanHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}@`, $options: "i" } },
+      { agencyName: { $regex: `^${cleanHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" } },
+    ],
     status: "active",
   })
-    .select("_id name agencyName agencySlug customDomain")
+    .select("_id name username email agencyName agencySlug customDomain")
     .lean();
 
   if (bySlug) {
@@ -743,8 +752,31 @@ export async function resolveAdminByHostOrSlug(
     return {
       adminId,
       agencyName: settings?.branding?.companyName || bySlug.agencyName || bySlug.name,
-      agencySlug: bySlug.agencySlug || cleanHost,
+      agencySlug: bySlug.agencySlug || bySlug.username || cleanHost,
       customDomain: bySlug.customDomain,
+      settings,
+    };
+  }
+
+  // 4. Graceful Fallback: If on main server domain (or if slug didn't match), fallback to first active admin
+  const fallbackAdmin = await User.findOne({
+    status: "active",
+  })
+    .populate("roleId")
+    .select("_id name username email agencyName agencySlug customDomain roleId")
+    .lean();
+
+  if (
+    fallbackAdmin &&
+    ((fallbackAdmin.roleId as any)?.slug === "admin" || (fallbackAdmin.roleId as any)?.slug === "super_admin")
+  ) {
+    const adminId = fallbackAdmin._id.toString();
+    const settings = await getWebsiteSettingsByAdminId(adminId);
+    return {
+      adminId,
+      agencyName: settings?.branding?.companyName || fallbackAdmin.agencyName || fallbackAdmin.name,
+      agencySlug: fallbackAdmin.agencySlug || fallbackAdmin.username || "agency",
+      customDomain: fallbackAdmin.customDomain,
       settings,
     };
   }

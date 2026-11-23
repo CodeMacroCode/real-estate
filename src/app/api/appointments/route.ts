@@ -145,7 +145,16 @@ export async function GET(req: NextRequest) {
       })),
     ]);
 
-    return jsonResponse(appointments, 200, {
+    const mappedAppointments = appointments.map((apt: any) => {
+      const fallbackInvoiceUrl = apt.confirmationId?.invoiceUrl;
+      return {
+        ...apt,
+        invoiceUrl: apt.invoiceUrl || fallbackInvoiceUrl || undefined,
+        invoiceName: apt.invoiceName || (fallbackInvoiceUrl ? "Invoice Receipt" : undefined),
+      };
+    });
+
+    return jsonResponse(mappedAppointments, 200, {
       page,
       limit,
       total,

@@ -3,6 +3,7 @@ import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { Appointment } from "@/models/Appointment";
 import { Lead } from "@/models/Lead";
+import { ClientConfirmation } from "@/models/ClientConfirmation";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import mongoose from "mongoose";
@@ -93,6 +94,14 @@ export async function PATCH(
     }
 
     await appointment.save();
+
+    if (appointment.confirmationId && invoiceUrl !== undefined) {
+      try {
+        await ClientConfirmation.findByIdAndUpdate(appointment.confirmationId, {
+          invoiceUrl: invoiceUrl || undefined,
+        });
+      } catch {}
+    }
 
     await recordAuditEvent({
       actor: {

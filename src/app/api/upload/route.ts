@@ -60,55 +60,48 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    let fileUrl = "";
-
-    // 1. Try local disk write if environment allows writing (e.g. localhost / non-serverless)
-    const isVercel = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-
-    if (!isVercel) {
-      try {
-        const uploadsDir = path.join(process.cwd(), "public", "uploads", "invoices");
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        const safeBaseName = path
-          .basename(originalName, ext)
-          .replace(/[^a-zA-Z0-9_-]/g, "_")
-          .slice(0, 50);
-        const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-        const savedFileName = `${safeBaseName}_${uniqueSuffix}${ext}`;
-        const destinationPath = path.join(uploadsDir, savedFileName);
-
-        fs.writeFileSync(destinationPath, buffer);
-        fileUrl = `/uploads/invoices/${savedFileName}`;
-      } catch (localErr) {
-        // Fall through to database storage if local filesystem is read-only
-        console.warn("Local disk write unavailable, falling back to database file storage:", localErr);
+    // 1. Try local disk write if possible (for local cache & fast access)
+    let savedFileName = "";
+    try {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads", "invoices");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
       }
+      const safeBaseName = path
+        .basename(originalName, ext)
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .slice(0, 50);
+      const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      savedFileName = `${safeBaseName}_${uniqueSuffix}${ext}`;
+      const destinationPath = path.join(uploadsDir, savedFileName);
+
+      fs.writeFileSync(destinationPath, buffer);
+    } catch (localErr) {
+      console.warn("Local disk write unavailable:", localErr);
     }
 
-    // 2. If running on Vercel serverless (read-only filesystem) or disk write failed, store in MongoDB
-    if (!fileUrl) {
-      await connectToDatabase();
-      const base64Data = buffer.toString("base64");
-      const mime = file.type || "application/octet-stream";
+    // 2. ALWAYS persist to MongoDB StoredFile
+    // This guarantees images and files are immediately accessible via /api/files/[id]
+    // on all serverless, containerized, and standalone Next.js deployments without 404s.
+    await connectToDatabase();
+    const base64Data = buffer.toString("base64");
+    const mime = file.type || "application/octet-stream";
 
-      const storedDoc = await StoredFile.create({
-        fileName: originalName,
-        mimeType: mime,
-        data: base64Data,
-        size: file.size,
-        uploadedById: authContext.user._id,
-      });
+    const storedDoc = await StoredFile.create({
+      fileName: savedFileName || originalName,
+      mimeType: mime,
+      data: base64Data,
+      size: file.size,
+      uploadedById: authContext.user._id,
+    });
 
-      fileUrl = `/api/files/${storedDoc._id.toString()}`;
-    }
+    const fileUrl = `/api/files/${storedDoc._id.toString()}`;
 
     return jsonResponse({
       fileUrl,
       fileName: originalName,
       fileSize: file.size,
-      mimeType: file.type,
+      mimeType: mime,
       extension: ext,
     });
   } catch (error: any) {

@@ -116,7 +116,23 @@ export async function PATCH(
     if (body.description !== undefined) updateFields.description = body.description;
     if (body.isPublishedOnWebsite !== undefined) updateFields.isPublishedOnWebsite = body.isPublishedOnWebsite;
     if (body.featuredOnWebsite !== undefined) updateFields.featuredOnWebsite = body.featuredOnWebsite;
-    if (body.location) updateFields.location = { ...project.location, ...body.location };
+    if (body.location) {
+      let cleanEmbedUrl =
+        body.location.googleMapsEmbedUrl !== undefined
+          ? body.location.googleMapsEmbedUrl?.trim()
+          : project.location?.googleMapsEmbedUrl;
+      if (cleanEmbedUrl && cleanEmbedUrl.includes("<iframe")) {
+        const match = cleanEmbedUrl.match(/src=["'](.*?)["']/);
+        if (match && match[1]) {
+          cleanEmbedUrl = match[1];
+        }
+      }
+      updateFields.location = {
+        ...project.location,
+        ...body.location,
+        googleMapsEmbedUrl: cleanEmbedUrl || "",
+      };
+    }
     if (body.media) updateFields.media = { ...project.media, ...body.media };
 
     const updated = await Project.findByIdAndUpdate(

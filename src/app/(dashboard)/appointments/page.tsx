@@ -33,6 +33,7 @@ import {
   Copy,
   Target,
   Globe,
+  Upload,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import {
@@ -108,6 +109,7 @@ interface AppointmentItem {
     agreedDeliveryDate?: string;
     followUpDate?: string;
     rejectionReason?: string;
+    invoiceUrl?: string;
   };
   createdAt: string;
 }
@@ -786,6 +788,9 @@ export default function AppointmentsPage() {
                     CLIENT CONFIRMATION
                   </TableHead>
                   <TableHead className="whitespace-nowrap">
+                    INVOICE
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">
                     CREATED BY ROLE
                   </TableHead>
                   <TableHead className="whitespace-nowrap">
@@ -802,6 +807,7 @@ export default function AppointmentsPage() {
                     !!apt.nextAppointmentId ||
                     (apt.outcome === "MAYBE" && apt.status === "Completed");
                   const srNo = (page - 1) * limit + (index + 1);
+                  const aptInvoiceUrl = apt.invoiceUrl || apt.confirmationId?.invoiceUrl;
 
                   return (
                     <TableRow key={apt._id}>
@@ -1007,6 +1013,40 @@ export default function AppointmentsPage() {
                         )}
                       </TableCell>
 
+                      {/* INVOICE */}
+                      <TableCell>
+                        {aptInvoiceUrl ? (
+                          <a
+                            href={aptInvoiceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition shadow-2xs group cursor-pointer"
+                            title={`View Attached Invoice: ${apt.invoiceName || "Invoice File"}`}
+                          >
+                            <Receipt className="size-3.5 text-emerald-600 group-hover:scale-110 transition shrink-0" />
+                            <span className="truncate max-w-[100px]">{apt.invoiceName || "Invoice"}</span>
+                            <ExternalLink className="size-3 text-emerald-500 shrink-0" />
+                          </a>
+                        ) : apt.outcome === "YES" ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAppointmentForInvoice(apt);
+                              setIsInvoiceModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 hover:text-emerald-700 hover:bg-emerald-50/70 transition border border-dashed border-slate-300 cursor-pointer"
+                            title="Upload Invoice"
+                          >
+                            <Upload className="size-3" />
+                            <span>Upload</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
+                      </TableCell>
+
                       {/* 9. CREATED BY ROLE */}
                       <TableCell>
                         <div className="text-xs text-slate-700 font-medium lowercase">
@@ -1111,13 +1151,20 @@ export default function AppointmentsPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedAppointmentForInvoice(apt);
+                                setSelectedAppointmentForInvoice({
+                                  ...apt,
+                                  invoiceUrl: aptInvoiceUrl,
+                                });
                                 setIsInvoiceModalOpen(true);
                               }}
-                              className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition"
+                              className={`p-1 rounded transition cursor-pointer ${
+                                aptInvoiceUrl
+                                  ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 shadow-2xs"
+                                  : "text-slate-500 hover:text-emerald-600 hover:bg-emerald-50"
+                              }`}
                               title={
-                                apt.invoiceUrl
-                                  ? "Invoice Attached"
+                                aptInvoiceUrl
+                                  ? `Invoice Attached: ${apt.invoiceName || "View/Manage"}`
                                   : "Upload Invoice"
                               }
                             >
