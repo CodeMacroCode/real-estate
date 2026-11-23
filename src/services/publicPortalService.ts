@@ -704,7 +704,7 @@ export async function resolveAdminByHostOrSlug(
   const { User } = await import("@/models/User");
   const { getWebsiteSettingsByAdminId } = await import("@/services/websiteSettingService");
 
-  // 1. Direct custom domain match
+  // 1. Direct custom domain match on User.customDomain
   const byCustomDomain = await User.findOne({
     customDomain: cleanHost,
     status: "active",
@@ -774,6 +774,29 @@ export async function resolveAdminByHostOrSlug(
       agencyName: settings?.branding?.companyName || bySlug.agencyName || bySlug.name,
       agencySlug: bySlug.agencySlug || bySlug.username || cleanHost,
       customDomain: bySlug.customDomain,
+      settings,
+    };
+  }
+
+  // 4. Graceful Fallback: If on main server domain (or if slug didn't match), fallback to first active admin
+  const fallbackAdmin = await User.findOne({
+    status: "active",
+  })
+    .populate("roleId")
+    .select("_id name username email agencyName agencySlug customDomain roleId")
+    .lean();
+
+  if (
+    fallbackAdmin &&
+    ((fallbackAdmin.roleId as any)?.slug === "admin" || (fallbackAdmin.roleId as any)?.slug === "super_admin")
+  ) {
+    const adminId = fallbackAdmin._id.toString();
+    const settings = await getWebsiteSettingsByAdminId(adminId);
+    return {
+      adminId,
+      agencyName: settings?.branding?.companyName || fallbackAdmin.agencyName || fallbackAdmin.name,
+      agencySlug: fallbackAdmin.agencySlug || fallbackAdmin.username || "agency",
+      customDomain: fallbackAdmin.customDomain,
       settings,
     };
   }
@@ -871,4 +894,3 @@ export async function getTopLocationsForTenant(adminId?: string): Promise<string
     return [];
   }
 }
-
