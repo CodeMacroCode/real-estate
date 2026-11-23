@@ -133,15 +133,15 @@ export function Sidebar({ user }: SidebarProps) {
   ].filter((item) => item.visible);
 
   // Social media like Publier section
-  const socialMediaItems = [
-    {
-      name: "Content Social Media",
-      href: "/content-social-media",
-      icon: LucideSparkles,
-      active: pathname.startsWith("/content-social-media"),
-      visible: true,
-    },
-  ].filter((item) => item.visible);
+  // const socialMediaItems = [
+  //   {
+  //     name: "Content Social Media",
+  //     href: "/content-social-media",
+  //     icon: LucideSparkles,
+  //     active: pathname.startsWith("/content-social-media"),
+  //     visible: true,
+  //   },
+  // ].filter((item) => item.visible);
 
   // Properties & Real Estate Engine Modules (for Agency Admin & Staff)
   const propertiesCrmItems = [
@@ -273,7 +273,7 @@ export function Sidebar({ user }: SidebarProps) {
         )}
 
         {/* Social Media Content Navigation */}
-        {socialMediaItems.length > 0 && (
+        {/*   {socialMediaItems.length > 0 && (
           <div>
             <div className="px-2 mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               <span>Social Media Content</span>
@@ -303,7 +303,7 @@ export function Sidebar({ user }: SidebarProps) {
               })}
             </nav>
           </div>
-        )}
+        )} */}
 
         {/* Properties & Real Estate Engine Navigation */}
         {propertiesCrmItems.length > 0 && (
