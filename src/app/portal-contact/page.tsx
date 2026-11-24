@@ -29,26 +29,24 @@ export default async function PortalContactPage({
   const headerList = await headers();
   const host = headerList.get("host") || "";
 
-  // 1. Resolve tenant identity from Host header
-  const tenantFromHost = await resolveAdminByHostOrSlug(host);
-
-  // 2. Or fallback to URL query params (?agency=apex or ?adminId=...)
+  // 1. Explicit URL query parameter has HIGHEST priority (?agency=prasad or ?adminId=...)
   const tenantFromQuery = resolvedSearchParams.agency
     ? await resolveAdminByHostOrSlug(resolvedSearchParams.agency)
+    : resolvedSearchParams.adminId
+      ? await resolveAdminByHostOrSlug(resolvedSearchParams.adminId)
+      : null;
+
+  // 2. Fallback to Host header only if no explicit agency query param was supplied
+  const tenantFromHost = !tenantFromQuery && host
+    ? await resolveAdminByHostOrSlug(host)
     : null;
 
+  const agencyBranding = tenantFromQuery || tenantFromHost || null;
+
   const targetAdminId =
-    tenantFromHost?.adminId ||
-    tenantFromQuery?.adminId ||
+    agencyBranding?.adminId ||
     resolvedSearchParams.adminId ||
     undefined;
-
-  // Strict tenant isolation: Global un-scoped portal is disabled.
-  if (!targetAdminId) {
-    notFound();
-  }
-
-  const agencyBranding = tenantFromHost || tenantFromQuery || null;
   const topLocations = await getTopLocationsForTenant(targetAdminId);
 
   return (

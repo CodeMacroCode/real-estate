@@ -12,6 +12,7 @@ interface PropertyOverviewSpecsProps {
   totalFloors?: number;
   propertyType?: string;
   propertyCategory?: string;
+  officeNumber?: string;
 }
 
 export function PropertyOverviewSpecs({
@@ -26,6 +27,7 @@ export function PropertyOverviewSpecs({
   totalFloors,
   propertyType,
   propertyCategory,
+  officeNumber,
 }: PropertyOverviewSpecsProps) {
   const specs = [
     {
@@ -61,19 +63,34 @@ export function PropertyOverviewSpecs({
             : null,
     },
     { label: "Typology", value: propertyType || propertyCategory || null },
+    {
+      label: "Office Number",
+      value: officeNumber || null,
+      href: officeNumber ? `tel:${officeNumber.replace(/\s+/g, "")}` : undefined,
+    },
   ].filter((s) => Boolean(s.value));
 
   return (
     <div className="border border-line bg-card-white">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 divide-x divide-y divide-line">
-        {specs.map((item, idx) => (
+        {specs.map((item: any, idx) => (
           <div key={idx} className="p-3.5 bg-card-white">
             <span className="text-[10px] uppercase font-bold tracking-wider text-muted-ink block">
               {item.label}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-ink mt-0.5 block truncate">
-              {item.value}
-            </span>
+            {item.href ? (
+              <a
+                href={item.href}
+                className="text-xs sm:text-sm font-bold text-ink hover:text-brass transition mt-0.5 block truncate"
+                title={`Call ${item.value}`}
+              >
+                {item.value}
+              </a>
+            ) : (
+              <span className="text-xs sm:text-sm font-bold text-ink mt-0.5 block truncate">
+                {item.value}
+              </span>
+            )}
           </div>
         ))}
       </div>

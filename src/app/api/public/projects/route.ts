@@ -19,19 +19,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Require an admin/agency context. Global cross-admin listing is strictly disabled.
-    if (!adminId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Agency or Admin identification is required. Global public marketplace is disabled.",
-          data: [],
-          pagination: { total: 0, page: 1, limit: 12, pages: 0 },
-        },
-        { status: 400 }
-      );
-    }
-
     const projectType = searchParams.get("projectType") || undefined;
     const city = searchParams.get("city") || undefined;
     const featured = searchParams.get("featured") || undefined;

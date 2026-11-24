@@ -1750,6 +1750,10 @@ export function PropertiesClient({
                             src={imgUrl}
                             alt={`Upload ${idx + 1}`}
                             className="size-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='1.5'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E";
+                            }}
                           />
                           <button
                             type="button"
@@ -1816,6 +1820,10 @@ export function PropertiesClient({
                               src={fp.planImageUrl}
                               alt={fp.floorName}
                               className="size-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='1.5'%3E%3Cpolygon points='12 2 2 7 12 12 22 7 12 2'/%3E%3Cpolyline points='2 17 12 22 22 17'/%3E%3C/svg%3E";
+                              }}
                             />
                           </div>
                           <div>
@@ -2270,6 +2278,10 @@ export function PropertiesClient({
                             src={imgUrl}
                             alt={`Existing Photo ${idx + 1}`}
                             className="size-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='1.5'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E";
+                            }}
                           />
                           <button
                             type="button"
@@ -2293,6 +2305,10 @@ export function PropertiesClient({
                             src={imgUrl}
                             alt={`New Upload ${idx + 1}`}
                             className="size-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='1.5'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E";
+                            }}
                           />
                           <button
                             type="button"
@@ -2362,6 +2378,10 @@ export function PropertiesClient({
                               src={fp.planImageUrl}
                               alt={fp.floorName}
                               className="size-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='1.5'%3E%3Cpolygon points='12 2 2 7 12 12 22 7 12 2'/%3E%3Cpolyline points='2 17 12 22 22 17'/%3E%3C/svg%3E";
+                              }}
                             />
                           </div>
                           <div>

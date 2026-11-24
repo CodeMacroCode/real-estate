@@ -1001,13 +1001,29 @@ export function WebmasterModal({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Official Mobile / Phone
+                    Office Contact / Phone Number *
                   </label>
                   <input
                     type="text"
                     value={formData.contact?.phone || ""}
                     onChange={(e) => handleChange("contact", "phone", e.target.value)}
                     placeholder="+91 (0712) 256-8900"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Displayed in 01 — Unit Specifications and portal contact headers.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Office Landline / Alternate Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.contact?.alternatePhone || ""}
+                    onChange={(e) => handleChange("contact", "alternatePhone", e.target.value)}
+                    placeholder="e.g. +91 712 1234567"
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

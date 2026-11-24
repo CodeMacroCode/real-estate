@@ -1,13 +1,23 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPublicProjectBySlug } from "@/services/publicPortalService";
+import {
+  getPublicProjectBySlug,
+  resolveAdminByHostOrSlug,
+} from "@/services/publicPortalService";
 import { ProjectDetailInquiryForm } from "@/components/project/ProjectDetailInquiryForm";
 import { ProjectMasterPlanViewer } from "@/components/project/ProjectMasterPlanViewer";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 import { formatPrice } from "@/lib/portalUtils";
-import { MapPin, ShieldCheck, Check, ArrowLeft, Building } from "lucide-react";
+import {
+  MapPin,
+  ShieldCheck,
+  Check,
+  ArrowLeft,
+  Building,
+  Phone,
+} from "lucide-react";
 
 interface PublicProjectDetailPageProps {
   params: Promise<{
@@ -19,7 +29,9 @@ interface PublicProjectDetailPageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: PublicProjectDetailPageProps) {
+export async function generateMetadata({
+  params,
+}: PublicProjectDetailPageProps) {
   const resolvedParams = await params;
   const project = await getPublicProjectBySlug(resolvedParams.slug);
   if (!project) {
@@ -43,12 +55,28 @@ export default async function PublicProjectDetailPage({
     notFound();
   }
 
-  const agencySlug = resolvedSearchParams.agency || project.agency?.agencySlug || "";
+  const agencySlug =
+    resolvedSearchParams.agency || project.agency?.agencySlug || "";
+  const targetAdminId =
+    resolvedSearchParams.adminId || project.agency?.adminId;
+
+  const agencyBranding = agencySlug
+    ? await resolveAdminByHostOrSlug(agencySlug)
+    : targetAdminId
+      ? await resolveAdminByHostOrSlug(targetAdminId)
+      : null;
+
+  const officePhone =
+    agencyBranding?.settings?.contact?.phone ||
+    project.agency?.phone ||
+    agencyBranding?.settings?.contact?.alternatePhone ||
+    null;
+
   const backToProjectsHref = agencySlug
     ? `/portal-projects?agency=${agencySlug}`
-    : resolvedSearchParams.adminId || project.agency?.adminId
-    ? `/portal-projects?adminId=${resolvedSearchParams.adminId || project.agency?.adminId}`
-    : "/portal-projects";
+    : targetAdminId
+      ? `/portal-projects?adminId=${targetAdminId}`
+      : "/portal-projects";
 
   const priceDisplay = "Price on Request";
 
@@ -61,7 +89,10 @@ export default async function PublicProjectDetailPage({
 
   return (
     <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
-      <PublicHeader agencyName={project.agency?.agencyName} />
+      <PublicHeader
+        agencyName={agencyBranding?.agencyName || project.agency?.agencyName}
+        settings={agencyBranding?.settings}
+      />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -99,11 +130,15 @@ export default async function PublicProjectDetailPage({
               <div className="bg-card-white border-2 border-ink-green shadow-hard-brass p-6 sm:p-8">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                   <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass">
-                    {project.projectType} Township &bull; By {project.developerName}
+                    {project.projectType} Township &bull; By{" "}
+                    {project.developerName}
                   </span>
                   {project.reraNumber && (
                     <span className="text-xs font-mono text-muted-ink flex items-center gap-1">
-                      <ShieldCheck className="size-3.5 text-brass" strokeWidth={1.5} />
+                      <ShieldCheck
+                        className="size-3.5 text-brass"
+                        strokeWidth={1.5}
+                      />
                       MahaRERA: {project.reraNumber}
                     </span>
                   )}
@@ -113,13 +148,37 @@ export default async function PublicProjectDetailPage({
                   {project.name}
                 </h1>
 
-                <p className="mt-2 text-xs sm:text-sm text-muted-ink flex items-center gap-1.5">
-                  <MapPin className="size-4 text-brass shrink-0" strokeWidth={1.5} />
-                  <span>
-                    {project.location.address ? `${project.location.address}, ` : ""}
-                    {project.location.city}
-                  </span>
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-muted-ink">
+                  <p className="flex items-center gap-1.5">
+                    <MapPin
+                      className="size-4 text-brass shrink-0"
+                      strokeWidth={1.5}
+                    />
+                    <span>
+                      {project.location.address
+                        ? `${project.location.address}, `
+                        : ""}
+                      {project.location.city}
+                    </span>
+                  </p>
+
+                  {officePhone && (
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <span className="text-line text-xs hidden sm:inline">&bull;</span>
+                      <Phone
+                        className="size-3.5 text-brass shrink-0"
+                        strokeWidth={1.5}
+                      />
+                      <a
+                        href={`tel:${officePhone}`}
+                        className="hover:text-ink-green transition-colors"
+                        title="Call Agency Office"
+                      >
+                        Office: {officePhone}
+                      </a>
+                    </div>
+                  )}
+                </div>
 
                 <div className="mt-6 pt-6 border-t border-line flex flex-wrap items-baseline justify-between gap-4">
                   <div>
@@ -148,7 +207,9 @@ export default async function PublicProjectDetailPage({
                         Construction Phasing
                       </span>
                       <div className="font-mono text-xs sm:text-sm font-bold text-ink-green mt-1">
-                        {project.totalUnits ? `${project.totalUnits} Total Units` : "Master Sanction Layout"}
+                        {project.totalUnits
+                          ? `${project.totalUnits} Total Units`
+                          : "Master Sanction Layout"}
                       </div>
                     </div>
                   </div>
@@ -218,7 +279,10 @@ export default async function PublicProjectDetailPage({
                         key={idx}
                         className="p-2.5 bg-paper border border-line flex items-center gap-2 text-xs font-semibold text-ink"
                       >
-                        <Check className="size-3.5 text-brass shrink-0" strokeWidth={2} />
+                        <Check
+                          className="size-3.5 text-brass shrink-0"
+                          strokeWidth={2}
+                        />
                         <span className="truncate">{amenity}</span>
                       </div>
                     ))}
@@ -227,7 +291,9 @@ export default async function PublicProjectDetailPage({
               )}
 
               {/* Strategic Project Location & Google Map */}
-              {(project.location?.googleMapsEmbedUrl || project.location?.address || project.location?.city) && (
+              {(project.location?.googleMapsEmbedUrl ||
+                project.location?.address ||
+                project.location?.city) && (
                 <div className="bg-card-white border border-line p-6 space-y-4">
                   <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
                     Strategic Project Location &amp; Map
@@ -235,27 +301,33 @@ export default async function PublicProjectDetailPage({
                   <div className="flex items-center gap-2 text-xs text-ink font-semibold">
                     <MapPin className="size-4 text-brass shrink-0" />
                     <span>
-                      {project.location?.address ? `${project.location.address}, ` : ""}
+                      {project.location?.address
+                        ? `${project.location.address}, `
+                        : ""}
                       {project.location?.city}
                     </span>
                   </div>
                   <div className="w-full h-64 sm:h-72 bg-paper border border-line relative overflow-hidden">
                     <iframe
-                      src={
-                        (() => {
-                          const raw = project.location?.googleMapsEmbedUrl?.trim();
-                          if (raw) {
-                            if (raw.includes("<iframe")) {
-                              const match = raw.match(/src=["'](.*?)["']/);
-                              if (match && match[1]) return match[1];
-                            } else if (raw.startsWith("http://") || raw.startsWith("https://")) {
-                              return raw;
-                            }
+                      src={(() => {
+                        const raw =
+                          project.location?.googleMapsEmbedUrl?.trim();
+                        if (raw) {
+                          if (raw.includes("<iframe")) {
+                            const match = raw.match(/src=["'](.*?)["']/);
+                            if (match && match[1]) return match[1];
+                          } else if (
+                            raw.startsWith("http://") ||
+                            raw.startsWith("https://")
+                          ) {
+                            return raw;
                           }
-                          const query = encodeURIComponent(`${project.location?.address || ""}, ${project.location?.city || project.name}`);
-                          return `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
-                        })()
-                      }
+                        }
+                        const query = encodeURIComponent(
+                          `${project.location?.address || ""}, ${project.location?.city || project.name}`,
+                        );
+                        return `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
+                      })()}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
@@ -275,7 +347,9 @@ export default async function PublicProjectDetailPage({
                 projectId={project.id}
                 projectName={project.name}
                 projectCode={project.projectId}
-                adminId={resolvedSearchParams.adminId || project.agency?.adminId}
+                adminId={
+                  resolvedSearchParams.adminId || project.agency?.adminId
+                }
               />
             </div>
           </div>
@@ -303,7 +377,10 @@ export default async function PublicProjectDetailPage({
         </div>
       </main>
 
-      <PublicFooter agencyName={project.agency?.agencyName} />
+      <PublicFooter
+        agencyName={agencyBranding?.agencyName || project.agency?.agencyName}
+        settings={agencyBranding?.settings}
+      />
     </div>
   );
 }

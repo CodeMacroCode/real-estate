@@ -323,8 +323,8 @@ export function WebsiteManagementClient({
                 <div className="mt-3 pt-3 border-t border-slate-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600">
                   <div className="flex items-center gap-1.5 truncate">
                     <Phone className="size-3 text-blue-600 shrink-0" />
-                    <span className="font-semibold text-slate-700 truncate">
-                      {portal.contact?.phone || portal.mobile || "No phone"}
+                    <span className="font-semibold text-slate-700 truncate" title="Office Contact / Phone Number">
+                      Office: {portal.contact?.phone || portal.mobile || "No phone"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 truncate">
@@ -345,33 +345,47 @@ export function WebsiteManagementClient({
                 </div>
 
                 {/* Published Inventory Counters */}
-                <div className="mt-3 flex items-center gap-4 text-xs font-semibold">
-                  <span className="inline-flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                <div className="mt-3 flex items-center gap-3 text-xs font-semibold">
+                  <a
+                    href={portal.urls.propertiesUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition"
+                    title="Open Live Properties in new tab"
+                  >
                     <Building2 className="size-3.5" />
-                    {portal.publishedPropertiesCount} Live Properties
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
+                    <span>{portal.publishedPropertiesCount} Live Properties</span>
+                    <ExternalLink className="size-3" />
+                  </a>
+                  <a
+                    href={portal.urls.projectsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition"
+                    title="Open Live Projects in new tab"
+                  >
                     <Layers className="size-3.5" />
-                    {portal.publishedProjectsCount} Live Projects
-                  </span>
+                    <span>{portal.publishedProjectsCount} Live Projects</span>
+                    <ExternalLink className="size-3" />
+                  </a>
                 </div>
               </div>
 
               {/* URL Portals List */}
               <div className="p-5 space-y-3.5 flex-1 text-xs">
-                {/* Single Unified Global Agency Portal URL */}
+                {/* Single Unified Agency Website Portal URL */}
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                       <Globe className="size-4 text-blue-600" />
-                      Agency Public Website Portal Link
+                      Website Portal Link
                     </span>
                     <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       Live for Public
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mb-2">
-                    Share this single URL with your clients, WhatsApp bio, and advertisements. Buyers can explore all your verified properties and developments in one place.
+                    Official public website link for verified listings, projects, unit specifications, and client inquiries.
                   </p>
                   <div className="flex items-center gap-2 mt-1.5">
                     <input
@@ -385,7 +399,7 @@ export function WebsiteManagementClient({
                       onClick={() =>
                         handleCopy(
                           portal.urls.customPortalUrl || portal.urls.propertiesUrl,
-                          "Agency Public Portal URL"
+                          "Website Portal URL"
                         )
                       }
                       className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition cursor-pointer text-xs"

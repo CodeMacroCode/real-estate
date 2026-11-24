@@ -304,6 +304,12 @@ export default async function PublicPropertyDetailPage({
                   totalFloors={property.residentialSpecs?.totalFloors}
                   propertyType={property.propertyType}
                   propertyCategory={property.propertyCategory}
+                  officeNumber={
+                    agencyBranding?.settings?.contact?.phone ||
+                    property.agency?.phone ||
+                    agencyBranding?.settings?.contact?.alternatePhone ||
+                    undefined
+                  }
                 />
               </div>
 

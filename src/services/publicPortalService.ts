@@ -758,29 +758,6 @@ export async function resolveAdminByHostOrSlug(
     };
   }
 
-  // 4. Graceful Fallback: If on main server domain (or if slug didn't match), fallback to first active admin
-  const fallbackAdmin = await User.findOne({
-    status: "active",
-  })
-    .populate("roleId")
-    .select("_id name username email agencyName agencySlug customDomain roleId")
-    .lean();
-
-  if (
-    fallbackAdmin &&
-    ((fallbackAdmin.roleId as any)?.slug === "admin" || (fallbackAdmin.roleId as any)?.slug === "super_admin")
-  ) {
-    const adminId = fallbackAdmin._id.toString();
-    const settings = await getWebsiteSettingsByAdminId(adminId);
-    return {
-      adminId,
-      agencyName: settings?.branding?.companyName || fallbackAdmin.agencyName || fallbackAdmin.name,
-      agencySlug: fallbackAdmin.agencySlug || fallbackAdmin.username || "agency",
-      customDomain: fallbackAdmin.customDomain,
-      settings,
-    };
-  }
-
   return null;
 }
 
@@ -788,16 +765,16 @@ export async function resolveAdminByHostOrSlug(
  * Fetch top 5 active cities/localities for an admin's published properties and projects.
  */
 export async function getTopLocationsForTenant(adminId?: string): Promise<string[]> {
-  if (!adminId) return [];
   try {
     await connectToDatabase();
-    const adminObjectId = new mongoose.Types.ObjectId(adminId);
+    const isObjectId = adminId && mongoose.Types.ObjectId.isValid(adminId);
+    const adminMatch = isObjectId ? { adminId: new mongoose.Types.ObjectId(adminId) } : {};
 
     // 1. Distinct cities from properties
     const propertyLocations = await Property.aggregate([
       {
         $match: {
-          adminId: adminObjectId,
+          ...adminMatch,
           "publishing.publishOnWebsite": true,
           status: "Available",
         },
@@ -830,7 +807,7 @@ export async function getTopLocationsForTenant(adminId?: string): Promise<string
     const projectCities = await Project.aggregate([
       {
         $match: {
-          adminId: adminObjectId,
+          ...adminMatch,
           isPublishedOnWebsite: true,
           "location.city": { $exists: true, $ne: "" },
         },

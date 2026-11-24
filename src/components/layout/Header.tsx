@@ -154,6 +154,9 @@ export function Header({ user }: HeaderProps) {
       setIsSuccess(true);
       setTimeout(() => {
         setIsDialogOpen(false);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("app:navigation-start"));
+        }
         router.push('/login');
         router.refresh();
       }, 700);

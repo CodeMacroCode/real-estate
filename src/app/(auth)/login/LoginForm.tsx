@@ -50,6 +50,9 @@ export function LoginForm({ reason }: LoginFormProps) {
       }
 
       // Successful login
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("app:navigation-start"));
+      }
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
