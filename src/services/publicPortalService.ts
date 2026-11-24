@@ -778,29 +778,6 @@ export async function resolveAdminByHostOrSlug(
     };
   }
 
-  // 4. Graceful Fallback: If on main server domain (or if slug didn't match), fallback to first active admin
-  const fallbackAdmin = await User.findOne({
-    status: "active",
-  })
-    .populate("roleId")
-    .select("_id name username email agencyName agencySlug customDomain roleId")
-    .lean();
-
-  if (
-    fallbackAdmin &&
-    ((fallbackAdmin.roleId as any)?.slug === "admin" || (fallbackAdmin.roleId as any)?.slug === "super_admin")
-  ) {
-    const adminId = fallbackAdmin._id.toString();
-    const settings = await getWebsiteSettingsByAdminId(adminId);
-    return {
-      adminId,
-      agencyName: settings?.branding?.companyName || fallbackAdmin.agencyName || fallbackAdmin.name,
-      agencySlug: fallbackAdmin.agencySlug || fallbackAdmin.username || "agency",
-      customDomain: fallbackAdmin.customDomain,
-      settings,
-    };
-  }
-
   return null;
 }
 
