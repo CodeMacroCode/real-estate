@@ -19,6 +19,8 @@ import {
   Check,
   Filter,
   Loader2,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -178,6 +180,14 @@ export function DomainsClient({
   const filterAgencyId = useId();
   const searchInputId = useId();
   const statusFilterId = useId();
+  const helpCardId = useId();
+  const primaryHelpId = useId();
+  const tablePrimaryHelpId = useId();
+
+  // In-page help state
+  const [showHelp, setShowHelp] = useState(false);
+  const [showPrimaryHelp, setShowPrimaryHelp] = useState(false);
+  const [showTablePrimaryHelp, setShowTablePrimaryHelp] = useState(false);
 
   // List state
   const [domains, setDomains] = useState<DomainItem[]>([]);
@@ -312,6 +322,19 @@ export function DomainsClient({
     }, 200);
     return () => clearTimeout(timer);
   }, [fetchDomainsAndAgencies]);
+
+  useEffect(() => {
+    if (!showHelp && !showPrimaryHelp && !showTablePrimaryHelp) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowHelp(false);
+        setShowPrimaryHelp(false);
+        setShowTablePrimaryHelp(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showHelp, showPrimaryHelp, showTablePrimaryHelp]);
 
   const handleAddDomain = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,19 +490,124 @@ export function DomainsClient({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => fetchDomainsAndAgencies(true)}
-          disabled={refreshing || loading}
-          className="inline-flex items-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-            aria-hidden="true"
-          />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 self-start">
+          <button
+            type="button"
+            onClick={() => setShowHelp((prev) => !prev)}
+            aria-expanded={showHelp}
+            aria-controls={helpCardId}
+            className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+              showHelp
+                ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
+            <span>How it works</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fetchDomainsAndAgencies(true)}
+            disabled={refreshing || loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
+
+      {/* How Custom Domains Work Explanation Card */}
+      {showHelp && (
+        <section
+          id={helpCardId}
+          aria-labelledby="how-custom-domains-work-heading"
+          className="rounded-xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-blue-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <HelpCircle className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div>
+                <h2
+                  id="how-custom-domains-work-heading"
+                  className="text-base font-semibold text-slate-900"
+                >
+                  How Custom Domains Work
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Quick guide to binding, managing, and launching agency portals on custom hostnames.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHelp(false)}
+              aria-label="Close How Custom Domains Work guide"
+              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-blue-100 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-lg border border-slate-200/80 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                What Custom Domains Do
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Serve an agency&apos;s published property listings directly on their own domain (e.g.,{" "}
+                <span className="font-mono text-slate-800">www.abcrealty.in</span>) without redirecting to the platform URL, with strict tenant isolation so visitors only see that agency&apos;s listings and inquiries.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-200/80 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Primary vs Secondary
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Multiple domains can belong to one agency, but only one can be{" "}
+                <span className="font-semibold text-slate-800">Primary</span> (the main/canonical domain). Secondary domains still serve the agency&apos;s listings. Clicking{" "}
+                <span className="font-semibold text-slate-800">Set Primary</span> promotes a domain and demotes the previous one.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-200/80 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Active vs Inactive
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Only <span className="font-semibold text-slate-800">Active</span> domains resolve for visitors. Clicking{" "}
+                <span className="font-semibold text-slate-800">Deactivate</span> pauses a domain without deleting it so you can reactivate it anytime.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-200/80 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Setup Steps
+              </h3>
+              <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-xs leading-relaxed text-slate-600">
+                <li>Assign the domain to an agency here.</li>
+                <li>
+                  Ensure properties are marked{" "}
+                  <span className="font-medium text-slate-800">Available</span> &amp;{" "}
+                  <span className="font-medium text-slate-800">Published on Website</span>.
+                </li>
+                <li>
+                  Infrastructure team points DNS + reverse proxy (
+                  <span className="font-mono text-slate-800">Host</span> /{" "}
+                  <span className="font-mono text-slate-800">X-Forwarded-Host</span>) + SSL.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -661,20 +789,47 @@ export function DomainsClient({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              id="is-primary-new"
-              type="checkbox"
-              checked={isPrimaryNew}
-              onChange={(e) => setIsPrimaryNew(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <label
-              htmlFor="is-primary-new"
-              className="text-sm text-slate-700 select-none"
-            >
-              Set as primary domain for this agency
-            </label>
+          <div className="pt-1">
+            <div className="flex items-center gap-2">
+              <input
+                id="is-primary-new"
+                type="checkbox"
+                checked={isPrimaryNew}
+                onChange={(e) => setIsPrimaryNew(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label
+                htmlFor="is-primary-new"
+                className="text-sm text-slate-700 select-none"
+              >
+                Set as primary domain for this agency
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPrimaryHelp((prev) => !prev)}
+                aria-expanded={showPrimaryHelp}
+                aria-controls={primaryHelpId}
+                aria-label="What does primary domain mean?"
+                title="What does primary domain mean?"
+                className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+                  showPrimaryHelp
+                    ? "border-blue-300 bg-blue-50 text-blue-700"
+                    : "border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                }`}
+              >
+                <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+            {showPrimaryHelp && (
+              <div
+                id={primaryHelpId}
+                role="note"
+                className="mt-2 max-w-xl rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-xs text-slate-700"
+              >
+                <span className="font-semibold text-slate-900">Primary domain:</span>{" "}
+                The agency&apos;s main/canonical domain. Only one domain per agency can be Primary—setting a new Primary automatically demotes the previous one to Secondary, while Secondary domains continue serving the agency&apos;s listings.
+              </div>
+            )}
           </div>
         </form>
       </section>
@@ -745,6 +900,29 @@ export function DomainsClient({
           </div>
         </div>
 
+        {showTablePrimaryHelp && (
+          <div
+            id={tablePrimaryHelpId}
+            role="note"
+            className="flex items-start justify-between gap-3 border-b border-blue-100 bg-blue-50/60 px-4 py-2.5 text-xs text-slate-700"
+          >
+            <p>
+              <span className="font-semibold text-slate-900">Primary Status:</span>{" "}
+              Each agency can have one <span className="font-semibold text-slate-900">Primary</span> (main/canonical) domain.{" "}
+              <span className="font-semibold text-slate-900">Secondary</span> domains still serve the agency&apos;s published listings, and clicking{" "}
+              <span className="font-semibold text-slate-900">Set Primary</span> promotes a domain while demoting the previous Primary.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowTablePrimaryHelp(false)}
+              aria-label="Close Primary Status explanation"
+              className="shrink-0 rounded p-0.5 text-slate-500 transition hover:bg-blue-100 hover:text-slate-800"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+
         {/* Responsive Semantic Table Region */}
         <div
           tabIndex={0}
@@ -791,7 +969,24 @@ export function DomainsClient({
                     scope="col"
                     className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600"
                   >
-                    Primary Status
+                    <div className="inline-flex items-center gap-1.5">
+                      <span>Primary Status</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowTablePrimaryHelp((prev) => !prev)}
+                        aria-expanded={showTablePrimaryHelp}
+                        aria-controls={tablePrimaryHelpId}
+                        aria-label="Explain Primary Status"
+                        title="Explain Primary Status"
+                        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+                          showTablePrimaryHelp
+                            ? "border-blue-300 bg-blue-50 text-blue-700"
+                            : "border-slate-300 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        }`}
+                      >
+                        <HelpCircle className="h-3 w-3" aria-hidden="true" />
+                      </button>
+                    </div>
                   </th>
                   <th
                     scope="col"
