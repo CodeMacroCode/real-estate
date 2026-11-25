@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "./lib/auth/constants";
 import { verifyAuthToken } from "./lib/auth/jwt";
+import { isPlatformHost, normalizeHostname } from "./lib/domains/normalize";
 
 // Public paths that do not require authentication
 const PUBLIC_PATHS = [
@@ -34,7 +35,19 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const rawHost = (
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const hostname = normalizeHostname(rawHost);
+  const isPlatform = !hostname || isPlatformHost(hostname);
+
+  const isCustomDomainRoot = !isPlatform && pathname === "/";
+  const isPublicPath =
+    isCustomDomainRoot || PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   // CSRF protection: evaluate cookie-authenticated state-changing requests
@@ -97,8 +110,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect root path to dashboard or login
-  if (pathname === "/") {
+  // Redirect root path to dashboard or login on platform hosts only
+  if (pathname === "/" && isPlatform) {
     if (isValidSession) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }

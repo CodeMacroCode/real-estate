@@ -1,5 +1,7 @@
 import React from "react";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import {
   Building2,
   Search,
@@ -19,11 +21,15 @@ import {
 import {
   getPublicProperties,
   getPublicProjects,
+  resolveAdminByHostOrSlug,
+  getTopLocationsForTenant,
 } from "@/services/publicPortalService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
+import PublicPortalClient from "./portal-properties/PublicPortalClient";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +40,76 @@ export const metadata = {
 };
 
 export default async function HomePage() {
+  const headerList = await headers();
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const normalizedHost = normalizeHostname(rawHost);
+  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
+
+  if (isCustomDomain) {
+    const tenant = await resolveAdminByHostOrSlug(normalizedHost);
+    if (!tenant) {
+      notFound();
+    }
+
+    const [initialData, topLocations] = await Promise.all([
+      getPublicProperties({
+        adminId: tenant.adminId,
+        limit: 12,
+      }),
+      getTopLocationsForTenant(tenant.adminId),
+    ]);
+
+    return (
+      <div
+        className="min-h-screen bg-paper text-ink flex flex-col justify-between"
+        style={
+          {
+            ...(tenant.settings?.theme?.primaryColor
+              ? { "--ink-green": tenant.settings.theme.primaryColor }
+              : {}),
+            ...(tenant.settings?.theme?.deepColor
+              ? { "--deep-green": tenant.settings.theme.deepColor }
+              : {}),
+            ...(tenant.settings?.theme?.accentColor
+              ? { "--brass": tenant.settings.theme.accentColor }
+              : {}),
+            ...(tenant.settings?.theme?.paperColor
+              ? { "--paper": tenant.settings.theme.paperColor }
+              : {}),
+          } as React.CSSProperties
+        }
+      >
+        <PublicHeader
+          agencyName={tenant.agencyName}
+          settings={tenant.settings}
+          isCustomDomain={true}
+        />
+        <main className="flex-1">
+          <PublicPortalClient
+            initialProperties={initialData.properties}
+            initialPagination={initialData.pagination}
+            searchParams={{}}
+            agencyBranding={{
+              ...tenant,
+              customDomain: tenant.customDomain || normalizedHost,
+            }}
+          />
+        </main>
+        <PublicFooter
+          agencyName={tenant.agencyName}
+          topLocations={topLocations}
+          settings={tenant.settings}
+        />
+      </div>
+    );
+  }
+
   // Fetch real verified published properties and projects directly from CRM
   const [propertiesData, projectsData] = await Promise.all([
     getPublicProperties({ limit: 6, sort: "featured" }),

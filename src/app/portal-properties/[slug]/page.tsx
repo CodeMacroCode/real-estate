@@ -1,7 +1,9 @@
 import React from "react";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { getPublicPropertyBySlug, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
 import { PropertyDetailInquiryForm } from "@/components/property/PropertyDetailInquiryForm";
 import { InteractiveFloorMapViewer } from "@/components/property/InteractiveFloorMapViewer";
 import { PropertyOverviewSpecs } from "@/components/property/PropertyOverviewSpecs";
@@ -22,7 +24,27 @@ interface PublicPropertyDetailPageProps {
 
 export async function generateMetadata({ params }: PublicPropertyDetailPageProps) {
   const resolvedParams = await params;
-  const property = await getPublicPropertyBySlug(resolvedParams.slug);
+  const headerList = await headers();
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const normalizedHost = normalizeHostname(rawHost);
+  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
+
+  let scopedAdminId: string | undefined;
+  if (isCustomDomain) {
+    const tenantFromHost = await resolveAdminByHostOrSlug(normalizedHost);
+    if (!tenantFromHost) {
+      return { title: "Property Not Found" };
+    }
+    scopedAdminId = tenantFromHost.adminId;
+  }
+
+  const property = await getPublicPropertyBySlug(resolvedParams.slug, scopedAdminId);
   if (!property) {
     return { title: "Property Not Found" };
   }
@@ -38,23 +60,54 @@ export default async function PublicPropertyDetailPage({
 }: PublicPropertyDetailPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const property = await getPublicPropertyBySlug(resolvedParams.slug);
+
+  const headerList = await headers();
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const normalizedHost = normalizeHostname(rawHost);
+  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
+
+  let tenantFromHost: Awaited<ReturnType<typeof resolveAdminByHostOrSlug>> = null;
+  if (isCustomDomain) {
+    tenantFromHost = await resolveAdminByHostOrSlug(normalizedHost);
+    if (!tenantFromHost) {
+      notFound();
+    }
+  }
+
+  const property = await getPublicPropertyBySlug(
+    resolvedParams.slug,
+    tenantFromHost?.adminId,
+  );
 
   if (!property) {
     notFound();
   }
 
-  const agencySlug = resolvedSearchParams.agency || property.agency?.agencySlug || "";
-  const targetAdminId = resolvedSearchParams.adminId || property.agency?.adminId;
+  const agencySlug = isCustomDomain
+    ? tenantFromHost?.agencySlug || ""
+    : resolvedSearchParams.agency || property.agency?.agencySlug || "";
+  const targetAdminId = isCustomDomain
+    ? tenantFromHost?.adminId
+    : resolvedSearchParams.adminId || property.agency?.adminId;
 
   // Fetch agency branding and custom theme settings
-  const agencyBranding = agencySlug
+  const agencyBranding = isCustomDomain
+    ? tenantFromHost
+    : agencySlug
     ? await resolveAdminByHostOrSlug(agencySlug)
     : targetAdminId
     ? await resolveAdminByHostOrSlug(targetAdminId)
     : null;
 
-  const backToListingsHref = agencySlug
+  const backToListingsHref = isCustomDomain
+    ? "/"
+    : agencySlug
     ? `/portal-properties?agency=${agencySlug}`
     : targetAdminId
     ? `/portal-properties?adminId=${targetAdminId}`
@@ -172,6 +225,7 @@ export default async function PublicPropertyDetailPage({
       <PublicHeader
         agencyName={agencyBranding?.agencyName || property.agency?.agencyName}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
@@ -356,7 +410,7 @@ export default async function PublicPropertyDetailPage({
                 propertyId={property.id}
                 propertyTitle={property.title}
                 propertyCode={property.propertyId}
-                adminId={resolvedSearchParams.adminId || property.agency?.adminId}
+                adminId={targetAdminId}
               />
 
               {/* Geographic Location & Embedded Google Map in Sidebar */}

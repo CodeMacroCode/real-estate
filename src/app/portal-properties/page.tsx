@@ -6,6 +6,7 @@ import {
   resolveAdminByHostOrSlug,
   getTopLocationsForTenant,
 } from "@/services/publicPortalService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
 import PublicPortalClient from "./PublicPortalClient";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
@@ -40,26 +41,48 @@ export default async function PublicPropertiesPage({
 }: PublicPropertiesPageProps) {
   const resolvedSearchParams = await searchParams;
   const headerList = await headers();
-  const host = headerList.get("host") || "";
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const normalizedHost = normalizeHostname(rawHost);
+  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
 
-  // 1. Explicit URL query parameter has HIGHEST priority (?agency=prasad or ?adminId=...)
-  const tenantFromQuery = resolvedSearchParams.agency
-    ? await resolveAdminByHostOrSlug(resolvedSearchParams.agency)
-    : resolvedSearchParams.adminId
+  let targetAdminId: string | undefined;
+  let agencyBranding: Awaited<ReturnType<typeof resolveAdminByHostOrSlug>> = null;
+
+  if (isCustomDomain) {
+    // Strict tenant isolation on custom domains: resolve exclusively from host
+    // and ignore visitor-supplied ?agency= or ?adminId= query params.
+    agencyBranding = await resolveAdminByHostOrSlug(normalizedHost);
+    if (!agencyBranding) {
+      notFound();
+    }
+    targetAdminId = agencyBranding.adminId;
+  } else {
+    // Platform host: resolve from URL query params (?agency=apex or ?adminId=...)
+    const tenantFromQuery = resolvedSearchParams.agency
+      ? await resolveAdminByHostOrSlug(resolvedSearchParams.agency)
+      : resolvedSearchParams.adminId
       ? await resolveAdminByHostOrSlug(resolvedSearchParams.adminId)
       : null;
 
-  // 2. Fallback to Host header only if no explicit agency query param was supplied
-  const tenantFromHost = !tenantFromQuery && host
-    ? await resolveAdminByHostOrSlug(host)
-    : null;
+    targetAdminId =
+      tenantFromQuery?.adminId || resolvedSearchParams.adminId || undefined;
 
-  const agencyBranding = tenantFromQuery || tenantFromHost || null;
+    if (!targetAdminId) {
+      notFound();
+    }
 
-  const targetAdminId =
-    agencyBranding?.adminId ||
-    resolvedSearchParams.adminId ||
-    undefined;
+    agencyBranding = tenantFromQuery || null;
+  }
+
+  const clientSearchParams = isCustomDomain
+    ? { ...resolvedSearchParams, agency: undefined, adminId: undefined }
+    : resolvedSearchParams;
 
   const initialData = await getPublicProperties({
     adminId: targetAdminId,
@@ -102,13 +125,21 @@ export default async function PublicPropertiesPage({
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
       <main className="flex-1">
         <PublicPortalClient
           initialProperties={initialData.properties}
           initialPagination={initialData.pagination}
-          searchParams={resolvedSearchParams}
-          agencyBranding={agencyBranding}
+          searchParams={clientSearchParams}
+          agencyBranding={
+            isCustomDomain && agencyBranding
+              ? {
+                  ...agencyBranding,
+                  customDomain: agencyBranding.customDomain || normalizedHost,
+                }
+              : agencyBranding
+          }
         />
       </main>
       <PublicFooter

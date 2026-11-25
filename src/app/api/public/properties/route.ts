@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicProperties, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
+import { resolveTenantByHostname } from "@/services/domainService";
 
 /**
  * GET /api/public/properties
@@ -24,13 +26,38 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    let adminId = searchParams.get("adminId") || undefined;
-    const agency = searchParams.get("agency") || undefined;
+    const rawHost =
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      "";
+    const requestHost = normalizeHostname(rawHost.split(",")[0]?.trim() || "");
 
-    if (!adminId && agency) {
-      const resolved = await resolveAdminByHostOrSlug(agency);
-      if (resolved?.adminId) {
-        adminId = resolved.adminId;
+    let adminId: string | undefined;
+
+    if (requestHost && !isPlatformHost(requestHost)) {
+      const tenant = await resolveTenantByHostname(requestHost);
+      if (!tenant) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Unknown or inactive custom domain.",
+            data: [],
+            pagination: { total: 0, page: 1, limit: 12, pages: 0 },
+          },
+          { status: 404 }
+        );
+      }
+      // Lock tenant strictly to the resolved custom domain; ignore visitor-supplied ?adminId= or ?agency=
+      adminId = tenant.adminId;
+    } else {
+      adminId = searchParams.get("adminId") || undefined;
+      const agency = searchParams.get("agency") || undefined;
+
+      if (!adminId && agency) {
+        const resolved = await resolveAdminByHostOrSlug(agency);
+        if (resolved?.adminId) {
+          adminId = resolved.adminId;
+        }
       }
     }
 
