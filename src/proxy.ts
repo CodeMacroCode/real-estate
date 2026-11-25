@@ -9,7 +9,11 @@ const PUBLIC_PATHS = [
   "/api/auth/login",
   "/portal-properties",
   "/portal-projects",
+  "/portal-contact",
+  "/forms",
+  "/api/forms/submit",
   "/api/public",
+  "/api/files",
 ];
 
 export async function proxy(request: NextRequest) {
