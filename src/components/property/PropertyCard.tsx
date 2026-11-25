@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -14,22 +14,42 @@ import {
 } from "lucide-react";
 import { SanitizedPublicProperty } from "@/services/publicPortalService";
 import { formatPrice } from "@/lib/portalUtils";
+import { isPlatformHost } from "@/lib/domains/normalize";
 import { motion, useReducedMotion } from "motion/react";
 
 interface PropertyCardProps {
   property: SanitizedPublicProperty;
   onEnquireClick?: (property: SanitizedPublicProperty) => void;
   agencySlug?: string;
+  isCustomDomain?: boolean;
 }
 
-export function PropertyCard({ property, onEnquireClick, agencySlug }: PropertyCardProps) {
+export function PropertyCard({
+  property,
+  onEnquireClick,
+  agencySlug,
+  isCustomDomain,
+}: PropertyCardProps) {
   const [isFavourited, setIsFavourited] = useState(false);
+  const [onCustomDomain, setOnCustomDomain] = useState(Boolean(isCustomDomain));
   const shouldReduceMotion = useReducedMotion();
 
+  useEffect(() => {
+    if (isCustomDomain !== undefined) {
+      setOnCustomDomain(isCustomDomain);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      setOnCustomDomain(!isPlatformHost(window.location.hostname));
+    }
+  }, [isCustomDomain]);
+
+  const slugOrId = property.slug || property.id;
   const activeAgencySlug = agencySlug || property.agency?.agencySlug;
-  const propertyUrl = activeAgencySlug
-    ? `/portal-properties/${property.slug || property.id}?agency=${activeAgencySlug}`
-    : `/portal-properties/${property.slug || property.id}`;
+  const propertyUrl =
+    onCustomDomain || !activeAgencySlug
+      ? `/portal-properties/${slugOrId}`
+      : `/portal-properties/${slugOrId}?agency=${activeAgencySlug}`;
 
   const displayPrice =
     property.transactionType === "Rent" && property.pricing?.monthlyRent

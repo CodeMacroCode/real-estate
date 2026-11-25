@@ -22,6 +22,7 @@ import {
   FolderLock,
   BadgeCheck,
   LucideSparkles,
+  Link2,
 } from "lucide-react";
 import { SafeUser } from "@/types";
 
@@ -90,6 +91,13 @@ export function Sidebar({ user }: SidebarProps) {
       icon: Globe,
       active: pathname.startsWith("/website-management"),
       visible: true, // Visible to SuperAdmin (all URLs), Admin (their URLs), and Sub-roles
+    },
+    {
+      name: "Custom Domains",
+      href: "/domains",
+      icon: Link2,
+      active: pathname.startsWith("/domains"),
+      visible: isSuperAdmin || isAdmin,
     },
   ].filter((item) => item.visible);
 

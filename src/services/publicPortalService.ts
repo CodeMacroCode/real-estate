@@ -3,6 +3,8 @@ import { Property, IPropertyDocument } from "@/models/Property";
 import { Project, IProjectDocument } from "@/models/Project";
 import { ProjectUnit } from "@/models/ProjectUnit";
 import { WebsiteSetting } from "@/models/WebsiteSetting";
+import { resolveTenantByHostname } from "@/services/domainService";
+import { normalizeHostname } from "@/lib/domains/normalize";
 import mongoose, { FilterQuery } from "mongoose";
 
 export interface PublicPropertyFilterParams {
@@ -516,8 +518,11 @@ export async function getPublicPropertyBySlug(
     query.$or.push({ _id: slugOrId as any });
   }
 
-  if (adminId) {
-    query.adminId = adminId;
+  if (adminId !== undefined && adminId !== "") {
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      return null;
+    }
+    query.adminId = new mongoose.Types.ObjectId(adminId);
   }
 
   // Ensure User model is loaded for adminId population
@@ -645,8 +650,11 @@ export async function getPublicProjectBySlug(
     query.$or.push({ _id: slugOrId as any });
   }
 
-  if (adminId) {
-    query.adminId = adminId;
+  if (adminId !== undefined && adminId !== "") {
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      return null;
+    }
+    query.adminId = new mongoose.Types.ObjectId(adminId);
   }
 
   const doc = await Project.findOne(query)
@@ -677,11 +685,23 @@ export async function resolveAdminByHostOrSlug(
   settings?: any;
 } | null> {
   if (!hostOrSlug) return null;
+
+  // 0. Check AgencyDomain records first for custom domains
+  const cleanHost = normalizeHostname(hostOrSlug) || hostOrSlug.split(":")[0].toLowerCase().trim();
+  const domainTenant = await resolveTenantByHostname(cleanHost);
+  if (domainTenant) {
+    return {
+      adminId: domainTenant.adminId,
+      agencyName: domainTenant.agencyName,
+      agencySlug: domainTenant.agencySlug,
+      customDomain: domainTenant.hostname,
+      settings: domainTenant.settings,
+    };
+  }
+
   await connectToDatabase();
   const { User } = await import("@/models/User");
   const { getWebsiteSettingsByAdminId } = await import("@/services/websiteSettingService");
-
-  const cleanHost = hostOrSlug.split(":")[0].toLowerCase().trim();
 
   // 1. Direct custom domain match
   const byCustomDomain = await User.findOne({

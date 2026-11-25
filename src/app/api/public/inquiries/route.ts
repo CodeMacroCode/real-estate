@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ingestWebsiteInquiry } from "@/services/leadIngestionService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
+import { resolveTenantByHostname } from "@/services/domainService";
 
 /**
  * POST /api/public/inquiries
@@ -42,8 +44,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rawHost =
+      request.headers.get("x-forwarded-host") ||
+      request.headers.get("host") ||
+      "";
+    const requestHost = normalizeHostname(rawHost.split(",")[0]?.trim() || "");
+
+    let lockedAdminId: string | undefined;
+
+    if (requestHost && !isPlatformHost(requestHost)) {
+      const tenant = await resolveTenantByHostname(requestHost);
+      if (!tenant) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Unknown or inactive custom domain.",
+          },
+          { status: 404 }
+        );
+      }
+      // Lock tenant strictly to the resolved custom domain; ignore visitor-supplied body.adminId
+      lockedAdminId = tenant.adminId;
+    }
+
     const result = await ingestWebsiteInquiry({
-      adminId: payload.adminId,
+      adminId: lockedAdminId ?? payload.adminId,
       inquiryType: payload.inquiryType,
       propertyId: payload.propertyId,
       projectId: payload.projectId,

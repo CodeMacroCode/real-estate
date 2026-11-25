@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -12,17 +12,35 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { appendTenantQuery } from "@/lib/portalUtils";
+import { isPlatformHost } from "@/lib/domains/normalize";
 
 interface PublicHeaderProps {
   agencyName?: string;
   settings?: any;
+  isCustomDomain?: boolean;
 }
 
-export function PublicHeader({ agencyName, settings }: PublicHeaderProps) {
+export function PublicHeader({
+  agencyName,
+  settings,
+  isCustomDomain,
+}: PublicHeaderProps) {
   const searchParams = useSearchParams();
+  const [onCustomDomain, setOnCustomDomain] = useState(Boolean(isCustomDomain));
+
+  useEffect(() => {
+    if (isCustomDomain !== undefined) {
+      setOnCustomDomain(isCustomDomain);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      setOnCustomDomain(!isPlatformHost(window.location.hostname));
+    }
+  }, [isCustomDomain]);
+
   const agency = searchParams.get("agency") || undefined;
   const adminId = searchParams.get("adminId") || undefined;
-  const tenant = { agency, adminId };
+  const tenant = onCustomDomain ? {} : { agency, adminId };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [buyDropdownOpen, setBuyDropdownOpen] = useState(false);
@@ -39,7 +57,11 @@ export function PublicHeader({ agencyName, settings }: PublicHeaderProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo or Brand */}
           <Link
-            href={appendTenantQuery("/portal-properties", tenant)}
+            href={
+              onCustomDomain
+                ? "/"
+                : appendTenantQuery("/portal-properties", tenant)
+            }
             className="flex items-center gap-2.5 shrink-0 group focus-visible:outline-2"
           >
             {logoUrl ? (
