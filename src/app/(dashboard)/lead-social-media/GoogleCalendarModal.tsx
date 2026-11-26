@@ -26,11 +26,9 @@ export function GoogleCalendarModal({
   initialClientId = "",
   initialClientSecret = "",
   onSave,
-  onConnectOAuth,
 }: GoogleCalendarModalProps) {
   const [clientId, setClientId] = useState(initialClientId);
   const [clientSecret, setClientSecret] = useState(initialClientSecret);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   if (!isOpen) return null;
@@ -45,15 +43,21 @@ export function GoogleCalendarModal({
 
     setIsRedirecting(true);
     try {
-      // 1. Save / persist credentials
+      // 1. Save / persist this Admin's credentials (without marking connected yet)
       if (onSave) {
         await onSave({ clientId: clientId.trim(), clientSecret: clientSecret.trim() });
       }
 
-      // 2. Request authenticated Google OAuth consent URL from backend
-      const res = await fetch(
-        `/api/google-calendar/auth?adminId=${encodeURIComponent(adminId)}&clientId=${encodeURIComponent(clientId.trim())}&clientSecret=${encodeURIComponent(clientSecret.trim())}`,
-      );
+      // 2. Request authenticated Google OAuth consent URL via POST (keeps secret out of URL query)
+      const res = await fetch("/api/google-calendar/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminId,
+          clientId: clientId.trim(),
+          clientSecret: clientSecret.trim(),
+        }),
+      });
       const data = await res.json();
       if (!res.ok || !data.data?.url) {
         throw new Error(data.message || data.error || "Failed to initialize Google OAuth login flow");

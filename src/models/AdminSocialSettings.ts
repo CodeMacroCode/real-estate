@@ -6,6 +6,8 @@ export interface IAdminSocialSettingsDocument extends Document {
 
   meta: {
     pageAccessToken?: string;
+    pageId?: string;
+    pageName?: string;
     adAccountId?: string;
     leadGenFormIds?: string[];
     appSecret?: string;
@@ -15,6 +17,8 @@ export interface IAdminSocialSettingsDocument extends Document {
   linkedIn: {
     clientId?: string;
     clientSecret?: string;
+    adAccountId?: string;
+    formId?: string;
     sponsoredFormId?: string;
     isActive: boolean;
   };
@@ -26,10 +30,13 @@ export interface IAdminSocialSettingsDocument extends Document {
   };
 
   googleCalendar: {
+    clientId?: string;
+    clientSecret?: string;
     accessToken?: string;
     refreshToken?: string;
     expiryDate?: Date;
     connectedEmail?: string;
+    calendarEmail?: string;
     isConnected: boolean;
   };
 
@@ -48,6 +55,8 @@ const AdminSocialSettingsSchema = new Schema<IAdminSocialSettingsDocument>(
     },
     meta: {
       pageAccessToken: { type: String, select: false },
+      pageId: { type: String },
+      pageName: { type: String },
       adAccountId: { type: String },
       leadGenFormIds: [{ type: String }],
       appSecret: { type: String, select: false },
@@ -56,6 +65,8 @@ const AdminSocialSettingsSchema = new Schema<IAdminSocialSettingsDocument>(
     linkedIn: {
       clientId: { type: String },
       clientSecret: { type: String, select: false },
+      adAccountId: { type: String },
+      formId: { type: String },
       sponsoredFormId: { type: String },
       isActive: { type: Boolean, default: false },
     },
@@ -65,10 +76,13 @@ const AdminSocialSettingsSchema = new Schema<IAdminSocialSettingsDocument>(
       isActive: { type: Boolean, default: false },
     },
     googleCalendar: {
+      clientId: { type: String },
+      clientSecret: { type: String, select: false },
       accessToken: { type: String, select: false },
       refreshToken: { type: String, select: false },
       expiryDate: { type: Date },
       connectedEmail: { type: String },
+      calendarEmail: { type: String },
       isConnected: { type: Boolean, default: false },
     },
   },

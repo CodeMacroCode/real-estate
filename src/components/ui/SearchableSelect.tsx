@@ -44,19 +44,24 @@ export function SearchableSelect({
     [options, value]
   );
 
+  const onSearchChangeRef = useRef(onSearchChange);
+  useEffect(() => {
+    onSearchChangeRef.current = onSearchChange;
+  }, [onSearchChange]);
+
   // Debounced server-side search callback only when searchTerm changes and dropdown is open
   const prevSearchTermRef = useRef(searchTerm);
   useEffect(() => {
-    if (!onSearchChange || !isOpen) return;
+    if (!onSearchChangeRef.current || !isOpen) return;
     if (prevSearchTermRef.current === searchTerm) return;
 
     prevSearchTermRef.current = searchTerm;
     const timer = setTimeout(() => {
-      onSearchChange(searchTerm);
+      onSearchChangeRef.current?.(searchTerm);
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, debounceMs, isOpen, onSearchChange]);
+  }, [searchTerm, debounceMs, isOpen]);
 
   // Client-side fallback filter if no server-side handler is provided
   const displayOptions = useMemo(() => {

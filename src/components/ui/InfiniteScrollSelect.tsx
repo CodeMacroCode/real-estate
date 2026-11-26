@@ -67,7 +67,12 @@ export function InfiniteScrollSelect({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const isInitialMount = useRef(true);
+  const onSearchChangeRef = useRef(onSearchChange);
+  const prevDebouncedSearchRef = useRef(debouncedSearch);
+
+  useEffect(() => {
+    onSearchChangeRef.current = onSearchChange;
+  }, [onSearchChange]);
 
   // Auto-detect direction
   useEffect(() => {
@@ -86,14 +91,14 @@ export function InfiniteScrollSelect({
     }
   }, [open, dropUp]);
 
-  // Propagate debounced search up so parent can update query params (only on actual change, skip initial mount)
+  // Propagate debounced search up only when the debounced value actually changes
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
+    if (prevDebouncedSearchRef.current === debouncedSearch) {
       return;
     }
-    onSearchChange(debouncedSearch);
-  }, [debouncedSearch, onSearchChange]);
+    prevDebouncedSearchRef.current = debouncedSearch;
+    onSearchChangeRef.current(debouncedSearch);
+  }, [debouncedSearch]);
 
   // IntersectionObserver — triggers fetchNextPage when sentinel enters view
   useEffect(() => {

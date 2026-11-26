@@ -24,7 +24,6 @@ import {
   Pencil,
   Trash2,
   History,
-  Download,
   XCircle,
   HelpCircle,
   UserCircle,
@@ -47,6 +46,15 @@ import InvoiceModal from "./InvoiceModal";
 import EditAppointmentModal from "./EditAppointmentModal";
 import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
 import Lead360Modal from "@/components/Lead360Modal";
+import {
+  ExportReportFormat,
+  ExportReportMenu,
+} from "@/components/ui/ExportReportMenu";
+import {
+  exportAppointmentsToCsv,
+  exportAppointmentsToExcel,
+  exportAppointmentsToPdf,
+} from "@/lib/export/appointmentReportExport";
 import {
   Table,
   TableHeader,
@@ -119,6 +127,8 @@ export default function AppointmentsPage() {
   const [roleSlug, setRoleSlug] = useState<string>("");
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportingFormat, setExportingFormat] =
+    useState<ExportReportFormat | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
@@ -306,14 +316,11 @@ export default function AppointmentsPage() {
     }
   }, [isScheduleOpen, fetchLeadOptions, fetchStaffOptions]);
 
-  // Fetch Appointments
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const buildAppointmentQueryParams = useCallback(
+    (pageNum: number, pageLimit: number) => {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
+        page: pageNum.toString(),
+        limit: pageLimit.toString(),
       });
       if (statusFilter) params.append("status", statusFilter);
       if (selectedAdminId) params.append("adminId", selectedAdminId);
@@ -343,6 +350,18 @@ export default function AppointmentsPage() {
       if (kpiFilter === "yes") params.append("outcome", "YES");
       if (kpiFilter === "maybe") params.append("outcome", "MAYBE");
 
+      return params;
+    },
+    [statusFilter, selectedAdminId, kpiFilter, dateRange],
+  );
+
+  // Fetch Appointments
+  const fetchAppointments = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = buildAppointmentQueryParams(page, limit);
+
       const res = await fetch(`/api/appointments?${params.toString()}`);
       const json = await res.json();
 
@@ -362,7 +381,7 @@ export default function AppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, selectedAdminId, kpiFilter, dateRange]);
+  }, [page, limit, buildAppointmentQueryParams]);
 
   useEffect(() => {
     fetchAppointments();
@@ -436,73 +455,110 @@ export default function AppointmentsPage() {
     }
   };
 
-  // Export CSV
-  const handleExportCSV = () => {
-    if (appointments.length === 0) {
-      toast.error("No appointments to export");
-      return;
+  const fetchAllFilteredAppointmentsForExport = async (): Promise<
+    AppointmentItem[]
+  > => {
+    const query = search.trim().toLowerCase();
+    const applySearch = (items: AppointmentItem[]) => {
+      if (!query) return items;
+      return items.filter((item) =>
+        [
+          item.clientName,
+          item.clientPhone,
+          item.clientEmail,
+          item.agenda,
+          item.assignedSubRoleId?.name,
+        ]
+          .filter(Boolean)
+          .some((val) => String(val).toLowerCase().includes(query)),
+      );
+    };
+
+    if (totalCount <= appointments.length && appointments.length > 0) {
+      return applySearch(appointments);
     }
 
-    const headers = [
-      "Meeting Sequence",
-      "Client Name",
-      "Client Phone",
-      "Client Email",
-      "Meeting Date",
-      "Duration (Mins)",
-      "Meeting Type",
-      "Location / Link",
-      "Agenda",
-      "Status",
-      "Outcome",
-      "Quotation Amount",
-      "Host Executive",
-    ];
+    const batchLimit = 100;
+    const allItems: AppointmentItem[] = [];
+    let currentPage = 1;
+    let maxPages = 1;
 
-    const rows = appointments.map((a) => [
-      a.meetingSequence || 1,
-      `"${a.clientName || ""}"`,
-      `"${a.clientPhone || ""}"`,
-      `"${a.clientEmail || ""}"`,
-      `"${new Date(a.meetingDate).toLocaleString()}"`,
-      a.durationMinutes || 30,
-      a.meetingType || "Virtual",
-      `"${a.meetingLocation || a.googleCalendarLink || ""}"`,
-      `"${(a.agenda || "").replace(/"/g, '""')}"`,
-      a.status,
-      a.outcome || "Pending",
-      a.quotationAmount || 0,
-      `"${a.assignedSubRoleId?.name || "Staff"}"`,
-    ]);
+    do {
+      const params = buildAppointmentQueryParams(currentPage, batchLimit);
+      const res = await fetch(`/api/appointments?${params.toString()}`);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to load appointments for export");
+      }
+      if (Array.isArray(json.data)) {
+        allItems.push(...json.data);
+      }
+      const paginationMeta = json.meta || json.pagination || {};
+      maxPages = paginationMeta.totalPages || 1;
+      currentPage += 1;
+    } while (currentPage <= maxPages);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `appointment-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Exported CSV successfully!");
+    return applySearch(allItems);
+  };
+
+  const handleExportReport = async (format: ExportReportFormat) => {
+    setExportingFormat(format);
+    try {
+      const exportRows = await fetchAllFilteredAppointmentsForExport();
+      if (exportRows.length === 0) {
+        toast.error("No appointments match the current filters to export");
+        return;
+      }
+
+      const activeFilters: string[] = [];
+      if (kpiFilter !== "all") activeFilters.push(`View: ${kpiFilter}`);
+      if (statusFilter) activeFilters.push(`Status: ${statusFilter}`);
+      if (search.trim()) activeFilters.push(`Search: "${search.trim()}"`);
+      if (dateRange.startStr || dateRange.endStr) {
+        activeFilters.push(
+          `Date: ${dateRange.startStr || "..."} to ${dateRange.endStr || "..."}`,
+        );
+      }
+
+      const meta = {
+        generatedBy: currentUser?.name || "System",
+        filterSummary: activeFilters.join(" | ") || "All Appointments",
+      };
+
+      if (format === "csv") {
+        exportAppointmentsToCsv(exportRows);
+        toast.success(
+          `Exported ${exportRows.length} appointment(s) to CSV successfully!`,
+        );
+      } else if (format === "excel") {
+        exportAppointmentsToExcel(exportRows, meta);
+        toast.success(
+          `Exported ${exportRows.length} appointment(s) to Excel successfully!`,
+        );
+      } else {
+        exportAppointmentsToPdf(exportRows, meta);
+        toast.success(
+          `Exported ${exportRows.length} appointment(s) to PDF successfully!`,
+        );
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to export appointments",
+      );
+    } finally {
+      setExportingFormat(null);
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Top Action Toolbar */}
       <div className="flex items-center justify-end gap-2">
-        <button
-          onClick={handleExportCSV}
-          className="flex h-9 items-center gap-1.5 px-3 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
-          title="Export CSV report"
-        >
-          <Download className="w-3.5 h-3.5 text-slate-500" />
-          <span>Export CSV</span>
-        </button>
+        <ExportReportMenu
+          onExport={handleExportReport}
+          exportingFormat={exportingFormat}
+          disabled={loading}
+        />
 
         <button
           onClick={() => fetchAppointments()}
@@ -569,7 +625,7 @@ export default function AppointmentsPage() {
           </div>
           <div>
             <div className="text-xs text-slate-600 font-medium leading-none">
-              Today's Meetings
+              Today&apos;s Meetings
             </div>
             <div className="text-lg font-bold text-slate-900 mt-1">
               {kpiStats.todayCount}

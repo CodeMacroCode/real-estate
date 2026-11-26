@@ -6,26 +6,18 @@ import {
   Search,
   Plus,
   RefreshCw,
-  Calendar,
-  DollarSign,
-  FileText,
   AlertCircle,
   X,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
   XCircle,
-  HelpCircle,
   Phone,
   Mail,
   Copy,
   MessageSquare,
-  FilePlus,
   Receipt,
   History,
-  Download,
-  Sparkles,
-  ExternalLink,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import {
@@ -33,6 +25,11 @@ import {
   SearchableSelectOption,
 } from "@/components/ui/SearchableSelect";
 import Lead360Modal from "@/components/Lead360Modal";
+import {
+  ExportReportFormat,
+  ExportReportMenu,
+} from "@/components/ui/ExportReportMenu";
+import { exportClientConfirmationsReport } from "@/lib/export/clientConfirmationReportExport";
 import { toast } from "sonner";
 import {
   Table,
@@ -50,7 +47,7 @@ interface ClientConfirmationItem {
   clientPhone: string;
   clientEmail?: string;
   deliveryOrSiteAddress?: string;
-  clientConfirmation: "YES" | "NO" | "MAYBE";
+  clientConfirmation: "YES" | "NO";
   clientFeedback?: string;
   agreedDeliveryDate?: string;
   followUpDate?: string;
@@ -74,6 +71,8 @@ export default function ClientConfirmationsPage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [exportingFormat, setExportingFormat] =
+    useState<ExportReportFormat | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Filter & Search
@@ -104,10 +103,9 @@ export default function ClientConfirmationsPage() {
   // Log Form State
   const [formData, setFormData] = useState({
     appointmentId: "",
-    clientConfirmation: "YES" as "YES" | "NO" | "MAYBE",
+    clientConfirmation: "YES" as "YES" | "NO",
     clientFeedback: "",
     agreedDeliveryDate: "",
-    followUpDate: "",
     rejectionReason: "",
     quotationAmount: "",
     quotationNumber: "",
@@ -145,7 +143,11 @@ export default function ClientConfirmationsPage() {
       const res = await fetch(url);
       const json = await res.json();
       if (json.success) {
-        setConfirmations(json.data || []);
+        const onlyConfirmAndReject = (json.data || []).filter(
+          (item: ClientConfirmationItem) =>
+            item.clientConfirmation === "YES" || item.clientConfirmation === "NO",
+        );
+        setConfirmations(onlyConfirmAndReject);
       } else {
         setError(json.error || "Failed to load client confirmations");
       }
@@ -214,7 +216,6 @@ export default function ClientConfirmationsPage() {
         clientConfirmation: "YES",
         clientFeedback: "",
         agreedDeliveryDate: "",
-        followUpDate: "",
         rejectionReason: "",
         quotationAmount: "",
         quotationNumber: "",
@@ -233,57 +234,6 @@ export default function ClientConfirmationsPage() {
     toast.success(`Copied ${label} to clipboard!`);
   };
 
-  // Export CSV
-  const handleExportCSV = () => {
-    if (confirmations.length === 0) {
-      toast.error("No confirmations to export");
-      return;
-    }
-
-    const headers = [
-      "Client Name",
-      "Client Phone",
-      "Client Email",
-      "Outcome",
-      "Quotation Amount",
-      "Quotation Number",
-      "Agreed Handover Date",
-      "Follow-Up Date",
-      "Feedback / Notes",
-      "Date Logged",
-    ];
-
-    const rows = confirmations.map((c) => [
-      `"${c.clientName || ""}"`,
-      `"${c.clientPhone || ""}"`,
-      `"${c.clientEmail || ""}"`,
-      c.clientConfirmation,
-      c.quotationAmount || 0,
-      `"${c.quotationNumber || ""}"`,
-      c.agreedDeliveryDate
-        ? new Date(c.agreedDeliveryDate).toLocaleDateString()
-        : "",
-      c.followUpDate ? new Date(c.followUpDate).toLocaleDateString() : "",
-      `"${(c.clientFeedback || c.rejectionReason || "").replace(/"/g, '""')}"`,
-      new Date(c.createdAt).toLocaleDateString(),
-    ]);
-
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `client-confirmations-${new Date().toISOString().slice(0, 10)}.csv`,
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Exported Confirmations CSV!");
-  };
-
   const filteredConfirmations = useMemo(() => {
     return confirmations.filter((item) => {
       const matchesOutcome =
@@ -298,36 +248,68 @@ export default function ClientConfirmationsPage() {
     });
   }, [confirmations, outcomeFilter, search]);
 
+  const handleExportReport = (format: ExportReportFormat) => {
+    if (exportingFormat) return;
+    if (filteredConfirmations.length === 0) {
+      toast.error("No confirmations match the current filters to export");
+      return;
+    }
+
+    setExportingFormat(format);
+    try {
+      const activeFilters = [
+        outcomeFilter
+          ? `Outcome: ${outcomeFilter === "YES" ? "Confirmed" : "Rejected"}`
+          : "",
+        search.trim() ? `Search: "${search.trim()}"` : "",
+        dateRange.startStr || dateRange.endStr
+          ? `Date: ${dateRange.startStr || "..."} to ${dateRange.endStr || "..."}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      exportClientConfirmationsReport(format, filteredConfirmations, {
+        filterSummary: activeFilters || "All Decisions",
+      });
+
+      const label =
+        format === "csv" ? "CSV" : format === "excel" ? "Excel" : "PDF";
+      toast.success(
+        `Exported ${filteredConfirmations.length} decision(s) to ${label} successfully!`,
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Failed to export confirmations report",
+      );
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   const totalPages = Math.ceil(filteredConfirmations.length / pageSize) || 1;
   const paginatedConfirmations = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredConfirmations.slice(start, start + pageSize);
   }, [filteredConfirmations, page, pageSize]);
 
-  const getOutcomeBadge = (outcome: "YES" | "NO" | "MAYBE") => {
-    switch (outcome) {
-      case "YES":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-            <span>YES</span>
-          </span>
-        );
-      case "MAYBE":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-            <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
-            <span>MAYBE (Follow-up)</span>
-          </span>
-        );
-      case "NO":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
-            <XCircle className="w-3.5 h-3.5 text-rose-600" />
-            <span>NO (Closed Lost)</span>
-          </span>
-        );
+  const getOutcomeBadge = (outcome: "YES" | "NO") => {
+    if (outcome === "YES") {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Confirmed (YES)</span>
+        </span>
+      );
     }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+        <span>Rejected (NO)</span>
+      </span>
+    );
   };
 
   return (
@@ -340,19 +322,17 @@ export default function ClientConfirmationsPage() {
             <span>Client Confirmation Hub</span>
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Post-meeting outcome gate: finalize won deals, trigger follow-ups,
-            bind proposals, and graduate clients.
+            Post-meeting outcome gate: review confirmed and rejected client
+            decisions, bind proposals, and graduate clients.
           </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export CSV</span>
-          </button>
+          <ExportReportMenu
+            onExport={handleExportReport}
+            exportingFormat={exportingFormat}
+            disabled={loading}
+          />
 
           <button
             onClick={() => fetchConfirmations()}
@@ -375,10 +355,13 @@ export default function ClientConfirmationsPage() {
       </div>
 
       {/* Outcome Filter Pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
           type="button"
-          onClick={() => setOutcomeFilter("")}
+          onClick={() => {
+            setOutcomeFilter("");
+            setPage(1);
+          }}
           className={`p-3 rounded-xl border text-left transition ${
             outcomeFilter === ""
               ? "border-blue-500 bg-blue-50/80 ring-2 ring-blue-500/20"
@@ -395,7 +378,10 @@ export default function ClientConfirmationsPage() {
 
         <button
           type="button"
-          onClick={() => setOutcomeFilter("YES")}
+          onClick={() => {
+            setOutcomeFilter("YES");
+            setPage(1);
+          }}
           className={`p-3 rounded-xl border text-left transition ${
             outcomeFilter === "YES"
               ? "border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-500/20"
@@ -403,7 +389,7 @@ export default function ClientConfirmationsPage() {
           }`}
         >
           <div className="text-[10px] font-bold text-slate-400 uppercase">
-            Deals Won (YES)
+            Confirmed (YES)
           </div>
           <div className="text-xl font-bold text-emerald-600 mt-1">
             {confirmations.filter((c) => c.clientConfirmation === "YES").length}
@@ -412,27 +398,10 @@ export default function ClientConfirmationsPage() {
 
         <button
           type="button"
-          onClick={() => setOutcomeFilter("MAYBE")}
-          className={`p-3 rounded-xl border text-left transition ${
-            outcomeFilter === "MAYBE"
-              ? "border-amber-500 bg-amber-50/80 ring-2 ring-amber-500/20"
-              : "border-slate-200 bg-white hover:border-slate-300"
-          }`}
-        >
-          <div className="text-[10px] font-bold text-slate-400 uppercase">
-            Follow-Up (MAYBE)
-          </div>
-          <div className="text-xl font-bold text-amber-600 mt-1">
-            {
-              confirmations.filter((c) => c.clientConfirmation === "MAYBE")
-                .length
-            }
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setOutcomeFilter("NO")}
+          onClick={() => {
+            setOutcomeFilter("NO");
+            setPage(1);
+          }}
           className={`p-3 rounded-xl border text-left transition ${
             outcomeFilter === "NO"
               ? "border-rose-500 bg-rose-50/80 ring-2 ring-rose-500/20"
@@ -440,7 +409,7 @@ export default function ClientConfirmationsPage() {
           }`}
         >
           <div className="text-[10px] font-bold text-slate-400 uppercase">
-            Closed Lost (NO)
+            Rejected (NO)
           </div>
           <div className="text-xl font-bold text-rose-600 mt-1">
             {confirmations.filter((c) => c.clientConfirmation === "NO").length}
@@ -494,8 +463,8 @@ export default function ClientConfirmationsPage() {
               No Confirmations Recorded
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-              Complete a client meeting and record an outcome (YES, NO, or
-              MAYBE) to view records here.
+              Complete a client meeting and record a confirmed (YES) or
+              rejected (NO) outcome to view records here.
             </p>
           </div>
         ) : (
@@ -611,17 +580,10 @@ export default function ClientConfirmationsPage() {
                             ).toLocaleDateString()}
                           </div>
                         )}
-                      {item.clientConfirmation === "MAYBE" &&
-                        item.followUpDate && (
-                          <div className="text-xs text-amber-800 font-semibold">
-                            Follow-up:{" "}
-                            {new Date(item.followUpDate).toLocaleDateString()}
-                          </div>
-                        )}
                       {item.clientConfirmation === "NO" &&
                         item.rejectionReason && (
                           <div className="text-xs text-rose-700 italic">
-                            Lost: {item.rejectionReason}
+                            Rejected: {item.rejectionReason}
                           </div>
                         )}
                     </TableCell>
@@ -762,7 +724,7 @@ export default function ClientConfirmationsPage() {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Client Confirmation Outcome *
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() =>
@@ -775,22 +737,7 @@ export default function ClientConfirmationsPage() {
                     }`}
                   >
                     <TrendingUp className="w-4 h-4 text-emerald-600" />
-                    <span>YES</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, clientConfirmation: "MAYBE" })
-                    }
-                    className={`p-2.5 rounded-lg border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                      formData.clientConfirmation === "MAYBE"
-                        ? "border-amber-600 bg-amber-50 text-amber-800 ring-2 ring-amber-500"
-                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    <HelpCircle className="w-4 h-4 text-amber-600" />
-                    <span>MAYBE (Follow-up)</span>
+                    <span>Confirmed (YES)</span>
                   </button>
 
                   <button
@@ -805,7 +752,7 @@ export default function ClientConfirmationsPage() {
                     }`}
                   >
                     <XCircle className="w-4 h-4 text-rose-600" />
-                    <span>NO (Lost)</span>
+                    <span>Rejected (NO)</span>
                   </button>
                 </div>
               </div>
@@ -864,28 +811,6 @@ export default function ClientConfirmationsPage() {
                         })
                       }
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {formData.clientConfirmation === "MAYBE" && (
-                <div className="space-y-3 bg-amber-50/50 p-3.5 rounded-xl border border-amber-200">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Schedule Follow-Up Date & Time *
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={formData.followUpDate}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          followUpDate: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-                      required
                     />
                   </div>
                 </div>

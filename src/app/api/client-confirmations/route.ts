@@ -27,8 +27,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const outcome = searchParams.get('outcome')?.trim().toUpperCase();
 
-    const query: any = {};
+    const query: any = {
+      clientConfirmation:
+        outcome === 'YES' || outcome === 'NO'
+          ? outcome
+          : { $in: ['YES', 'NO'] },
+    };
     if (isAdmin) {
       query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
     } else if (!isSuperAdmin) {

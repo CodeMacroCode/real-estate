@@ -207,6 +207,8 @@ export function DomainsClient({
   const showHostnameError =
     (hostnameTouched || formSubmitted) && Boolean(clientValidationError);
 
+  const agenciesLoadedRef = React.useRef(false);
+
   const fetchDomainsAndAgencies = useCallback(
     async (silent = false) => {
       if (silent) {
@@ -259,11 +261,12 @@ export function DomainsClient({
               agencySlug: a.agencySlug,
               email: a.email || a.adminEmail,
             }));
+            agenciesLoadedRef.current = true;
             setAgencies(normalizedAgencies);
             setSelectedAgencyId((prev) =>
               prev || normalizedAgencies[0]?._id || ""
             );
-          } else if (agencies.length === 0) {
+          } else if (!agenciesLoadedRef.current) {
             // Fallback to /api/website-management if agencies weren't included
             try {
               const wmRes = await fetch("/api/website-management?limit=100", {
@@ -280,6 +283,7 @@ export function DomainsClient({
                     email: p.adminEmail,
                   })
                 );
+                agenciesLoadedRef.current = true;
                 setAgencies(portalAgencies);
                 setSelectedAgencyId((prev) =>
                   prev || portalAgencies[0]?._id || ""
@@ -298,7 +302,7 @@ export function DomainsClient({
         setRefreshing(false);
       }
     },
-    [searchQuery, statusFilter, agencyFilter, isSuperAdmin, agencies.length]
+    [searchQuery, statusFilter, agencyFilter, isSuperAdmin]
   );
 
   useEffect(() => {

@@ -44,6 +44,15 @@ import {
 } from "@/components/ui/table";
 import { SearchSelect, SearchOption } from "@/components/ui/SearchSelect";
 import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
+import {
+  ExportReportFormat,
+  ExportReportMenu,
+} from "@/components/ui/ExportReportMenu";
+import { fetchAllPaginatedExportItems } from "@/lib/export/tabularReportExport";
+import {
+  ExportableProject,
+  exportProjectsReport,
+} from "@/lib/export/realEstateModuleExports";
 
 interface ProjectsClientProps {
   initialProjects: SsrProjectItem[];
@@ -74,6 +83,8 @@ export function ProjectsClient({
   const [statusFilter, setStatusFilter] = useState(searchParams.get("constructionStatus") || "ALL");
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [exportingFormat, setExportingFormat] =
+    useState<ExportReportFormat | null>(null);
   const [isStructureModalOpen, setIsStructureModalOpen] = useState(false);
   const [selectedStructureData, setSelectedStructureData] = useState<any>(null);
   const [loadingStructure, setLoadingStructure] = useState(false);
@@ -606,6 +617,65 @@ export function ProjectsClient({
     }
   };
 
+  const handleExportReport = async (format: ExportReportFormat) => {
+    if (exportingFormat) return;
+    setExportingFormat(format);
+    try {
+      const exportRows: ExportableProject[] =
+        pagination.total <= initialProjects.length && initialProjects.length > 0
+          ? initialProjects
+          : await fetchAllPaginatedExportItems<ExportableProject>(
+              async (pageNum, pageLimit) => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("page", String(pageNum));
+                params.set("limit", String(pageLimit));
+                const res = await fetch(`/api/projects?${params.toString()}`);
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                  throw new Error(
+                    json.error || "Failed to load projects for export",
+                  );
+                }
+                const meta = json.meta || json.pagination || {};
+                return {
+                  items: json.data || [],
+                  totalPages: meta.totalPages || 1,
+                };
+              },
+            );
+
+      if (exportRows.length === 0) {
+        toast.error("No projects match the current filters to export");
+        return;
+      }
+
+      const activeFilters = [
+        projectTypeFilter !== "ALL" ? `Type: ${projectTypeFilter}` : "",
+        statusFilter !== "ALL" ? `Stage: ${statusFilter}` : "",
+        search.trim() ? `Search: "${search.trim()}"` : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      exportProjectsReport(format, exportRows, {
+        generatedBy: currentUser?.name || "System",
+        filterSummary: activeFilters || "All Projects",
+      });
+
+      const label =
+        format === "csv" ? "CSV" : format === "excel" ? "Excel" : "PDF";
+      toast.success(
+        `Exported ${exportRows.length} project(s) to ${label} successfully!`,
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to export projects",
+      );
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -620,17 +690,25 @@ export function ProjectsClient({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            refreshMasterOptions();
-            setIsCreateModalOpen(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
-        >
-          <Plus className="size-4" />
-          Create New Project
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <ExportReportMenu
+            onExport={handleExportReport}
+            exportingFormat={exportingFormat}
+            disabled={isPending}
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              refreshMasterOptions();
+              setIsCreateModalOpen(true);
+            }}
+            className="inline-flex h-9 items-center gap-2 px-4 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
+          >
+            <Plus className="size-4" />
+            Create New Project
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

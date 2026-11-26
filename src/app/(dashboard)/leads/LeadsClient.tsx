@@ -29,8 +29,18 @@ import {
   Loader2,
 } from "lucide-react";
 import ScheduleAppointmentModal from "./ScheduleAppointmentModal";
+import BulkImportLeadsModal from "./BulkImportLeadsModal";
 import Lead360Modal from "@/components/Lead360Modal";
 import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
+import {
+  ExportReportFormat,
+  ExportReportMenu,
+} from "@/components/ui/ExportReportMenu";
+import {
+  exportLeadsToCsv,
+  exportLeadsToExcel,
+  exportLeadsToPdf,
+} from "@/lib/export/leadReportExport";
 import { Spinner } from "@/components/ui/Spinner";
 import {
   SearchableSelect,
@@ -128,6 +138,8 @@ export function LeadsClient({
   const [roleSlug, setRoleSlug] = useState<string>(initialRoleSlug);
   const [leads, setLeads] = useState<LeadItem[]>(initialLeads);
   const [loading, setLoading] = useState(false);
+  const [exportingFormat, setExportingFormat] =
+    useState<ExportReportFormat | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
@@ -205,6 +217,7 @@ export function LeadsClient({
   const [selectedLeadIdFor360, setSelectedLeadIdFor360] = useState<
     string | null
   >(null);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   // Form base state
   const [formAdminId, setFormAdminId] = useState("");
@@ -443,6 +456,101 @@ export function LeadsClient({
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+  const fetchAllFilteredLeadsForExport = useCallback(async () => {
+    const buildParams = (targetPage: number) => {
+      const params = new URLSearchParams({
+        page: targetPage.toString(),
+        limit: "100",
+      });
+      if (search) params.append("search", search);
+      if (statusFilter) params.append("status", statusFilter);
+      if (sourceFilter) params.append("source", sourceFilter);
+      if (selectedAdminId) params.append("adminId", selectedAdminId);
+      if (
+        dateRange.startStr ||
+        (dateRange.start && !isNaN(dateRange.start.getTime()))
+      ) {
+        params.append(
+          "startDate",
+          dateRange.startStr || dateRange.start!.toISOString(),
+        );
+      }
+      if (
+        dateRange.endStr ||
+        (dateRange.end && !isNaN(dateRange.end.getTime()))
+      ) {
+        params.append(
+          "endDate",
+          dateRange.endStr || dateRange.end!.toISOString(),
+        );
+      }
+      return params;
+    };
+
+    const firstRes = await fetch(`/api/leads?${buildParams(1).toString()}`);
+    const firstJson = await firstRes.json();
+    if (!firstRes.ok || !firstJson.success) {
+      throw new Error(firstJson.error || "Failed to fetch leads for export");
+    }
+
+    const allRows: LeadItem[] = [...(firstJson.data || [])];
+    const pagesCount = firstJson.pagination?.totalPages || 1;
+
+    for (let p = 2; p <= pagesCount; p++) {
+      const res = await fetch(`/api/leads?${buildParams(p).toString()}`);
+      const json = await res.json();
+      if (res.ok && json.success && Array.isArray(json.data)) {
+        allRows.push(...json.data);
+      }
+    }
+
+    return allRows;
+  }, [search, statusFilter, sourceFilter, selectedAdminId, dateRange]);
+
+  const handleExportReport = async (format: ExportReportFormat) => {
+    if (exportingFormat) return;
+    setExportingFormat(format);
+    try {
+      const exportRows =
+        totalCount <= leads.length && leads.length > 0
+          ? leads
+          : await fetchAllFilteredLeadsForExport();
+
+      if (exportRows.length === 0) {
+        toast.error("No leads to export");
+        return;
+      }
+
+      const activeFilters = [
+        statusFilter ? `Status=${statusFilter}` : "",
+        sourceFilter ? `Source=${sourceFilter}` : "",
+        search ? `Search="${search}"` : "",
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      const meta = {
+        generatedBy: currentUser?.name || currentUser?.email || "",
+        filterSummary: activeFilters || "All Leads",
+      };
+
+      if (format === "csv") {
+        exportLeadsToCsv(exportRows);
+        toast.success(`Exported ${exportRows.length} leads to CSV!`);
+      } else if (format === "excel") {
+        exportLeadsToExcel(exportRows, meta);
+        toast.success(`Exported ${exportRows.length} leads to Excel!`);
+      } else {
+        exportLeadsToPdf(exportRows, meta);
+        toast.success(`Exported ${exportRows.length} leads to PDF!`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || `Failed to export ${format.toUpperCase()} report`);
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   // FETCH THE SPECIFIC ASSIGNED DYNAMIC FORM FOR CURRENT/SELECTED ADMIN
   const fetchAssignedForm = useCallback(async (targetAdmin?: string) => {
@@ -748,10 +856,10 @@ export function LeadsClient({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <PhoneIncoming className="w-6 h-6 text-blue-600" />
+            <PhoneIncoming className="w-6 h-6 text-blue-600 shrink-0" />
             Leads &amp; Inquiries
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -763,17 +871,33 @@ export function LeadsClient({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsBulkImportOpen(true)}
+            className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition shadow-xs whitespace-nowrap"
+          >
+            <Upload className="w-3.5 h-3.5 text-blue-600" />
+            <span>Bulk Import</span>
+          </button>
+
+          <ExportReportMenu
+            onExport={handleExportReport}
+            exportingFormat={exportingFormat}
+            disabled={loading}
+          />
+
           <button
             onClick={() => fetchLeads()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm"
+            className="flex h-9 items-center gap-1.5 px-3 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-xs whitespace-nowrap"
           >
-            <RefreshCw className="w-4 h-4 text-slate-400" />
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
           </button>
+
           <button
             onClick={handleOpenAddModal}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition"
+            className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-xs whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>Add New Lead</span>
@@ -1687,6 +1811,18 @@ export function LeadsClient({
         }}
         leadId={selectedLeadIdFor360}
       />
+
+      {/* BULK IMPORT LEADS MODAL */}
+      {isBulkImportOpen && (
+        <BulkImportLeadsModal
+          isOpen={isBulkImportOpen}
+          onClose={() => setIsBulkImportOpen(false)}
+          onSuccess={() => fetchLeads()}
+          isSuperAdmin={isSuperAdmin}
+          adminOptions={adminOptions}
+          onSearchAdmins={fetchAdmins}
+        />
+      )}
     </div>
   );
 }

@@ -1,91 +1,134 @@
 import { NextRequest } from "next/server";
 import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
-import { getGoogleCalendarAuthUrl } from "@/services/googleCalendar.service";
+import {
+  buildGoogleCalendarRedirectUri,
+  getGoogleCalendarAuthUrl,
+  resolveRequestOrigin,
+} from "@/services/googleCalendar.service";
 import GoogleCalendarConfig from "@/models/GoogleCalendarConfig.model";
+import { AdminSocialSettings } from "@/models/AdminSocialSettings";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  try {
-    const authContext = await getAuthenticatedContext(req);
-    if (!authContext) {
-      return errorResponse("Unauthorized", 401);
-    }
+async function initiateGoogleCalendarOAuth(
+  req: NextRequest,
+  clientIdInput?: string,
+  clientSecretInput?: string,
+) {
+  const authContext = await getAuthenticatedContext(req);
+  if (!authContext) {
+    return errorResponse("Unauthorized", 401);
+  }
 
-    await connectToDatabase();
+  const roleSlug = authContext.role?.slug || "";
+  if (roleSlug !== "admin") {
+    return errorResponse(
+      "Forbidden: Only Admin users can configure Google Calendar for their organization.",
+      403,
+    );
+  }
 
-    const { searchParams } = new URL(req.url);
-    const clientIdParam = searchParams.get("clientId")?.trim();
-    const clientSecretParam = searchParams.get("clientSecret")?.trim();
-    const queryAdminId = searchParams.get("adminId")?.trim();
+  await connectToDatabase();
 
-    const roleSlug = authContext.role?.slug || "";
-    let effectiveAdminId: string;
+  const effectiveAdminId = authContext.user._id.toString();
+  const adminObjectId = new mongoose.Types.ObjectId(effectiveAdminId);
 
-    if (roleSlug === "admin") {
-      effectiveAdminId = authContext.user._id.toString();
-    } else if (roleSlug === "super_admin" && queryAdminId) {
-      effectiveAdminId = queryAdminId;
-    } else if (authContext.user.parentAdminId) {
-      effectiveAdminId = authContext.user.parentAdminId.toString();
-    } else {
-      effectiveAdminId = authContext.user._id.toString();
-    }
+  const existingConfig: any = await GoogleCalendarConfig.findOne({
+    adminId: adminObjectId,
+  }).lean();
 
-    // Check existing config if custom credentials aren't passed
-    const existingConfig: any = await GoogleCalendarConfig.findOne({
-      adminId: new mongoose.Types.ObjectId(effectiveAdminId),
-    }).lean();
+  const effectiveClientId =
+    clientIdInput?.trim() || existingConfig?.clientId || "";
+  const effectiveClientSecret =
+    clientSecretInput?.trim() || existingConfig?.clientSecret || "";
 
-    const effectiveClientId =
-      clientIdParam ||
-      existingConfig?.clientId ||
-      process.env.GOOGLE_CALENDAR_CLIENT_ID ||
-      process.env.GOOGLE_CLIENT_ID;
+  if (!effectiveClientId || !effectiveClientSecret) {
+    return errorResponse(
+      "Google OAuth Client ID and Secret are required for your Admin account.",
+      400,
+    );
+  }
 
-    const effectiveClientSecret =
-      clientSecretParam ||
-      existingConfig?.clientSecret ||
-      process.env.GOOGLE_CALENDAR_CLIENT_SECRET ||
-      process.env.GOOGLE_CLIENT_SECRET;
-
-    if (!effectiveClientId || !effectiveClientSecret) {
-      return errorResponse(
-        "Google OAuth Client ID and Secret are required to initiate Google Calendar connection.",
-        400,
-      );
-    }
-
-    // If custom credentials were provided in the request, save/persist them so tokens match
-    if (clientIdParam && clientSecretParam) {
-      await GoogleCalendarConfig.findOneAndUpdate(
-        { adminId: new mongoose.Types.ObjectId(effectiveAdminId) },
+  // Persist this Admin's own credentials separately without marking connected until OAuth succeeds
+  if (clientIdInput?.trim() && clientSecretInput?.trim()) {
+    await Promise.all([
+      GoogleCalendarConfig.findOneAndUpdate(
+        { adminId: adminObjectId },
         {
-          adminId: new mongoose.Types.ObjectId(effectiveAdminId),
-          clientId: clientIdParam,
-          clientSecret: clientSecretParam,
+          $set: {
+            adminId: adminObjectId,
+            clientId: effectiveClientId,
+            clientSecret: effectiveClientSecret,
+          },
         },
         { upsert: true, new: true },
-      );
-    }
+      ),
+      AdminSocialSettings.findOneAndUpdate(
+        { adminId: adminObjectId },
+        {
+          $set: {
+            "googleCalendar.clientId": effectiveClientId,
+            "googleCalendar.clientSecret": effectiveClientSecret,
+          },
+        },
+        { upsert: true },
+      ),
+    ]);
+  }
 
-    const authUrl = getGoogleCalendarAuthUrl({
-      adminId: effectiveAdminId,
-      userId: authContext.user._id.toString(),
-      clientId: effectiveClientId,
-      clientSecret: effectiveClientSecret,
-    });
+  const origin = resolveRequestOrigin(req);
+  const redirectUri = buildGoogleCalendarRedirectUri(origin);
 
-    return jsonResponse({
-      url: authUrl,
-      clientId: effectiveClientId,
-    });
+  const authUrl = getGoogleCalendarAuthUrl({
+    adminId: effectiveAdminId,
+    userId: effectiveAdminId,
+    clientId: effectiveClientId,
+    clientSecret: effectiveClientSecret,
+    origin,
+    redirectUri,
+  });
+
+  return jsonResponse({
+    url: authUrl,
+    clientId: effectiveClientId,
+    redirectUri,
+  });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    return await initiateGoogleCalendarOAuth(
+      req,
+      typeof body?.clientId === "string" ? body.clientId : undefined,
+      typeof body?.clientSecret === "string" ? body.clientSecret : undefined,
+    );
   } catch (error: any) {
-    console.error("[GoogleCalendarAuthError]:", error);
-    return errorResponse(error.message || "Failed to generate Google Calendar auth URL", 500);
+    console.error("[GoogleCalendarAuthError POST]:", error);
+    return errorResponse(
+      error.message || "Failed to generate Google Calendar auth URL",
+      500,
+    );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    return await initiateGoogleCalendarOAuth(
+      req,
+      searchParams.get("clientId") || undefined,
+      searchParams.get("clientSecret") || undefined,
+    );
+  } catch (error: any) {
+    console.error("[GoogleCalendarAuthError GET]:", error);
+    return errorResponse(
+      error.message || "Failed to generate Google Calendar auth URL",
+      500,
+    );
   }
 }
 

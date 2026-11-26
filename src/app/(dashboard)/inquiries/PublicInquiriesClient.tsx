@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { toast } from "sonner";
 import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
+import {
+  ExportReportFormat,
+  ExportReportMenu,
+} from "@/components/ui/ExportReportMenu";
+import { fetchAllPaginatedExportItems } from "@/lib/export/tabularReportExport";
+import { exportInquiriesReport } from "@/lib/export/realEstateModuleExports";
 import {
   Table,
   TableHeader,
@@ -59,6 +66,8 @@ export default function PublicInquiriesClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [exportingFormat, setExportingFormat] =
+    useState<ExportReportFormat | null>(null);
 
   const currentType = searchParams.get("type") || "All";
 
@@ -138,6 +147,68 @@ export default function PublicInquiriesClient({
     }
   };
 
+  const handleExportReport = async (format: ExportReportFormat) => {
+    if (exportingFormat) return;
+    setExportingFormat(format);
+    try {
+      const exportRows: PublicInquiryItem[] =
+        initialPagination.total <= initialInquiries.length &&
+        initialInquiries.length > 0
+          ? initialInquiries
+          : await fetchAllPaginatedExportItems<PublicInquiryItem>(
+              async (pageNum, pageLimit) => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("page", String(pageNum));
+                params.set("limit", String(pageLimit));
+                const res = await fetch(`/api/inquiries?${params.toString()}`);
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                  throw new Error(
+                    json.error || "Failed to load inquiries for export",
+                  );
+                }
+                const meta = json.meta || json.pagination || {};
+                return {
+                  items: json.data || [],
+                  totalPages: meta.totalPages || 1,
+                };
+              },
+            );
+
+      if (exportRows.length === 0) {
+        toast.error("No inquiries match the current filters to export");
+        return;
+      }
+
+      const startDateParam = searchParams.get("startDate");
+      const endDateParam = searchParams.get("endDate");
+      const activeFilters = [
+        currentType !== "All" ? `Type: ${currentType}` : "",
+        startDateParam || endDateParam
+          ? `Date: ${startDateParam || "..."} to ${endDateParam || "..."}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      exportInquiriesReport(format, exportRows, {
+        filterSummary: activeFilters || "All Website Inquiries",
+      });
+
+      const label =
+        format === "csv" ? "CSV" : format === "excel" ? "Excel" : "PDF";
+      toast.success(
+        `Exported ${exportRows.length} inquir(ies) to ${label} successfully!`,
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to export inquiries",
+      );
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Table Toolbar */}
@@ -177,6 +248,12 @@ export default function PublicInquiriesClient({
               <option value="General">General</option>
             </select>
           </div>
+
+          <ExportReportMenu
+            onExport={handleExportReport}
+            exportingFormat={exportingFormat}
+            disabled={isPending}
+          />
         </div>
       </div>
 

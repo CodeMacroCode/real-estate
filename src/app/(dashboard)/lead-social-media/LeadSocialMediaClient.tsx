@@ -1,0 +1,541 @@
+"use client";
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  FaFacebookF,
+  FaGoogle,
+  FaLinkedin,
+  FaCalendarAlt,
+  FaSync,
+  FaCheckCircle,
+} from "react-icons/fa";
+import { toast } from "sonner";
+import { SocialPlatformCard, SocialPlatform } from "./SocialPlatformCard";
+import { MetaAdsModal } from "./MetaAdsModal";
+import { GoogleAdsModal } from "./GoogleAdsModal";
+import { GoogleCalendarModal } from "./GoogleCalendarModal";
+import { LinkedInAdsModal } from "./LinkedInAdsModal";
+
+interface LeadSocialMediaInitialData {
+  adminId: string;
+  settings: any;
+  leadCounts: {
+    meta: number;
+    googleAds: number;
+    linkedIn: number;
+    calendar: number;
+  };
+  googleAdsConfig: {
+    isActive: boolean;
+    webhookKey: string;
+    webhookUrl: string;
+    leadsIngestedCount: number;
+  };
+  activeFormName: string | null;
+}
+
+interface LeadSocialMediaClientProps {
+  initialAdminId?: string;
+  initialData?: LeadSocialMediaInitialData;
+}
+
+export function LeadSocialMediaClient({
+  initialAdminId = "",
+  initialData,
+}: LeadSocialMediaClientProps) {
+  const [loading, setLoading] = useState(!initialData);
+  const [adminId, setAdminId] = useState<string>(
+    initialData?.adminId || initialAdminId,
+  );
+  const [activeFormName, setActiveFormName] = useState<string | null>(
+    initialData?.activeFormName ?? null,
+  );
+  const hasHandledOAuthToastRef = useRef(false);
+  const isFetchingRef = useRef(false);
+  const [leadCounts, setLeadCounts] = useState(
+    initialData?.leadCounts || {
+      meta: 0,
+      googleAds: 0,
+      linkedIn: 0,
+      calendar: 0,
+    },
+  );
+
+  // Settings states
+  const [metaConfig, setMetaConfig] = useState({
+    isActive: Boolean(initialData?.settings?.meta?.isActive),
+    pageId: initialData?.settings?.meta?.pageId || "",
+    pageName: initialData?.settings?.meta?.pageName || "",
+    pageToken: initialData?.settings?.meta?.pageAccessToken || "",
+  });
+
+  const [googleAdsConfig, setGoogleAdsConfig] = useState(
+    initialData?.googleAdsConfig || {
+      isActive: false,
+      webhookKey: "",
+      webhookUrl: "",
+      leadsIngestedCount: 0,
+    },
+  );
+
+  const [linkedInConfig, setLinkedInConfig] = useState({
+    isActive: Boolean(initialData?.settings?.linkedIn?.isActive),
+    adAccountId: initialData?.settings?.linkedIn?.adAccountId || "",
+    formId: initialData?.settings?.linkedIn?.formId || "",
+  });
+
+  const [calendarConfig, setCalendarConfig] = useState({
+    isConnected: Boolean(initialData?.settings?.googleCalendar?.isConnected),
+    accountEmail:
+      initialData?.settings?.googleCalendar?.connectedEmail ||
+      initialData?.settings?.googleCalendar?.calendarEmail ||
+      "",
+    clientId: initialData?.settings?.googleCalendar?.clientId || "",
+  });
+
+  // Dialog open states
+  const [isMetaOpen, setIsMetaOpen] = useState(false);
+  const [isGoogleAdsOpen, setIsGoogleAdsOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isLinkedInOpen, setIsLinkedInOpen] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      setLoading(true);
+      let resolvedAdminId = initialAdminId || adminId;
+
+      if (!resolvedAdminId) {
+        const meRes = await fetch("/api/auth/me");
+        const meData = await meRes.json();
+        if (meData.success && meData.data?.user) {
+          const u = meData.data.user;
+          const roleSlug = meData.data.role?.slug || "";
+          resolvedAdminId =
+            roleSlug === "admin"
+              ? u._id
+              : u.parentAdminId
+                ? u.parentAdminId.toString()
+                : u._id;
+          setAdminId(resolvedAdminId);
+        }
+      }
+
+      const res = await fetch("/api/social-settings");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || json.error || "Failed to fetch settings");
+
+      const payload = json.data || json;
+      const settings = payload.settings || {};
+
+      const currentAdminId = payload.adminId || resolvedAdminId;
+      if (currentAdminId) setAdminId(currentAdminId);
+
+      if (payload.leadCounts) setLeadCounts(payload.leadCounts);
+
+      if (settings?.meta) {
+        setMetaConfig({
+          isActive: Boolean(settings.meta.isActive),
+          pageId: settings.meta.pageId || "",
+          pageName: settings.meta.pageName || "",
+          pageToken: settings.meta.pageAccessToken || "",
+        });
+      }
+
+      if (settings?.linkedIn) {
+        setLinkedInConfig({
+          isActive: Boolean(settings.linkedIn.isActive),
+          adAccountId: settings.linkedIn.adAccountId || "",
+          formId: settings.linkedIn.formId || "",
+        });
+      }
+
+      if (settings?.googleCalendar) {
+        setCalendarConfig({
+          isConnected: Boolean(settings.googleCalendar.isConnected),
+          accountEmail:
+            settings.googleCalendar.connectedEmail ||
+            settings.googleCalendar.calendarEmail ||
+            "",
+          clientId: settings.googleCalendar.clientId || "",
+        });
+      }
+
+      if (currentAdminId) {
+        const [gadsRes, formRes] = await Promise.all([
+          fetch(`/api/google/webhook/${currentAdminId}`),
+          fetch(`/api/forms/assigned?adminId=${currentAdminId}`).catch(
+            () => null,
+          ),
+        ]);
+
+        const gadsData = await gadsRes.json();
+        if (gadsData.success && gadsData.data) {
+          const isGoogleAdsActive =
+            settings?.googleAds?.isActive !== undefined
+              ? Boolean(settings.googleAds.isActive)
+              : Boolean(gadsData.data.isConnected);
+
+          setGoogleAdsConfig({
+            isActive: isGoogleAdsActive,
+            webhookKey: gadsData.data.webhookKey,
+            webhookUrl: gadsData.data.webhookUrl,
+            leadsIngestedCount: gadsData.data.leadsIngestedCount,
+          });
+        }
+
+        if (formRes) {
+          const formData = await formRes.json();
+          if (formData.success && formData.data) {
+            setActiveFormName(
+              formData.data.form?.name || formData.data.name || null,
+            );
+          }
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error loading social integrations");
+    } finally {
+      isFetchingRef.current = false;
+      setLoading(false);
+    }
+  }, [initialAdminId, adminId]);
+
+  useEffect(() => {
+    if (hasHandledOAuthToastRef.current) return;
+    hasHandledOAuthToastRef.current = true;
+
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const gcalSuccess = urlParams.get("gcal_success");
+      const gcalError = urlParams.get("gcal_error");
+      const gcalEmail = urlParams.get("email");
+
+      if (gcalSuccess === "true") {
+        toast.success(
+          gcalEmail
+            ? `Google Calendar successfully connected with ${decodeURIComponent(gcalEmail)}!`
+            : "Google Calendar successfully connected!",
+        );
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (gcalError) {
+        toast.error(
+          `Google Calendar connection error: ${decodeURIComponent(gcalError)}`,
+        );
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, []);
+
+  const handleSaveMeta = async (payload: {
+    pageToken: string;
+    pageId: string;
+    pageName: string;
+  }) => {
+    const res = await fetch("/api/social-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        platform: "meta",
+        config: {
+          isActive: true,
+          pageAccessToken: payload.pageToken,
+          pageId: payload.pageId,
+          pageName: payload.pageName,
+        },
+      }),
+    });
+    if (!res.ok) throw new Error("Failed to save Meta settings");
+    await fetchData();
+  };
+
+  const handleRegenerateGoogleKey = async () => {
+    try {
+      const res = await fetch("/api/social-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: "googleAds",
+          config: {
+            isActive: true,
+            webhookSecretKey: `gads_${Math.random().toString(36).substring(2, 12)}`,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to regenerate key");
+      toast.success("New Google Ads webhook key generated!");
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Could not regenerate key");
+    }
+  };
+
+  const handleSendTestLead = async () => {
+    const res = await fetch("/api/social-settings/test-simulator", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        platform: "googleAds",
+        testPayload: {
+          clientName: "David Miller",
+          clientPhone: "+1 (555) 349-2910",
+          clientEmail: "david.miller@example.com",
+          campaignName: "Luxury Penthouses Campaign",
+        },
+      }),
+    });
+    if (!res.ok) throw new Error("Simulation failed");
+    await fetchData();
+  };
+
+  const handleDisconnect = async (platformName: string) => {
+    try {
+      const res = await fetch("/api/social-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: platformName,
+          config: { isActive: false, isConnected: false },
+        }),
+      });
+      if (!res.ok) throw new Error(`Failed to disconnect ${platformName}`);
+      toast.info(`${platformName} disconnected`);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || "Disconnect failed");
+    }
+  };
+
+  const handleSaveLinkedIn = async (payload: {
+    adAccountId: string;
+    formId: string;
+  }) => {
+    const res = await fetch("/api/social-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        platform: "linkedIn",
+        config: {
+          isActive: true,
+          adAccountId: payload.adAccountId,
+          formId: payload.formId,
+        },
+      }),
+    });
+    if (!res.ok) throw new Error("Failed to save LinkedIn settings");
+    await fetchData();
+  };
+
+  const platforms: SocialPlatform[] = [
+    {
+      id: "meta",
+      name: "Meta Lead Ads (FB & IG)",
+      category: "Paid Social",
+      description:
+        "Capture instant lead form submissions directly from Facebook and Instagram campaigns.",
+      icon: <FaFacebookF className="size-5" />,
+      color: "bg-blue-600",
+    },
+    {
+      id: "googleAds",
+      name: "Google Ads Lead Forms",
+      category: "Ads Lead & Data",
+      description:
+        "Stream lead extension responses instantly into your CRM via secure webhook endpoint and campaigns.",
+      icon: <FaGoogle className="size-5" />,
+      color: "bg-amber-600",
+    },
+    {
+      id: "linkedIn",
+      name: "LinkedIn Lead Gen",
+      category: "B2B Network",
+      description:
+        "Synchronize high-intent leads captured through LinkedIn Sponsored InMail and forms.",
+      icon: <FaLinkedin className="size-5" />,
+      color: "bg-[#0077b5]",
+    },
+    {
+      id: "googleCalendar",
+      name: "Google Calendar & Meet",
+      category: "Scheduling",
+      description:
+        "Automate 2-way client calendar synchronization, invitations, and Google Meet generation.",
+      icon: <FaCalendarAlt className="size-5" />,
+      color: "bg-emerald-600",
+    },
+  ];
+
+  const totalConnected = [
+    metaConfig.isActive,
+    googleAdsConfig.isActive,
+    linkedInConfig.isActive,
+    calendarConfig.isConnected,
+  ].filter(Boolean).length;
+
+  const totalLeads =
+    leadCounts.meta + leadCounts.googleAds + leadCounts.linkedIn;
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Top Action Toolbar */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex h-9 items-center gap-1.5 px-3.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg shadow-xs transition"
+        >
+          <FaSync className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      {/* KPI Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-slate-500 font-medium">
+              Active Integrations
+            </div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">
+              {totalConnected} / 4
+            </div>
+          </div>
+          <div className="size-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <FaCheckCircle className="size-5" />
+          </div>
+        </div>
+
+        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-slate-500 font-medium">
+              Total Automated Ingestions
+            </div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">
+              {totalLeads}
+            </div>
+          </div>
+          <div className="size-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+            {totalLeads}
+          </div>
+        </div>
+
+        <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-slate-500 font-medium">
+              Google Ads Ingested
+            </div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">
+              {leadCounts.googleAds}
+            </div>
+          </div>
+          <div className="size-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <FaGoogle className="size-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Platform Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <SocialPlatformCard
+          platform={platforms[0]}
+          isConnected={metaConfig.isActive}
+          leadsCount={leadCounts.meta}
+          onOpenModal={() => setIsMetaOpen(true)}
+          onDisconnect={() => handleDisconnect("meta")}
+        />
+
+        <SocialPlatformCard
+          platform={platforms[1]}
+          isConnected={googleAdsConfig.isActive}
+          leadsCount={leadCounts.googleAds}
+          onOpenModal={() => setIsGoogleAdsOpen(true)}
+          onDisconnect={() => handleDisconnect("googleAds")}
+        />
+
+        <SocialPlatformCard
+          platform={platforms[2]}
+          isConnected={linkedInConfig.isActive}
+          leadsCount={leadCounts.linkedIn}
+          onOpenModal={() => setIsLinkedInOpen(true)}
+          onDisconnect={() => handleDisconnect("linkedIn")}
+        />
+
+        <SocialPlatformCard
+          platform={platforms[3]}
+          isConnected={calendarConfig.isConnected}
+          leadsCount={leadCounts.calendar}
+          onOpenModal={() => setIsCalendarOpen(true)}
+          onDisconnect={() => handleDisconnect("googleCalendar")}
+        />
+      </div>
+
+      {isMetaOpen && (
+        <MetaAdsModal
+          isOpen={isMetaOpen}
+          onOpenChange={setIsMetaOpen}
+          adminId={adminId}
+          initialToken={metaConfig.pageToken}
+          initialPageId={metaConfig.pageId}
+          initialPageName={metaConfig.pageName}
+          activeFormName={activeFormName}
+          onSave={handleSaveMeta}
+        />
+      )}
+
+      {isGoogleAdsOpen && (
+        <GoogleAdsModal
+          isOpen={isGoogleAdsOpen}
+          onOpenChange={setIsGoogleAdsOpen}
+          webhookUrl={googleAdsConfig.webhookUrl}
+          webhookKey={googleAdsConfig.webhookKey}
+          activeFormName={activeFormName}
+          onRegenerateKey={handleRegenerateGoogleKey}
+          onSendTestLead={handleSendTestLead}
+        />
+      )}
+
+      {isLinkedInOpen && (
+        <LinkedInAdsModal
+          isOpen={isLinkedInOpen}
+          onOpenChange={setIsLinkedInOpen}
+          adminId={adminId}
+          isConnected={linkedInConfig.isActive}
+          initialClientId={linkedInConfig.adAccountId}
+          initialClientSecret={linkedInConfig.formId}
+          onSave={async ({ clientId, clientSecret }) => {
+            await handleSaveLinkedIn({
+              adAccountId: clientId,
+              formId: clientSecret,
+            });
+          }}
+        />
+      )}
+
+      {isCalendarOpen && (
+        <GoogleCalendarModal
+          isOpen={isCalendarOpen}
+          onOpenChange={setIsCalendarOpen}
+          adminId={adminId}
+          isConnected={calendarConfig.isConnected}
+          connectedEmail={calendarConfig.accountEmail}
+          initialClientId={calendarConfig.clientId}
+          onSave={async ({ clientId, clientSecret }) => {
+            const res = await fetch("/api/social-settings", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                platform: "googleCalendar",
+                config: {
+                  clientId,
+                  clientSecret,
+                },
+              }),
+            });
+            if (!res.ok) throw new Error("Failed to save Calendar settings");
+          }}
+        />
+      )}
+    </div>
+  );
+}

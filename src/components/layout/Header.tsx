@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -44,6 +44,7 @@ export function Header({ user }: HeaderProps) {
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [isExitingImpersonation, setIsExitingImpersonation] = useState(false);
   const [dynamicBreadcrumbLabels, setDynamicBreadcrumbLabels] = useState<Record<string, string>>({});
+  const fetchedBreadcrumbSegmentsRef = useRef<Set<string>>(new Set());
 
   const fetchSessions = async () => {
     setIsLoadingSessions(true);
@@ -68,7 +69,7 @@ export function Header({ user }: HeaderProps) {
     fetchSessions();
   };
 
-  // Listen to breadcrumb updates from child pages or fetch client name when on client-information/[id]
+  // Listen to breadcrumb updates from child pages
   useEffect(() => {
     const handleUpdate = (e: CustomEvent) => {
       if (e.detail?.segment && e.detail?.label) {
@@ -80,16 +81,24 @@ export function Header({ user }: HeaderProps) {
     };
 
     window.addEventListener('updateBreadcrumbLabel' as any, handleUpdate);
+    return () => {
+      window.removeEventListener('updateBreadcrumbLabel' as any, handleUpdate);
+    };
+  }, []);
 
-    // Auto-resolve MongoDB ObjectId when on client-information/[id] or projects/[id]
+  // Auto-resolve MongoDB ObjectId / slug once per pathname change
+  useEffect(() => {
     const segments = pathname.split('/').filter(Boolean);
     const lastSeg = segments[segments.length - 1];
+    if (!lastSeg || fetchedBreadcrumbSegmentsRef.current.has(lastSeg)) {
+      return;
+    }
+
     if (
       segments.includes('client-information') &&
-      lastSeg &&
-      /^[0-9a-fA-F]{24}$/.test(lastSeg) &&
-      !dynamicBreadcrumbLabels[lastSeg]
+      /^[0-9a-fA-F]{24}$/.test(lastSeg)
     ) {
+      fetchedBreadcrumbSegmentsRef.current.add(lastSeg);
       fetch(`/api/clients/${lastSeg}`)
         .then((res) => res.json())
         .then((json) => {
@@ -101,14 +110,8 @@ export function Header({ user }: HeaderProps) {
           }
         })
         .catch(() => {});
-    }
-
-    if (
-      segments.includes('projects') &&
-      lastSeg &&
-      lastSeg !== 'projects' &&
-      !dynamicBreadcrumbLabels[lastSeg]
-    ) {
+    } else if (segments.includes('projects') && lastSeg !== 'projects') {
+      fetchedBreadcrumbSegmentsRef.current.add(lastSeg);
       fetch(`/api/projects/${lastSeg}`)
         .then((res) => res.json())
         .then((json) => {
@@ -122,11 +125,7 @@ export function Header({ user }: HeaderProps) {
         })
         .catch(() => {});
     }
-
-    return () => {
-      window.removeEventListener('updateBreadcrumbLabel' as any, handleUpdate);
-    };
-  }, [pathname, dynamicBreadcrumbLabels]);
+  }, [pathname]);
 
   const handleExitImpersonation = async () => {
     setIsExitingImpersonation(true);

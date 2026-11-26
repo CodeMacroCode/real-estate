@@ -2,11 +2,10 @@ import { NextRequest } from "next/server";
 import { getAuthenticatedContext } from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { AdminSocialSettings } from "@/models/AdminSocialSettings";
-import { Lead } from "@/models/Lead";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
+import { getAdminSocialSettingsData } from "@/services/socialSettingsService";
 import mongoose from "mongoose";
-import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +16,6 @@ export async function GET(req: NextRequest) {
       return errorResponse("Unauthorized", 401);
     }
 
-    await connectToDatabase();
-
     const roleSlug = authContext.role?.slug || "";
     let targetAdminId: mongoose.Types.ObjectId;
 
@@ -26,10 +23,14 @@ export async function GET(req: NextRequest) {
       targetAdminId = new mongoose.Types.ObjectId(authContext.user._id);
     } else if (roleSlug === "super_admin") {
       const { searchParams } = new URL(req.url);
-      const queryAdminId = searchParams.get("adminId");
-      targetAdminId = queryAdminId
-        ? new mongoose.Types.ObjectId(queryAdminId)
-        : new mongoose.Types.ObjectId(authContext.user._id);
+      const queryAdminId = searchParams.get("adminId")?.trim();
+      if (!queryAdminId || !mongoose.Types.ObjectId.isValid(queryAdminId)) {
+        return errorResponse(
+          "Forbidden: Lead social settings are managed per Admin account.",
+          403,
+        );
+      }
+      targetAdminId = new mongoose.Types.ObjectId(queryAdminId);
     } else {
       // Sub-Role
       if (!authContext.user.parentAdminId) {
@@ -43,101 +44,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    let settings: any = await AdminSocialSettings.findOne({
-      adminId: targetAdminId,
-    }).lean();
-
-    if (!settings) {
-      // Create initial settings document with a default secret key for Google Ads
-      const initialKey = `gads_${crypto.randomBytes(16).toString("hex")}`;
-      const created = await AdminSocialSettings.create({
-        adminId: targetAdminId,
-        meta: { isActive: false, leadGenFormIds: [] },
-        linkedIn: { isActive: false },
-        googleAds: { isActive: false, webhookSecretKey: initialKey },
-        googleCalendar: { isConnected: false },
-      });
-      settings = created.toObject();
-    }
-
-    // Also check dedicated integration collections to ensure two-way sync
-    const [GoogleCalendarConfigModule, MetaConnectionModule, GoogleAdsConfigModule] =
-      await Promise.all([
-        import("@/models/GoogleCalendarConfig.model"),
-        import("@/models/MetaConnection.model"),
-        import("@/models/GoogleAdsConfig.model"),
-      ]);
-
-    const GoogleCalendarConfig = GoogleCalendarConfigModule.default;
-    const MetaConnection = MetaConnectionModule.default;
-    const GoogleAdsConfig = GoogleAdsConfigModule.default;
-
-    const [gcalConfig, metaConn, gadsConfig]: [any, any, any] = await Promise.all([
-      GoogleCalendarConfig.findOne({ adminId: targetAdminId }).lean(),
-      MetaConnection.findOne({ adminId: targetAdminId }).lean(),
-      GoogleAdsConfig.findOne({ adminId: targetAdminId }).lean(),
-    ]);
-
-    const isCalendarConnected = Boolean(
-      settings?.googleCalendar?.isConnected || gcalConfig?.isConnected,
-    );
-    const calendarEmail =
-      settings?.googleCalendar?.connectedEmail ||
-      settings?.googleCalendar?.calendarEmail ||
-      gcalConfig?.accountEmail ||
-      "";
-
-    const isMetaActive = Boolean(
-      settings?.meta?.isActive || metaConn?.isConnected,
-    );
-
-    const isGoogleAdsActive = Boolean(
-      settings?.googleAds?.isActive || gadsConfig?.isConnected,
-    );
-
-    if (settings) {
-      settings.googleCalendar = {
-        ...settings.googleCalendar,
-        isConnected: isCalendarConnected,
-        connectedEmail: calendarEmail,
-        calendarEmail: calendarEmail,
-        clientId: settings?.googleCalendar?.clientId || gcalConfig?.clientId || "",
-      };
-
-      settings.meta = {
-        ...settings.meta,
-        isActive: isMetaActive,
-        pageId: settings?.meta?.pageId || metaConn?.pageId || "",
-        pageName: settings?.meta?.pageName || metaConn?.pageName || "",
-        pageAccessToken: settings?.meta?.pageAccessToken || metaConn?.pageToken || "",
-      };
-
-      settings.googleAds = {
-        ...settings.googleAds,
-        isActive: isGoogleAdsActive,
-        webhookSecretKey:
-          settings?.googleAds?.webhookSecretKey || gadsConfig?.webhookKey || "",
-        customerId: settings?.googleAds?.customerId || gadsConfig?.customerId || "",
-      };
-    }
-
-    // Count leads by channel for this admin
-    const [metaLeads, googleLeads, linkedInLeads] = await Promise.all([
-      Lead.countDocuments({ adminId: targetAdminId, source: "Meta" }),
-      Lead.countDocuments({ adminId: targetAdminId, source: "GoogleAds" }),
-      Lead.countDocuments({ adminId: targetAdminId, source: "LinkedIn" }),
-    ]);
-
-    return jsonResponse({
-      settings,
-      leadCounts: {
-        meta: metaLeads,
-        googleAds: googleLeads,
-        linkedIn: linkedInLeads,
-        calendar: isCalendarConnected ? 1 : 0,
-      },
-      adminId: targetAdminId.toString(),
-    });
+    const payload = await getAdminSocialSettingsData(targetAdminId);
+    return jsonResponse(payload);
   } catch (error: any) {
     return errorResponse(
       error.message || "Failed to fetch social settings",
@@ -154,9 +62,9 @@ export async function POST(req: NextRequest) {
     }
 
     const roleSlug = authContext.role?.slug || "";
-    if (roleSlug !== "admin" && roleSlug !== "super_admin") {
+    if (roleSlug !== "admin") {
       return errorResponse(
-        "Only an Admin or Super Admin can update social credentials",
+        "Forbidden: Only an Admin user can configure social and calendar integrations for their organization.",
         403,
       );
     }
@@ -164,12 +72,10 @@ export async function POST(req: NextRequest) {
     await connectToDatabase();
 
     const body = await req.json();
-    const { platform, config, adminId } = body;
+    const { platform, config } = body;
 
-    const targetAdminId =
-      roleSlug === "super_admin" && adminId
-        ? new mongoose.Types.ObjectId(adminId)
-        : new mongoose.Types.ObjectId(authContext.user._id);
+    // Strictly scope updates to the authenticated Admin's own ID
+    const targetAdminId = new mongoose.Types.ObjectId(authContext.user._id);
 
     let settings = await AdminSocialSettings.findOne({
       adminId: targetAdminId,
@@ -208,16 +114,44 @@ export async function POST(req: NextRequest) {
         ...config,
       };
     } else if (platform === "googleCalendar") {
+      const existingGcal = settings.googleCalendar || {};
+      const nextIsConnected =
+        config.isConnected !== undefined
+          ? Boolean(config.isConnected)
+          : config.isActive !== undefined
+            ? Boolean(config.isActive)
+            : Boolean(existingGcal.isConnected);
+
       settings.googleCalendar = {
-        ...settings.googleCalendar,
+        ...existingGcal,
         ...config,
+        isConnected: nextIsConnected,
+        ...(nextIsConnected === false
+          ? { connectedEmail: "", calendarEmail: "", accessToken: "", refreshToken: "" }
+          : {}),
       };
-      // Also update GoogleCalendarConfig collection
-      const GoogleCalendarConfig = (await import("@/models/GoogleCalendarConfig.model")).default;
+
+      // Also sync GoogleCalendarConfig collection strictly for this Admin
+      const GoogleCalendarConfig = (
+        await import("@/models/GoogleCalendarConfig.model")
+      ).default;
+      const gcalUpdate: Record<string, any> = {
+        adminId: targetAdminId,
+        isConnected: nextIsConnected,
+      };
+      if (config.clientId) gcalUpdate.clientId = config.clientId;
+      if (config.clientSecret) gcalUpdate.clientSecret = config.clientSecret;
+      if (nextIsConnected === false) {
+        gcalUpdate.accountEmail = "";
+        gcalUpdate.accessToken = "";
+        gcalUpdate.refreshToken = "";
+      }
+
+      const hasCredentials = Boolean(config.clientId && config.clientSecret);
       await GoogleCalendarConfig.findOneAndUpdate(
         { adminId: targetAdminId },
-        { isConnected: Boolean(config.isActive ?? config.isConnected ?? false) },
-        { upsert: false }
+        { $set: gcalUpdate },
+        { upsert: hasCredentials },
       );
     }
 

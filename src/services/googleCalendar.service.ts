@@ -1,17 +1,94 @@
+import crypto from "crypto";
+import { NextRequest } from "next/server";
 import { google } from "googleapis";
 import GoogleCalendarConfig, {
   IGoogleCalendarConfig,
 } from "../models/GoogleCalendarConfig.model";
+import { getAuthSecret } from "../lib/auth/jwt";
 
-const DEFAULT_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || "";
-const DEFAULT_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || "";
-const getRedirectUri = () => {
-  if (process.env.GOOGLE_CALENDAR_REDIRECT_URI) {
-    return process.env.GOOGLE_CALENDAR_REDIRECT_URI;
+const OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
+
+export interface GoogleOAuthStatePayload {
+  adminId: string;
+  userId: string;
+  origin: string;
+  redirectUri: string;
+  iat: number;
+}
+
+/**
+ * Resolves the external browser origin from the incoming request headers so
+ * OAuth redirect URIs and post-callback redirects stay on the same origin.
+ */
+export function resolveRequestOrigin(req: NextRequest): string {
+  const forwardedHost = req.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const host = forwardedHost || req.headers.get("host")?.split(",")[0]?.trim();
+  const forwardedProto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+
+  if (host) {
+    const isLocal =
+      host.startsWith("localhost") ||
+      host.startsWith("127.0.0.1") ||
+      host.startsWith("[::1]");
+    const protocol = forwardedProto || (isLocal ? "http" : "https");
+    return `${protocol}://${host}`;
   }
-  const base = process.env.APP_URL || process.env.FRONTEND_URL || "http://localhost:3000";
-  return `${base.replace(/\/$/, "")}/api/google-calendar/oauth2callback`;
-};
+
+  return req.nextUrl.origin || "http://localhost:3000";
+}
+
+export function buildGoogleCalendarRedirectUri(origin: string): string {
+  return `${origin.replace(/\/$/, "")}/api/google-calendar/oauth2callback`;
+}
+
+function signStatePayload(payload: GoogleOAuthStatePayload): string {
+  const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  const sig = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(encoded)
+    .digest("base64url");
+  return `${encoded}.${sig}`;
+}
+
+export function verifyGoogleOAuthState(stateString?: string | null): GoogleOAuthStatePayload {
+  if (!stateString || !stateString.includes(".")) {
+    throw new Error("Invalid or missing OAuth state parameter");
+  }
+
+  const parts = stateString.split(".");
+  if (parts.length !== 2) {
+    throw new Error("Malformed OAuth state parameter");
+  }
+
+  const [encoded, providedSig] = parts;
+  const expectedSig = crypto
+    .createHmac("sha256", getAuthSecret())
+    .update(encoded)
+    .digest("base64url");
+
+  const providedBuf = Buffer.from(providedSig, "utf8");
+  const expectedBuf = Buffer.from(expectedSig, "utf8");
+  if (
+    providedBuf.length !== expectedBuf.length ||
+    !crypto.timingSafeEqual(providedBuf, expectedBuf)
+  ) {
+    throw new Error("OAuth state signature verification failed");
+  }
+
+  const parsed = JSON.parse(
+    Buffer.from(encoded, "base64url").toString("utf8"),
+  ) as GoogleOAuthStatePayload;
+
+  if (!parsed?.adminId || !parsed?.origin || !parsed?.redirectUri) {
+    throw new Error("Incomplete OAuth state payload");
+  }
+
+  if (!parsed.iat || Date.now() - parsed.iat > OAUTH_STATE_TTL_MS) {
+    throw new Error("OAuth authorization session expired. Please try again.");
+  }
+
+  return parsed;
+}
 
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
@@ -20,27 +97,36 @@ const SCOPES = [
 ];
 
 export const createOAuth2Client = (
-  customClientId?: string,
-  customClientSecret?: string,
+  clientId: string,
+  clientSecret: string,
+  redirectUri?: string,
 ) => {
-  return new google.auth.OAuth2(
-    customClientId || DEFAULT_CLIENT_ID,
-    customClientSecret || DEFAULT_CLIENT_SECRET,
-    getRedirectUri(),
-  );
+  if (!clientId || !clientSecret) {
+    throw new Error("Admin Google OAuth Client ID and Secret are required");
+  }
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 };
 
-export const getGoogleCalendarAuthUrl = (statePayload: {
+export const getGoogleCalendarAuthUrl = (args: {
   adminId: string;
-  userId?: string;
-  clientId?: string;
-  clientSecret?: string;
+  userId: string;
+  clientId: string;
+  clientSecret: string;
+  origin: string;
+  redirectUri: string;
 }) => {
   const oauth2Client = createOAuth2Client(
-    statePayload.clientId,
-    statePayload.clientSecret,
+    args.clientId,
+    args.clientSecret,
+    args.redirectUri,
   );
-  const state = Buffer.from(JSON.stringify(statePayload)).toString("base64");
+  const state = signStatePayload({
+    adminId: args.adminId,
+    userId: args.userId,
+    origin: args.origin,
+    redirectUri: args.redirectUri,
+    iat: Date.now(),
+  });
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
@@ -51,23 +137,21 @@ export const getGoogleCalendarAuthUrl = (statePayload: {
 
 export const exchangeCodeForTokens = async (
   code: string,
-  stateString?: string,
+  statePayload: GoogleOAuthStatePayload,
 ) => {
-  if (!stateString) throw new Error("Missing state in OAuth callback");
-  const decodedState = JSON.parse(
-    Buffer.from(stateString, "base64").toString("utf8"),
-  );
-  const { adminId, userId, clientId, clientSecret } = decodedState;
+  const { adminId, userId, redirectUri } = statePayload;
 
   const existingConfig = await GoogleCalendarConfig.findOne({ adminId });
-  const effectiveClientId =
-    clientId || existingConfig?.clientId || DEFAULT_CLIENT_ID;
-  const effectiveClientSecret =
-    clientSecret || existingConfig?.clientSecret || DEFAULT_CLIENT_SECRET;
+  if (!existingConfig?.clientId || !existingConfig?.clientSecret) {
+    throw new Error(
+      "Google Calendar OAuth credentials not found for this Admin account",
+    );
+  }
 
   const oauth2Client = createOAuth2Client(
-    effectiveClientId,
-    effectiveClientSecret,
+    existingConfig.clientId,
+    existingConfig.clientSecret,
+    redirectUri,
   );
   const { tokens } = await oauth2Client.getToken(code);
   oauth2Client.setCredentials(tokens);
@@ -80,11 +164,11 @@ export const exchangeCodeForTokens = async (
     { adminId },
     {
       adminId,
-      clientId: effectiveClientId,
-      clientSecret: effectiveClientSecret,
+      clientId: existingConfig.clientId,
+      clientSecret: existingConfig.clientSecret,
       accountEmail,
       accessToken: tokens.access_token || "",
-      refreshToken: tokens.refresh_token || "",
+      refreshToken: tokens.refresh_token || existingConfig.refreshToken || "",
       tokenExpiryDate: tokens.expiry_date || Date.now() + 3600 * 1000,
       scope: tokens.scope || "",
       isConnected: true,
@@ -101,7 +185,14 @@ export const getCalendarClientForAdmin = async (adminId: string) => {
     adminId,
     isConnected: true,
   });
-  if (!config || (!config.refreshToken && !config.accessToken)) return null;
+  if (
+    !config ||
+    !config.clientId ||
+    !config.clientSecret ||
+    (!config.refreshToken && !config.accessToken)
+  ) {
+    return null;
+  }
 
   const oauth2Client = createOAuth2Client(config.clientId, config.clientSecret);
   oauth2Client.setCredentials({

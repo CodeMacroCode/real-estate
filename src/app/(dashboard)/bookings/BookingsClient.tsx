@@ -34,6 +34,15 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { DateRangeFilter } from "@/app/componets/ui/DateRangeFilter";
+import {
+  ExportReportFormat,
+  ExportReportMenu,
+} from "@/components/ui/ExportReportMenu";
+import { fetchAllPaginatedExportItems } from "@/lib/export/tabularReportExport";
+import {
+  ExportableBooking,
+  exportBookingsReport,
+} from "@/lib/export/realEstateModuleExports";
 
 interface BookingItem {
   _id: string;
@@ -81,6 +90,8 @@ interface BookingItem {
 export default function BookingsClient({ user, role }: { user: any; role: any }) {
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportingFormat, setExportingFormat] =
+    useState<ExportReportFormat | null>(null);
   const [isPending, startTransition] = useTransition();
 
   // Filters & Pagination
@@ -115,17 +126,26 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
   const [docTitle, setDocTitle] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
 
+  const buildBookingQueryParams = useCallback(
+    (pageNum: number, pageLimit: number) => {
+      const params = new URLSearchParams();
+      params.set("page", String(pageNum));
+      params.set("limit", String(pageLimit));
+      if (search.trim()) params.set("search", search.trim());
+      if (statusFilter && statusFilter !== "ALL")
+        params.set("status", statusFilter);
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+      return params;
+    },
+    [search, statusFilter, startDate, endDate],
+  );
+
   // Fetch Bookings
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      params.set("page", String(page));
-      params.set("limit", String(limit));
-      if (search) params.set("search", search);
-      if (statusFilter && statusFilter !== "ALL") params.set("status", statusFilter);
-      if (startDate) params.set("startDate", startDate);
-      if (endDate) params.set("endDate", endDate);
+      const params = buildBookingQueryParams(page, limit);
 
       const res = await fetch(`/api/bookings?${params.toString()}`);
       const json = await res.json();
@@ -139,7 +159,7 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, statusFilter, startDate, endDate]);
+  }, [page, limit, buildBookingQueryParams]);
 
   useEffect(() => {
     fetchBookings();
@@ -252,6 +272,64 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
     }
   };
 
+  const handleExportReport = async (format: ExportReportFormat) => {
+    if (exportingFormat) return;
+    setExportingFormat(format);
+    try {
+      const exportRows: ExportableBooking[] =
+        totalCount <= bookings.length && bookings.length > 0
+          ? bookings
+          : await fetchAllPaginatedExportItems<ExportableBooking>(
+              async (pageNum, pageLimit) => {
+                const params = buildBookingQueryParams(pageNum, pageLimit);
+                const res = await fetch(`/api/bookings?${params.toString()}`);
+                const json = await res.json();
+                if (!res.ok || !json.data) {
+                  throw new Error(
+                    json.error || "Failed to load track records for export",
+                  );
+                }
+                return {
+                  items: json.data.bookings || [],
+                  totalPages: json.data.pagination?.totalPages || 1,
+                };
+              },
+            );
+
+      if (exportRows.length === 0) {
+        toast.error("No track records match the current filters to export");
+        return;
+      }
+
+      const activeFilters = [
+        statusFilter !== "ALL" ? `Status: ${statusFilter}` : "",
+        search.trim() ? `Search: "${search.trim()}"` : "",
+        startDate || endDate
+          ? `Date: ${startDate || "..."} to ${endDate || "..."}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      exportBookingsReport(format, exportRows, {
+        generatedBy: user?.name || "System",
+        filterSummary: activeFilters || "All Track Records",
+      });
+
+      const label =
+        format === "csv" ? "CSV" : format === "excel" ? "Excel" : "PDF";
+      toast.success(
+        `Exported ${exportRows.length} track record(s) to ${label} successfully!`,
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to export track records",
+      );
+    } finally {
+      setExportingFormat(null);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header section */}
@@ -264,6 +342,14 @@ export default function BookingsClient({ user, role }: { user: any; role: any })
           <p className="text-xs text-slate-500 mt-1">
             Track all property & project unit bookings, payment milestone installments, and secure client document lockers.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <ExportReportMenu
+            onExport={handleExportReport}
+            exportingFormat={exportingFormat}
+            disabled={loading}
+          />
         </div>
       </div>
 
