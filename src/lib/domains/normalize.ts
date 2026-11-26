@@ -3,7 +3,6 @@ const PLATFORM_HOSTS = new Set<string>([
   "127.0.0.1",
   "[::1]",
   "::1",
-  "property-management-system.run.place",
 ]);
 
 const LABEL_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;

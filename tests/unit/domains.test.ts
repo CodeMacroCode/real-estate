@@ -145,7 +145,6 @@ describe('Unit: Domain Normalization, Validation & Platform Host Detection', () 
     expect(isPlatformHost('http://localhost:3000')).toBe(true);
     expect(isPlatformHost('127.0.0.1:3000')).toBe(true);
     expect(isPlatformHost('[::1]:3000')).toBe(true);
-    expect(isPlatformHost('property-management-system.run.place')).toBe(true);
     expect(isPlatformHost('portal.agency.com')).toBe(false);
     expect(isPlatformHost('')).toBe(false);
 
