@@ -1,0 +1,6 @@
+import{j as s}from"./iframe-BJectA6S.js";import{c}from"./createLucideIcon-C3vR_ETf.js";function i({href:e,children:t,...n}){const o=typeof e=="object"?"#":e;return s.jsx("a",{href:o,onClick:a=>{a.preventDefault(),console.log(`[Storybook Link] Navigate to ${o}`)},...n,children:t})}i.__docgenInfo={description:"",methods:[],displayName:"Link",props:{href:{required:!0,tsType:{name:"union",raw:"string | object",elements:[{name:"string"},{name:"object"}]},description:""},children:{required:!0,tsType:{name:"ReactReactNode",raw:"React.ReactNode"},description:""},prefetch:{required:!1,tsType:{name:"boolean"},description:""},replace:{required:!1,tsType:{name:"boolean"},description:""},scroll:{required:!1,tsType:{name:"boolean"},description:""}}};const d=()=>({push:e=>console.log(`[Storybook Router] push: ${e}`),replace:e=>console.log(`[Storybook Router] replace: ${e}`),prefetch:()=>{},back:()=>console.log("[Storybook Router] back"),forward:()=>console.log("[Storybook Router] forward"),refresh:()=>console.log("[Storybook Router] refresh")}),u=()=>"/dashboard";/**
+ * @license lucide-react v1.66.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const r={name:"chevron-right",size:24,node:[["path",{d:"m9 18 6-6-6-6",key:"mthhwq"}]]};r.node;const m=c(r);export{m as C,i as L,d as a,u};
