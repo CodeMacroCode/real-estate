@@ -431,17 +431,26 @@ export function WebsiteManagementClient({
 
                 {/* Optional Subdomain / Custom Domain Status */}
                 {portal.customDomain && (
-                  <div className="px-3.5 py-2.5 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="px-3.5 py-2.5 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-slate-700 font-medium">Custom Domain Connected:</span>
                       <span className="font-mono font-bold text-emerald-800">{portal.customDomain}</span>
+                      {portal.customDomains && portal.customDomains.length > 1 && (
+                        <Link
+                          href="/domains"
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold text-[10px] transition"
+                          title="Manage all custom domains"
+                        >
+                          +{portal.customDomains.length - 1} more
+                        </Link>
+                      )}
                     </div>
                     <a
-                      href={`https://${portal.customDomain}/portal-properties`}
+                      href={`https://${portal.customDomain}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-emerald-700 hover:text-emerald-900 font-bold text-[11px] inline-flex items-center gap-1"
+                      className="text-emerald-700 hover:text-emerald-900 font-bold text-[11px] inline-flex items-center gap-1 shrink-0"
                     >
                       Visit Domain <ExternalLink className="size-3" />
                     </a>
