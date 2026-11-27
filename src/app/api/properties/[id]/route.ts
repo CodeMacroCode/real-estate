@@ -1,15 +1,69 @@
 import { NextRequest } from "next/server";
 import mongoose from "mongoose";
-import { getAuthenticatedContext } from "@/lib/auth/session";
+import {
+  AuthenticatedContext,
+  getAuthenticatedContext,
+} from "@/lib/auth/session";
 import { connectToDatabase } from "@/lib/mongodb/db";
 import { Property } from "@/models/Property";
 import { Owner } from "@/models/Owner";
 import { Booking } from "@/models/Booking";
+import { User } from "@/models/User";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import { shouldAutoUnpublishStatus, calculateInvestmentRoi } from "@/services/propertyService";
 
 export const dynamic = "force-dynamic";
+
+function toPlainObject(value: unknown): Record<string, any> {
+  if (!value || typeof value !== "object") return {};
+  return typeof (value as any).toObject === "function"
+    ? (value as any).toObject()
+    : { ...(value as Record<string, any>) };
+}
+
+/**
+ * Scope single-property access to the caller's organization admin (or creator
+ * fallback if a sub-role user has no parentAdminId).
+ */
+async function buildPropertyAccessQuery(
+  id: string,
+  authContext: AuthenticatedContext,
+): Promise<Record<string, any>> {
+  const query: Record<string, any> = {
+    _id: new mongoose.Types.ObjectId(id),
+  };
+
+  const roleSlug = authContext.role?.slug || "";
+  if (roleSlug === "super_admin") {
+    return query;
+  }
+
+  if (roleSlug === "admin") {
+    query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
+    return query;
+  }
+
+  let parentAdminId: unknown = authContext.user.parentAdminId;
+  if (!parentAdminId) {
+    const currentUser = await User.findById(authContext.user._id)
+      .select("parentAdminId")
+      .lean();
+    parentAdminId = currentUser?.parentAdminId;
+  }
+
+  if (parentAdminId) {
+    const rawParentId =
+      typeof parentAdminId === "object" && "_id" in (parentAdminId as any)
+        ? (parentAdminId as any)._id
+        : parentAdminId;
+    query.adminId = new mongoose.Types.ObjectId(String(rawParentId));
+  } else {
+    query.createdById = new mongoose.Types.ObjectId(authContext.user._id);
+  }
+
+  return query;
+}
 
 /**
  * GET /api/properties/[id]
@@ -30,11 +84,7 @@ export async function GET(
     }
 
     await connectToDatabase();
-    const isSuperAdmin = authContext.role.slug === "super_admin";
-    const query: any = { _id: new mongoose.Types.ObjectId(id) };
-    if (!isSuperAdmin) {
-      query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
-    }
+    const query = await buildPropertyAccessQuery(id, authContext);
 
     const property = await Property.findOne(query)
       .populate("ownerId", "name mobile email ownershipType panGstNumber")
@@ -86,11 +136,7 @@ export async function PATCH(
     }
 
     await connectToDatabase();
-    const isSuperAdmin = authContext.role.slug === "super_admin";
-    const query: any = { _id: new mongoose.Types.ObjectId(id) };
-    if (!isSuperAdmin) {
-      query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
-    }
+    const query = await buildPropertyAccessQuery(id, authContext);
 
     const property = await Property.findOne(query);
     if (!property) {
@@ -107,12 +153,20 @@ export async function PATCH(
     if (body.ownerId && mongoose.Types.ObjectId.isValid(body.ownerId)) {
       updateFields.ownerId = new mongoose.Types.ObjectId(body.ownerId);
     }
-    if (body.pricing) updateFields.pricing = { ...property.pricing, ...body.pricing };
-    if (body.areaDetails) updateFields.areaDetails = { ...property.areaDetails, ...body.areaDetails };
+    if (body.pricing) {
+      updateFields.pricing = {
+        ...toPlainObject(property.pricing),
+        ...body.pricing,
+      };
+    }
+    if (body.areaDetails) {
+      updateFields.areaDetails = {
+        ...toPlainObject(property.areaDetails),
+        ...body.areaDetails,
+      };
+    }
     if (body.location) {
-      const existingLoc = (property.location as any)?.toObject
-        ? (property.location as any).toObject()
-        : property.location || {};
+      const existingLoc = toPlainObject(property.location);
       const embedInput = body.location.googleMapsEmbedUrl !== undefined
         ? body.location.googleMapsEmbedUrl
         : existingLoc.googleMapsEmbedUrl;
@@ -135,7 +189,10 @@ export async function PATCH(
     }
     if (body.amenities) updateFields.amenities = body.amenities;
     if (body.residentialSpecs) {
-      const mergedSpecs = { ...property.residentialSpecs, ...body.residentialSpecs };
+      const mergedSpecs = {
+        ...toPlainObject(property.residentialSpecs),
+        ...body.residentialSpecs,
+      };
       if (mergedSpecs.furnishing) {
         const f = mergedSpecs.furnishing.trim();
         if (/^fully[\s-_]?furnished$/i.test(f)) mergedSpecs.furnishing = "Fully-Furnished";
@@ -144,7 +201,12 @@ export async function PATCH(
       }
       updateFields.residentialSpecs = mergedSpecs;
     }
-    if (body.media) updateFields.media = { ...property.media, ...body.media };
+    if (body.media) {
+      updateFields.media = {
+        ...toPlainObject(property.media),
+        ...body.media,
+      };
+    }
 
     // Status transition & Automatic Unpublishing rule
     if (body.status && body.status !== property.status) {
@@ -152,7 +214,7 @@ export async function PATCH(
 
       // Check if new status triggers unpublish
       const unpublishNeeded = await shouldAutoUnpublishStatus(body.status);
-      if (unpublishNeeded && property.publishing.publishOnWebsite) {
+      if (unpublishNeeded && property.publishing?.publishOnWebsite) {
         updateFields["publishing.publishOnWebsite"] = false;
         updateFields["publishing.unpublishReason"] = `Automatic unpublish triggered by status '${body.status}'`;
       }
@@ -170,11 +232,11 @@ export async function PATCH(
 
     // Pre-Leased Investment ROI update
     if (body.investmentSpecs || body.pricing?.price || body.pricing?.monthlyRent) {
-      const price = body.pricing?.price || property.pricing.price || 0;
-      const rent = body.pricing?.monthlyRent || property.pricing.monthlyRent || 0;
+      const price = body.pricing?.price || property.pricing?.price || 0;
+      const rent = body.pricing?.monthlyRent || property.pricing?.monthlyRent || 0;
       const calculated = calculateInvestmentRoi(rent, price);
       updateFields.investmentSpecs = {
-        ...(property.investmentSpecs || {}),
+        ...toPlainObject(property.investmentSpecs),
         ...(body.investmentSpecs || {}),
         currentMonthlyRent: rent,
         expectedAnnualRent: calculated.expectedAnnualRent,
@@ -229,11 +291,7 @@ export async function DELETE(
     }
 
     await connectToDatabase();
-    const isSuperAdmin = authContext.role.slug === "super_admin";
-    const query: any = { _id: new mongoose.Types.ObjectId(id) };
-    if (!isSuperAdmin) {
-      query.adminId = new mongoose.Types.ObjectId(authContext.user._id);
-    }
+    const query = await buildPropertyAccessQuery(id, authContext);
 
     const property = await Property.findOne(query);
     if (!property) {

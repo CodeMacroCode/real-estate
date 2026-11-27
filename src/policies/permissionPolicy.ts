@@ -1,4 +1,4 @@
-import { CRMModule, IRole, PermissionAction } from '../types';
+import { CRMModule, IRole, ModulePermissionConfig, PermissionAction } from '../types';
 
 /**
  * Evaluates whether a given role holds the requested permission action on a target module.
@@ -66,4 +66,68 @@ export function canPublish(role: Partial<IRole> | any, module: CRMModule): boole
 
 export function canApprove(role: Partial<IRole> | any, module: CRMModule): boolean {
   return hasPermission(role, module, 'approve');
+}
+
+/** Drop empty-action entries and deduplicate actions within each module. */
+export function sanitizePermissions(
+  permissions: ModulePermissionConfig[] | null | undefined,
+): ModulePermissionConfig[] {
+  if (!Array.isArray(permissions)) return [];
+  return permissions
+    .filter(
+      (p) =>
+        p &&
+        typeof p === 'object' &&
+        typeof p.module === 'string' &&
+        Array.isArray(p.actions) &&
+        p.actions.length > 0,
+    )
+    .map((p) => ({
+      ...p,
+      actions: Array.from(new Set(p.actions)),
+    }));
+}
+
+/**
+ * Resolve effective user permissions, honoring explicit empty custom overrides
+ * (hasCustomPermissions === true) while staying compatible with legacy records.
+ */
+export function resolveEffectivePermissions(
+  user:
+    | {
+        customPermissions?: ModulePermissionConfig[];
+        hasCustomPermissions?: boolean;
+      }
+    | null
+    | undefined,
+  rolePermissions: ModulePermissionConfig[] | null | undefined,
+): ModulePermissionConfig[] {
+  if (
+    user &&
+    (user.hasCustomPermissions === true ||
+      (Array.isArray(user.customPermissions) && user.customPermissions.length > 0))
+  ) {
+    return sanitizePermissions(user.customPermissions);
+  }
+  return sanitizePermissions(rolePermissions);
+}
+
+/** Clamp permissions to an Admin's authorized module/action ceiling. */
+export function clampPermissionsToCeiling(
+  permissions: ModulePermissionConfig[],
+  ceiling: ModulePermissionConfig[] | null | undefined,
+): ModulePermissionConfig[] {
+  const clean = sanitizePermissions(permissions);
+  if (!ceiling) return clean;
+  return clean
+    .map((perm) => {
+      const allowed = ceiling.find((c) => c.module === perm.module);
+      if (!allowed || !Array.isArray(allowed.actions)) return null;
+      const filteredActions = perm.actions.filter((act) =>
+        allowed.actions.includes(act),
+      );
+      if (filteredActions.length === 0) return null;
+      return { ...perm, actions: filteredActions };
+    })
+    .filter((item): item is ModulePermissionConfig => item !== null);
 }
