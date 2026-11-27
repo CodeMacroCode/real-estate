@@ -5,6 +5,7 @@ import { Role } from "@/models/Role";
 import { Property } from "@/models/Property";
 import { Project } from "@/models/Project";
 import { WebsiteSetting } from "@/models/WebsiteSetting";
+import { AgencyDomain } from "@/models/AgencyDomain";
 
 export interface SsrWebsiteManagementPortalItem {
   adminId: string;
@@ -21,6 +22,11 @@ export interface SsrWebsiteManagementPortalItem {
     city?: string;
   };
   customDomain: string | null;
+  customDomains?: Array<{
+    hostname: string;
+    isPrimary: boolean;
+    isActive: boolean;
+  }>;
   publishedPropertiesCount: number;
   publishedProjectsCount: number;
   createdAt: string;
@@ -85,6 +91,11 @@ export async function getSsrWebsitePortals({
   // Search filter
   if (search && search.trim()) {
     const s = search.trim();
+    const matchedAgencyIds = await AgencyDomain.find({
+      hostname: { $regex: s, $options: "i" },
+      isActive: true,
+    }).distinct("agencyId");
+
     targetAdminQuery.$or = [
       { name: { $regex: s, $options: "i" } },
       { email: { $regex: s, $options: "i" } },
@@ -92,6 +103,9 @@ export async function getSsrWebsitePortals({
       { agencyName: { $regex: s, $options: "i" } },
       { agencySlug: { $regex: s, $options: "i" } },
       { customDomain: { $regex: s, $options: "i" } },
+      ...(matchedAgencyIds.length > 0
+        ? [{ _id: { $in: matchedAgencyIds } }]
+        : []),
     ];
   }
 
@@ -114,7 +128,12 @@ export async function getSsrWebsitePortals({
   const targetAdminIds = adminDocs.map((a: any) => a._id);
 
   // Aggregation counts for properties & projects and website settings
-  const [propertyCounts, projectCounts, websiteSettingsDocs] = await Promise.all([
+  const [
+    propertyCounts,
+    projectCounts,
+    websiteSettingsDocs,
+    agencyDomainDocs,
+  ] = await Promise.all([
     Property.aggregate([
       {
         $match: {
@@ -136,6 +155,12 @@ export async function getSsrWebsitePortals({
     WebsiteSetting.find({ adminId: { $in: targetAdminIds } })
       .select("adminId contact branding")
       .lean(),
+    AgencyDomain.find({
+      agencyId: { $in: targetAdminIds },
+      isActive: true,
+    })
+      .sort({ isPrimary: -1, createdAt: -1 })
+      .lean(),
   ]);
 
   const propertyCountMap = new Map(
@@ -147,6 +172,20 @@ export async function getSsrWebsitePortals({
   const settingsMap = new Map(
     websiteSettingsDocs.map((s: any) => [s.adminId.toString(), s]),
   );
+  const domainsMap = new Map<
+    string,
+    Array<{ hostname: string; isPrimary: boolean; isActive: boolean }>
+  >();
+  for (const domain of agencyDomainDocs as any[]) {
+    const key = domain.agencyId.toString();
+    const list = domainsMap.get(key) || [];
+    list.push({
+      hostname: domain.hostname,
+      isPrimary: Boolean(domain.isPrimary),
+      isActive: Boolean(domain.isActive),
+    });
+    domainsMap.set(key, list);
+  }
 
   const adminPortals: SsrWebsiteManagementPortalItem[] = adminDocs.map(
     (admin: any) => {
@@ -158,12 +197,14 @@ export async function getSsrWebsitePortals({
       const projectsUrl = `${baseUrl}/portal-projects?agency=${slug}`;
       const directAdminUrl = `${baseUrl}/portal-properties?adminId=${adminId}`;
 
-      let customPortalUrl: string | null = null;
-      let subdomainUrl: string | null = null;
+      const domainsForAdmin = domainsMap.get(adminId) || [];
+      const primaryDomain =
+        domainsForAdmin[0]?.hostname || admin.customDomain || null;
 
-      if (admin.customDomain) {
-        customPortalUrl = `https://${admin.customDomain}/portal-properties`;
-      }
+      const customPortalUrl: string | null = primaryDomain
+        ? `https://${primaryDomain}`
+        : null;
+      let subdomainUrl: string | null = null;
 
       if (admin.agencySlug) {
         const domainParts = host.split(":");
@@ -187,7 +228,8 @@ export async function getSsrWebsitePortals({
           address: adminSetting?.contact?.address,
           city: adminSetting?.contact?.city,
         },
-        customDomain: admin.customDomain || null,
+        customDomain: primaryDomain,
+        customDomains: domainsForAdmin,
         publishedPropertiesCount: propertyCountMap.get(adminId) || 0,
         publishedProjectsCount: projectCountMap.get(adminId) || 0,
         createdAt: admin.createdAt
