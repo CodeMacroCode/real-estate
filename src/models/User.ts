@@ -3,6 +3,7 @@ import { IUser, SafeUser } from '../types';
 import './Role';
 
 export interface IUserDocument extends Omit<IUser, '_id'>, Document {
+  hasCustomPermissions: boolean;
   toSafeUser(): SafeUser;
 }
 
@@ -137,6 +138,10 @@ const UserSchema = new Schema<IUserDocument>(
         leadVisibilityScope: { type: String, enum: ['assigned', 'team', 'company'], default: 'assigned' },
       },
     ],
+    hasCustomPermissions: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
