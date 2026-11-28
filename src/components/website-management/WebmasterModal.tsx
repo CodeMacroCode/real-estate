@@ -46,7 +46,7 @@ export function WebmasterModal({
   onSaved,
 }: WebmasterModalProps) {
   const [activeTab, setActiveTab] = useState<
-    "branding" | "hero" | "theme" | "contact" | "social" | "regulatory" | "footer"
+    "branding" | "hero" | "theme" | "contact" | "social" | "regulatory" | "footer" | "seo"
   >("branding");
 
   const [formData, setFormData] = useState<any>(initialSettings || {});
@@ -56,6 +56,8 @@ export function WebmasterModal({
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFooterLogo, setUploadingFooterLogo] = useState(false);
+  const [uploadingOgImage, setUploadingOgImage] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geoResults, setGeoResults] = useState<any[]>([]);
   const [geoError, setGeoError] = useState("");
@@ -112,9 +114,7 @@ export function WebmasterModal({
 
   // Sync formData whenever initialSettings changes or modal opens
   useEffect(() => {
-    if (initialSettings) {
-      setFormData(initialSettings);
-    }
+    setFormData(initialSettings || {});
   }, [initialSettings]);
 
   if (!isOpen) return null;
@@ -125,6 +125,19 @@ export function WebmasterModal({
       [section]: {
         ...(prev[section] || {}),
         [key]: value,
+      },
+    }));
+  };
+
+  const handleSeoPageChange = (key: string, value: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      seo: {
+        ...(prev.seo || {}),
+        pages: {
+          ...(prev.seo?.pages || {}),
+          [key]: value,
+        },
       },
     }));
   };
@@ -156,7 +169,7 @@ export function WebmasterModal({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "logo" | "footerLogo" | "cover",
+    type: "logo" | "footerLogo" | "cover" | "ogImage" | "favicon",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -165,6 +178,8 @@ export function WebmasterModal({
     if (type === "logo") setUploadingLogo(true);
     if (type === "cover") setUploadingCover(true);
     if (type === "footerLogo") setUploadingFooterLogo(true);
+    if (type === "ogImage") setUploadingOgImage(true);
+    if (type === "favicon") setUploadingFavicon(true);
 
     try {
       const data = new FormData();
@@ -191,6 +206,10 @@ export function WebmasterModal({
         handleChange("footer", "logoUrl", fileUrl);
       } else if (type === "cover") {
         handleChange("hero", "coverImageUrl", fileUrl);
+      } else if (type === "ogImage") {
+        handleChange("seo", "ogImageUrl", fileUrl);
+      } else if (type === "favicon") {
+        handleChange("seo", "faviconUrl", fileUrl);
       }
       toast.success("Image uploaded successfully");
     } catch (err: any) {
@@ -202,6 +221,8 @@ export function WebmasterModal({
       if (type === "logo") setUploadingLogo(false);
       if (type === "cover") setUploadingCover(false);
       if (type === "footerLogo") setUploadingFooterLogo(false);
+      if (type === "ogImage") setUploadingOgImage(false);
+      if (type === "favicon") setUploadingFavicon(false);
     }
   };
 
@@ -393,6 +414,18 @@ export function WebmasterModal({
           >
             <Layout className="size-4" />
             <span>Footer Section</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("seo")}
+            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
+              activeTab === "seo"
+                ? "border-blue-600 text-blue-600 font-bold"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Search className="size-4" />
+            <span>SEO &amp; Metadata</span>
           </button>
         </div>
 
@@ -1430,6 +1463,264 @@ export function WebmasterModal({
                   placeholder="e.g. © 2026 Prasad Realty. All rights reserved."
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+            </div>
+          )}
+
+          {/* 8. SEO & Metadata Tab */}
+          {activeTab === "seo" && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">SEO &amp; Search Engine Metadata</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Configure how your public website appears in Google search results, social shares, and browser tabs.
+                </p>
+              </div>
+
+              {/* Search Engine Indexing Toggle */}
+              <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer hover:bg-slate-50 transition">
+                <input
+                  type="checkbox"
+                  checked={formData.seo?.robotsIndex ?? true}
+                  onChange={(e) => handleChange("seo", "robotsIndex", e.target.checked)}
+                  className="mt-0.5 size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <div>
+                  <div className="text-xs font-bold text-slate-900">
+                    Allow search engines to index this website
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    When enabled, Google and other search engines can crawl and index your public pages and sitemap. Disable to set <span className="font-mono">noindex, nofollow</span>.
+                  </div>
+                </div>
+              </label>
+
+              {/* Default Meta Title & Description */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Default Meta Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seo?.metaTitle || ""}
+                    onChange={(e) => handleChange("seo", "metaTitle", e.target.value)}
+                    placeholder="e.g. Prasad Realty | RERA Verified Properties &amp; Projects in Nagpur"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Recommended: 50–60 characters. Falls back to your Company Name if left blank.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Default Meta Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.seo?.metaDescription || ""}
+                    onChange={(e) => handleChange("seo", "metaDescription", e.target.value)}
+                    placeholder="Explore verified residential apartments, commercial spaces, and RERA-approved projects..."
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Recommended: 140–160 characters for optimal search result snippets.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Comma-separated Meta Keywords
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seo?.keywords || ""}
+                    onChange={(e) => handleChange("seo", "keywords", e.target.value)}
+                    placeholder="e.g. real estate, apartments for sale, RERA projects, property portal"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Social Share OG Image & Favicon */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Social Share / OG Image URL
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formData.seo?.ogImageUrl || ""}
+                      onChange={(e) => handleChange("seo", "ogImageUrl", e.target.value)}
+                      placeholder="https://... or upload image"
+                      className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                    <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition shrink-0">
+                      <Upload className="size-3.5 text-blue-600" />
+                      <span>{uploadingOgImage ? "..." : "Upload"}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        disabled={uploadingOgImage}
+                        onChange={(e) => handleFileUpload(e, "ogImage")}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Shown when links are shared on WhatsApp, LinkedIn, or X (recommended 1200×630).
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Custom Favicon URL
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formData.seo?.faviconUrl || ""}
+                      onChange={(e) => handleChange("seo", "faviconUrl", e.target.value)}
+                      placeholder="https://... or upload icon"
+                      className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                    <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition shrink-0">
+                      <Upload className="size-3.5 text-blue-600" />
+                      <span>{uploadingFavicon ? "..." : "Upload"}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/x-icon,image/svg+xml,image/webp"
+                        disabled={uploadingFavicon}
+                        onChange={(e) => handleFileUpload(e, "favicon")}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Square icon displayed in browser tabs (PNG, ICO, or SVG).
+                  </p>
+                </div>
+              </div>
+
+              {/* Google Search Console Verification */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Google Search Console Verification Code
+                </label>
+                <input
+                  type="text"
+                  value={formData.seo?.googleSiteVerification || ""}
+                  onChange={(e) => handleChange("seo", "googleSiteVerification", e.target.value)}
+                  placeholder="e.g. google-site-verification token value"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Outputs <span className="font-mono">&lt;meta name=&quot;google-site-verification&quot; content=&quot;...&quot; /&gt;</span> on your portal pages.
+                </p>
+              </div>
+
+              {/* Per-Page SEO Overrides */}
+              <div className="pt-3 border-t border-slate-200 space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Per-Page SEO Overrides (Optional)
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Customize titles and descriptions for individual portal sections. Leave blank to use the defaults above.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                  <div className="md:col-span-2 text-xs font-bold text-slate-800">
+                    Properties Listing Page (/portal-properties)
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Properties Page Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seo?.pages?.propertiesTitle || ""}
+                      onChange={(e) => handleSeoPageChange("propertiesTitle", e.target.value)}
+                      placeholder="e.g. Verified Properties for Sale &amp; Rent"
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Properties Page Description
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seo?.pages?.propertiesDescription || ""}
+                      onChange={(e) => handleSeoPageChange("propertiesDescription", e.target.value)}
+                      placeholder="Browse RERA-verified apartments, plots, and commercial units..."
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                  <div className="md:col-span-2 text-xs font-bold text-slate-800">
+                    Projects Listing Page (/portal-projects)
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Projects Page Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seo?.pages?.projectsTitle || ""}
+                      onChange={(e) => handleSeoPageChange("projectsTitle", e.target.value)}
+                      placeholder="e.g. Upcoming &amp; Completed Real Estate Projects"
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Projects Page Description
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seo?.pages?.projectsDescription || ""}
+                      onChange={(e) => handleSeoPageChange("projectsDescription", e.target.value)}
+                      placeholder="Explore flagship townships and residential developments..."
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50">
+                  <div className="md:col-span-2 text-xs font-bold text-slate-800">
+                    Contact Us Page (/portal-contact)
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Contact Page Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seo?.pages?.contactTitle || ""}
+                      onChange={(e) => handleSeoPageChange("contactTitle", e.target.value)}
+                      placeholder="e.g. Contact Our Property Advisors"
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Contact Page Description
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.seo?.pages?.contactDescription || ""}
+                      onChange={(e) => handleSeoPageChange("contactDescription", e.target.value)}
+                      placeholder="Get in touch with our office for site visits and inquiries..."
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}

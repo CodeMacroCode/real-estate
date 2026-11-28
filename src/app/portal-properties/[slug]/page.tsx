@@ -1,9 +1,16 @@
 import React from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { getPublicPropertyBySlug, resolveAdminByHostOrSlug } from "@/services/publicPortalService";
 import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
+import {
+  buildPortalMetadata,
+  buildRealEstateListingJsonLd,
+  resolvePortalTenant,
+  serializeJsonLd,
+} from "@/lib/seo/portalMetadata";
 import { PropertyDetailInquiryForm } from "@/components/property/PropertyDetailInquiryForm";
 import { InteractiveFloorMapViewer } from "@/components/property/InteractiveFloorMapViewer";
 import { PropertyOverviewSpecs } from "@/components/property/PropertyOverviewSpecs";
@@ -22,36 +29,51 @@ interface PublicPropertyDetailPageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: PublicPropertyDetailPageProps) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PublicPropertyDetailPageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const headerList = await headers();
-  const rawHost = (
-    headerList.get("x-forwarded-host") ||
-    headerList.get("host") ||
-    ""
-  )
-    .split(",")[0]
-    .trim();
-  const normalizedHost = normalizeHostname(rawHost);
-  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const tenant = await resolvePortalTenant(resolvedSearchParams);
 
-  let scopedAdminId: string | undefined;
-  if (isCustomDomain) {
-    const tenantFromHost = await resolveAdminByHostOrSlug(normalizedHost);
-    if (!tenantFromHost) {
-      return { title: "Property Not Found" };
-    }
-    scopedAdminId = tenantFromHost.adminId;
+  if (tenant.isCustomDomain && !tenant.agencyBranding) {
+    return { title: "Property Not Found" };
   }
 
-  const property = await getPublicPropertyBySlug(resolvedParams.slug, scopedAdminId);
+  const property = await getPublicPropertyBySlug(
+    resolvedParams.slug,
+    tenant.isCustomDomain ? tenant.agencyBranding?.adminId : undefined,
+  );
   if (!property) {
     return { title: "Property Not Found" };
   }
-  return {
-    title: `${property.title} | ${property.location.city}`,
-    description: `${property.propertyType} for ${property.transactionType} in ${property.location.city}. Verified listing dossier.`,
-  };
+
+  let effectiveBranding = tenant.agencyBranding;
+  if (!effectiveBranding) {
+    const fallbackKey = property.agency?.agencySlug || property.agency?.adminId;
+    if (fallbackKey) {
+      effectiveBranding = await resolveAdminByHostOrSlug(fallbackKey);
+    }
+  }
+
+  const propertyImages = [
+    ...(property.media?.featuredImage ? [property.media.featuredImage] : []),
+    ...(Array.isArray(property.media?.images) ? property.media.images : []),
+  ].filter(Boolean);
+
+  return buildPortalMetadata({
+    pageType: "property-detail",
+    agencyBranding: effectiveBranding,
+    origin: tenant.origin,
+    pathname: `/portal-properties/${property.slug}`,
+    isCustomDomain: tenant.isCustomDomain,
+    overrides: {
+      title: `${property.title} | ${property.location.city}`,
+      description: `${property.propertyType} for ${property.transactionType} in ${property.location.city}. Verified listing dossier.`,
+      images: propertyImages,
+    },
+  });
 }
 
 export default async function PublicPropertyDetailPage({
@@ -202,6 +224,21 @@ export default async function PublicPropertyDetailPage({
 
   const floorPlanSectionNumber = property.amenities && property.amenities.length > 0 ? "04" : "03";
 
+  const proto =
+    (headerList.get("x-forwarded-proto") || "").split(",")[0].trim() ||
+    (normalizedHost === "localhost" || normalizedHost === "127.0.0.1"
+      ? "http"
+      : "https");
+  const pageUrl = rawHost
+    ? `${proto}://${rawHost}/portal-properties/${property.slug}`
+    : undefined;
+  const jsonLd = buildRealEstateListingJsonLd({
+    kind: "property",
+    item: property,
+    agencyBranding,
+    url: pageUrl,
+  });
+
   return (
     <div
       className="min-h-screen bg-paper text-ink flex flex-col justify-between"
@@ -222,6 +259,10 @@ export default async function PublicPropertyDetailPage({
         } as React.CSSProperties
       }
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <PublicHeader
         agencyName={agencyBranding?.agencyName || property.agency?.agencyName}
         settings={agencyBranding?.settings}

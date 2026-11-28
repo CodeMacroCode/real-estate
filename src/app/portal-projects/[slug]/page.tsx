@@ -1,10 +1,19 @@
 import React from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import {
   getPublicProjectBySlug,
   resolveAdminByHostOrSlug,
 } from "@/services/publicPortalService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
+import {
+  buildPortalMetadata,
+  buildRealEstateListingJsonLd,
+  resolvePortalTenant,
+  serializeJsonLd,
+} from "@/lib/seo/portalMetadata";
 import { ProjectDetailInquiryForm } from "@/components/project/ProjectDetailInquiryForm";
 import { ProjectMasterPlanViewer } from "@/components/project/ProjectMasterPlanViewer";
 import { PublicHeader } from "@/components/layout/PublicHeader";
@@ -31,16 +40,51 @@ interface PublicProjectDetailPageProps {
 
 export async function generateMetadata({
   params,
-}: PublicProjectDetailPageProps) {
+  searchParams,
+}: PublicProjectDetailPageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const project = await getPublicProjectBySlug(resolvedParams.slug);
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const tenant = await resolvePortalTenant(resolvedSearchParams);
+
+  if (tenant.isCustomDomain && !tenant.agencyBranding) {
+    return { title: "Project Not Found" };
+  }
+
+  const project = await getPublicProjectBySlug(
+    resolvedParams.slug,
+    tenant.isCustomDomain ? tenant.agencyBranding?.adminId : undefined,
+  );
   if (!project) {
     return { title: "Project Not Found" };
   }
-  return {
-    title: `${project.name} by ${project.developerName} | ${project.location.city}`,
-    description: `Discover ${project.projectType} units at ${project.name} in ${project.location.city}. MahaRERA approved development.`,
-  };
+
+  let effectiveBranding = tenant.agencyBranding;
+  if (!effectiveBranding) {
+    const fallbackKey = project.agency?.agencySlug || project.agency?.adminId;
+    if (fallbackKey) {
+      effectiveBranding = await resolveAdminByHostOrSlug(fallbackKey);
+    }
+  }
+
+  const projectImages = [
+    ...(project.media?.coverImage ? [project.media.coverImage] : []),
+    ...(Array.isArray(project.media?.images) ? project.media.images : []),
+  ].filter(Boolean);
+
+  return buildPortalMetadata({
+    pageType: "project-detail",
+    agencyBranding: effectiveBranding,
+    origin: tenant.origin,
+    pathname: `/portal-projects/${project.slug}`,
+    isCustomDomain: tenant.isCustomDomain,
+    overrides: {
+      title: `${project.name} by ${project.developerName} | ${project.location.city}`,
+      description:
+        project.description?.trim() ||
+        `Discover ${project.projectType} units at ${project.name} in ${project.location.city}. MahaRERA approved development.`,
+      images: projectImages,
+    },
+  });
 }
 
 export default async function PublicProjectDetailPage({
@@ -49,18 +93,45 @@ export default async function PublicProjectDetailPage({
 }: PublicProjectDetailPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const project = await getPublicProjectBySlug(resolvedParams.slug);
+
+  const headerList = await headers();
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const normalizedHost = normalizeHostname(rawHost);
+  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
+
+  let tenantFromHost: Awaited<ReturnType<typeof resolveAdminByHostOrSlug>> = null;
+  if (isCustomDomain) {
+    tenantFromHost = await resolveAdminByHostOrSlug(normalizedHost);
+    if (!tenantFromHost) {
+      notFound();
+    }
+  }
+
+  const project = await getPublicProjectBySlug(
+    resolvedParams.slug,
+    tenantFromHost?.adminId,
+  );
 
   if (!project) {
     notFound();
   }
 
-  const agencySlug =
-    resolvedSearchParams.agency || project.agency?.agencySlug || "";
-  const targetAdminId =
-    resolvedSearchParams.adminId || project.agency?.adminId;
+  const agencySlug = isCustomDomain
+    ? tenantFromHost?.agencySlug || ""
+    : resolvedSearchParams.agency || project.agency?.agencySlug || "";
+  const targetAdminId = isCustomDomain
+    ? tenantFromHost?.adminId
+    : resolvedSearchParams.adminId || project.agency?.adminId;
 
-  const agencyBranding = agencySlug
+  const agencyBranding = isCustomDomain
+    ? tenantFromHost
+    : agencySlug
     ? await resolveAdminByHostOrSlug(agencySlug)
     : targetAdminId
       ? await resolveAdminByHostOrSlug(targetAdminId)
@@ -87,11 +158,31 @@ export default async function PublicProjectDetailPage({
   ];
   const uniqueImages = Array.from(new Set(galleryImages));
 
+  const proto =
+    (headerList.get("x-forwarded-proto") || "").split(",")[0].trim() ||
+    (normalizedHost === "localhost" || normalizedHost === "127.0.0.1"
+      ? "http"
+      : "https");
+  const pageUrl = rawHost
+    ? `${proto}://${rawHost}/portal-projects/${project.slug}`
+    : undefined;
+  const jsonLd = buildRealEstateListingJsonLd({
+    kind: "project",
+    item: project,
+    agencyBranding,
+    url: pageUrl,
+  });
+
   return (
     <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <PublicHeader
         agencyName={agencyBranding?.agencyName || project.agency?.agencyName}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">

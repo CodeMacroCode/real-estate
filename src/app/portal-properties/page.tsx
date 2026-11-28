@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import {
@@ -7,17 +8,27 @@ import {
   getTopLocationsForTenant,
 } from "@/services/publicPortalService";
 import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
+import {
+  buildRealEstateAgentJsonLd,
+  getPortalPageMetadata,
+  serializeJsonLd,
+} from "@/lib/seo/portalMetadata";
 import PublicPortalClient from "./PublicPortalClient";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Browse Properties & Real Estate Listings",
-  description:
-    "Explore RERA-verified residential, commercial, and land investments.",
-};
+export async function generateMetadata({
+  searchParams,
+}: PublicPropertiesPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  return getPortalPageMetadata({
+    pageType: "properties",
+    pathname: "/portal-properties",
+    searchParams: resolvedSearchParams,
+  });
+}
 
 interface PublicPropertiesPageProps {
   searchParams: Promise<{
@@ -104,6 +115,17 @@ export default async function PublicPropertiesPage({
 
   const topLocations = await getTopLocationsForTenant(targetAdminId);
 
+  const proto =
+    (headerList.get("x-forwarded-proto") || "").split(",")[0].trim() ||
+    (normalizedHost === "localhost" || normalizedHost === "127.0.0.1"
+      ? "http"
+      : "https");
+  const pageUrl = rawHost ? `${proto}://${rawHost}/portal-properties` : undefined;
+  const jsonLd = buildRealEstateAgentJsonLd({
+    agencyBranding,
+    url: pageUrl,
+  });
+
   return (
     <div
       className="min-h-screen bg-paper text-ink flex flex-col justify-between"
@@ -124,6 +146,10 @@ export default async function PublicPropertiesPage({
         } as React.CSSProperties
       }
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
         settings={agencyBranding?.settings}
