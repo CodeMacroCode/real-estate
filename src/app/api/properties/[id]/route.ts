@@ -12,6 +12,7 @@ import { User } from "@/models/User";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import { shouldAutoUnpublishStatus, calculateInvestmentRoi } from "@/services/propertyService";
+import { shouldHideResidentialSpecsSection } from "@/lib/propertyFormHelpers";
 
 export const dynamic = "force-dynamic";
 
@@ -187,19 +188,28 @@ export async function PATCH(
         googleMapsEmbedUrl: cleanEmbedUrl,
       };
     }
-    if (body.amenities) updateFields.amenities = body.amenities;
-    if (body.residentialSpecs) {
-      const mergedSpecs = {
-        ...toPlainObject(property.residentialSpecs),
-        ...body.residentialSpecs,
-      };
-      if (mergedSpecs.furnishing) {
-        const f = mergedSpecs.furnishing.trim();
-        if (/^fully[\s-_]?furnished$/i.test(f)) mergedSpecs.furnishing = "Fully-Furnished";
-        else if (/^semi[\s-_]?furnished$/i.test(f)) mergedSpecs.furnishing = "Semi-Furnished";
-        else if (/^unfurnished$/i.test(f)) mergedSpecs.furnishing = "Unfurnished";
+    const effectivePropertyType = body.propertyType || property.propertyType;
+    const hideResidentialSpecs = shouldHideResidentialSpecsSection(effectivePropertyType);
+    const unsetFields: Record<string, string> = {};
+
+    if (hideResidentialSpecs) {
+      updateFields.amenities = [];
+      unsetFields.residentialSpecs = "";
+    } else {
+      if (body.amenities) updateFields.amenities = body.amenities;
+      if (body.residentialSpecs) {
+        const mergedSpecs = {
+          ...toPlainObject(property.residentialSpecs),
+          ...body.residentialSpecs,
+        };
+        if (mergedSpecs.furnishing) {
+          const f = mergedSpecs.furnishing.trim();
+          if (/^fully[\s-_]?furnished$/i.test(f)) mergedSpecs.furnishing = "Fully-Furnished";
+          else if (/^semi[\s-_]?furnished$/i.test(f)) mergedSpecs.furnishing = "Semi-Furnished";
+          else if (/^unfurnished$/i.test(f)) mergedSpecs.furnishing = "Unfurnished";
+        }
+        updateFields.residentialSpecs = mergedSpecs;
       }
-      updateFields.residentialSpecs = mergedSpecs;
     }
     if (body.media) {
       updateFields.media = {
@@ -244,9 +254,14 @@ export async function PATCH(
       };
     }
 
+    const updateOperation: Record<string, any> = { $set: updateFields };
+    if (Object.keys(unsetFields).length > 0) {
+      updateOperation.$unset = unsetFields;
+    }
+
     const updated = await Property.findByIdAndUpdate(
       id,
-      { $set: updateFields },
+      updateOperation,
       { new: true }
     );
 

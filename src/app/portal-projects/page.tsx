@@ -1,5 +1,5 @@
 import React from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   getPublicProjects,
@@ -50,6 +50,21 @@ export default async function PublicProjectsPage({
 
   const agencyBranding = tenantFromQuery || tenantFromHost || null;
 
+  if (
+    !resolvedSearchParams.agency &&
+    resolvedSearchParams.adminId &&
+    agencyBranding?.agencySlug
+  ) {
+    const nextParams = new URLSearchParams();
+    for (const [k, v] of Object.entries(resolvedSearchParams)) {
+      if (v !== undefined && k !== "adminId" && k !== "agency") {
+        nextParams.set(k, v);
+      }
+    }
+    nextParams.set("agency", agencyBranding.agencySlug);
+    redirect(`/portal-projects?${nextParams.toString()}`);
+  }
+
   const targetAdminId =
     agencyBranding?.adminId ||
     resolvedSearchParams.adminId ||
@@ -87,6 +102,8 @@ export default async function PublicProjectsPage({
     >
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
+        agencySlug={agencyBranding?.agencySlug || resolvedSearchParams.agency}
+        adminId={targetAdminId}
         settings={agencyBranding?.settings}
       />
       <main className="flex-1">
@@ -98,6 +115,8 @@ export default async function PublicProjectsPage({
       </main>
       <PublicFooter
         agencyName={agencyBranding?.agencyName}
+        agencySlug={agencyBranding?.agencySlug || resolvedSearchParams.agency}
+        adminId={targetAdminId}
         topLocations={topLocations}
         settings={agencyBranding?.settings}
       />

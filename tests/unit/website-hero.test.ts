@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WebsiteSetting } from "@/models/WebsiteSetting";
+import { appendTenantQuery, resolvePortalTenant } from "@/lib/portalUtils";
 import {
   HERO_COVER_RATIO_OPTIONS,
   HERO_WHITE_GLASS_STYLE,
@@ -56,10 +57,54 @@ describe("websiteHero cover ratio helpers", () => {
     expect(isHeroLightGlassMode(0.8)).toBe(false);
   });
 
-  it("defines hero cover banner fields on WebsiteSetting schema", () => {
+  it("defines hero cover banner and aboutUs fields on WebsiteSetting schema", () => {
     expect(WebsiteSetting.schema.path("hero.coverImageUrl")).toBeDefined();
     expect(WebsiteSetting.schema.path("hero.coverAspectRatio")).toBeDefined();
     expect(WebsiteSetting.schema.path("hero.coverImageOpacity")).toBeDefined();
     expect(WebsiteSetting.schema.path("hero.coverOverlayOpacity")).toBeDefined();
+    expect(WebsiteSetting.schema.path("aboutUs.headline")).toBeDefined();
+    expect(WebsiteSetting.schema.path("aboutUs.story")).toBeDefined();
+    expect(WebsiteSetting.schema.path("aboutUs.missionTitle")).toBeDefined();
+    expect(WebsiteSetting.schema.path("aboutUs.visionTitle")).toBeDefined();
+    expect(WebsiteSetting.schema.path("aboutUs.highlights")).toBeDefined();
+  });
+
+  it("preserves tenant agency or adminId when navigating from single property or project pages", () => {
+    const fromPropertyAdminId = resolvePortalTenant({
+      isCustomDomain: false,
+      agencySlug: "",
+      adminId: "6b0976896e354d193d445762",
+      searchAgency: null,
+      searchAdminId: null,
+    });
+    expect(appendTenantQuery("/portal-properties", fromPropertyAdminId)).toBe(
+      "/portal-properties?adminId=6b0976896e354d193d445762",
+    );
+
+    const fromSettingsAdminId = resolvePortalTenant({
+      isCustomDomain: false,
+      settingsAdminId: "6b0976896e354d193d445762",
+    });
+    expect(appendTenantQuery("/portal-projects", fromSettingsAdminId)).toBe(
+      "/portal-projects?adminId=6b0976896e354d193d445762",
+    );
+
+    const fromSlug = resolvePortalTenant({
+      isCustomDomain: false,
+      agencySlug: "hbproperty",
+      adminId: "6b0976896e354d193d445762",
+    });
+    expect(appendTenantQuery("/portal-properties", fromSlug)).toBe(
+      "/portal-properties?agency=hbproperty",
+    );
+
+    const customDomainTenant = resolvePortalTenant({
+      isCustomDomain: true,
+      agencySlug: "hbproperty",
+      adminId: "6b0976896e354d193d445762",
+    });
+    expect(appendTenantQuery("/portal-properties", customDomainTenant)).toBe(
+      "/portal-properties",
+    );
   });
 });

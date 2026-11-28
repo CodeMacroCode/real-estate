@@ -1,5 +1,5 @@
 import React from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   getPublicProperties,
@@ -80,6 +80,21 @@ export default async function PublicPropertiesPage({
     }
 
     agencyBranding = tenantFromQuery || null;
+
+    if (
+      !resolvedSearchParams.agency &&
+      resolvedSearchParams.adminId &&
+      agencyBranding?.agencySlug
+    ) {
+      const nextParams = new URLSearchParams();
+      for (const [k, v] of Object.entries(resolvedSearchParams)) {
+        if (v !== undefined && k !== "adminId" && k !== "agency") {
+          nextParams.set(k, v);
+        }
+      }
+      nextParams.set("agency", agencyBranding.agencySlug);
+      redirect(`/portal-properties?${nextParams.toString()}`);
+    }
   }
 
   const clientSearchParams = isCustomDomain
@@ -126,6 +141,8 @@ export default async function PublicPropertiesPage({
     >
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
+        agencySlug={agencyBranding?.agencySlug}
+        adminId={targetAdminId}
         settings={agencyBranding?.settings}
         isCustomDomain={isCustomDomain}
       />
@@ -146,8 +163,11 @@ export default async function PublicPropertiesPage({
       </main>
       <PublicFooter
         agencyName={agencyBranding?.agencyName}
+        agencySlug={agencyBranding?.agencySlug}
+        adminId={targetAdminId}
         topLocations={topLocations}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
     </div>
   );

@@ -8,6 +8,7 @@ import { User } from "@/models/User";
 import { jsonResponse, errorResponse } from "@/lib/apiResponse";
 import { recordAuditEvent } from "@/services/auditService";
 import { getSsrProperties, calculateInvestmentRoi, shouldAutoUnpublishStatus } from "@/services/propertyService";
+import { shouldHideResidentialSpecsSection } from "@/lib/propertyFormHelpers";
 
 export const dynamic = "force-dynamic";
 
@@ -156,8 +157,10 @@ export async function POST(req: NextRequest) {
       finalUnpublishReason = `Status '${status}' triggered automatic website unpublish`;
     }
 
-    // Normalize residentialSpecs furnishing if provided
-    let finalResidentialSpecs = residentialSpecs;
+    const hideResidentialSpecs = shouldHideResidentialSpecsSection(propertyType);
+
+    // Normalize residentialSpecs furnishing if provided (or omit for non-residential types)
+    let finalResidentialSpecs = hideResidentialSpecs ? undefined : residentialSpecs;
     if (finalResidentialSpecs?.furnishing) {
       const f = finalResidentialSpecs.furnishing.trim();
       let normalizedFurnishing = f;
@@ -210,7 +213,11 @@ export async function POST(req: NextRequest) {
       commercialSpecs: commercialSpecs || undefined,
       plotSpecs: plotSpecs || undefined,
       investmentSpecs: finalInvestmentSpecs || undefined,
-      amenities: Array.isArray(amenities) ? amenities : [],
+      amenities: hideResidentialSpecs
+        ? []
+        : Array.isArray(amenities)
+          ? amenities
+          : [],
       media: media || { images: [], videos: [], floorPlans: [] },
       publishing: {
         publishOnWebsite: finalPublish,

@@ -1,10 +1,13 @@
 import React from "react";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import {
   getPublicProjectBySlug,
   resolveAdminByHostOrSlug,
+  getTopLocationsForTenant,
 } from "@/services/publicPortalService";
+import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
 import { ProjectDetailInquiryForm } from "@/components/project/ProjectDetailInquiryForm";
 import { ProjectMasterPlanViewer } from "@/components/project/ProjectMasterPlanViewer";
 import { PublicHeader } from "@/components/layout/PublicHeader";
@@ -49,22 +52,40 @@ export default async function PublicProjectDetailPage({
 }: PublicProjectDetailPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
+  const headerList = await headers();
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const normalizedHost = normalizeHostname(rawHost);
+  const isCustomDomain = Boolean(normalizedHost && !isPlatformHost(normalizedHost));
+
   const project = await getPublicProjectBySlug(resolvedParams.slug);
 
   if (!project) {
     notFound();
   }
 
-  const agencySlug =
-    resolvedSearchParams.agency || project.agency?.agencySlug || "";
+  const agencySlug = isCustomDomain
+    ? project.agency?.agencySlug || ""
+    : resolvedSearchParams.agency || project.agency?.agencySlug || "";
   const targetAdminId =
     resolvedSearchParams.adminId || project.agency?.adminId;
 
-  const agencyBranding = agencySlug
-    ? await resolveAdminByHostOrSlug(agencySlug)
-    : targetAdminId
-      ? await resolveAdminByHostOrSlug(targetAdminId)
-      : null;
+  const agencyBranding = isCustomDomain
+    ? await resolveAdminByHostOrSlug(normalizedHost)
+    : agencySlug
+      ? await resolveAdminByHostOrSlug(agencySlug)
+      : targetAdminId
+        ? await resolveAdminByHostOrSlug(targetAdminId)
+        : null;
+
+  const topLocations = await getTopLocationsForTenant(
+    agencyBranding?.adminId || targetAdminId,
+  );
 
   const officePhone =
     agencyBranding?.settings?.contact?.phone ||
@@ -72,11 +93,13 @@ export default async function PublicProjectDetailPage({
     agencyBranding?.settings?.contact?.alternatePhone ||
     null;
 
-  const backToProjectsHref = agencySlug
-    ? `/portal-projects?agency=${agencySlug}`
-    : targetAdminId
-      ? `/portal-projects?adminId=${targetAdminId}`
-      : "/portal-projects";
+  const backToProjectsHref = isCustomDomain
+    ? "/portal-projects"
+    : agencySlug
+      ? `/portal-projects?agency=${agencySlug}`
+      : targetAdminId
+        ? `/portal-projects?adminId=${targetAdminId}`
+        : "/portal-projects";
 
   const priceDisplay = "Price on Request";
 
@@ -88,10 +111,31 @@ export default async function PublicProjectDetailPage({
   const uniqueImages = Array.from(new Set(galleryImages));
 
   return (
-    <div className="min-h-screen bg-paper text-ink flex flex-col justify-between">
+    <div
+      className="min-h-screen bg-paper text-ink flex flex-col justify-between"
+      style={
+        {
+          ...(agencyBranding?.settings?.theme?.primaryColor
+            ? { "--ink-green": agencyBranding.settings.theme.primaryColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.deepColor
+            ? { "--deep-green": agencyBranding.settings.theme.deepColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.accentColor
+            ? { "--brass": agencyBranding.settings.theme.accentColor }
+            : {}),
+          ...(agencyBranding?.settings?.theme?.paperColor
+            ? { "--paper": agencyBranding.settings.theme.paperColor }
+            : {}),
+        } as React.CSSProperties
+      }
+    >
       <PublicHeader
         agencyName={agencyBranding?.agencyName || project.agency?.agencyName}
+        agencySlug={agencyBranding?.agencySlug || agencySlug || undefined}
+        adminId={agencyBranding?.adminId || targetAdminId}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
@@ -379,7 +423,11 @@ export default async function PublicProjectDetailPage({
 
       <PublicFooter
         agencyName={agencyBranding?.agencyName || project.agency?.agencyName}
+        agencySlug={agencyBranding?.agencySlug || agencySlug || undefined}
+        adminId={agencyBranding?.adminId || targetAdminId}
+        topLocations={topLocations}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
     </div>
   );

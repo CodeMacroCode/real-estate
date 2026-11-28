@@ -10,6 +10,7 @@ import { PropertyOverviewSpecs } from "@/components/property/PropertyOverviewSpe
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 import { formatPrice, formatFloorOrdinal } from "@/lib/portalUtils";
+import { shouldHideResidentialSpecsSection } from "@/lib/propertyFormHelpers";
 import { MapPin, ShieldCheck, Check, ArrowLeft, Building, Navigation, ExternalLink } from "lucide-react";
 
 interface PublicPropertyDetailPageProps {
@@ -200,7 +201,13 @@ export default async function PublicPropertyDetailPage({
     ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
     : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress || property.location?.city || property.title)}`;
 
-  const floorPlanSectionNumber = property.amenities && property.amenities.length > 0 ? "04" : "03";
+  const hideResidentialSpecs = shouldHideResidentialSpecsSection(
+    property.propertyType,
+  );
+  const showAmenitiesSection =
+    !hideResidentialSpecs &&
+    Boolean(property.amenities && property.amenities.length > 0);
+  const floorPlanSectionNumber = showAmenitiesSection ? "04" : "03";
 
   return (
     <div
@@ -224,6 +231,8 @@ export default async function PublicPropertyDetailPage({
     >
       <PublicHeader
         agencyName={agencyBranding?.agencyName || property.agency?.agencyName}
+        agencySlug={agencySlug || undefined}
+        adminId={targetAdminId}
         settings={agencyBranding?.settings}
         isCustomDomain={isCustomDomain}
       />
@@ -381,7 +390,7 @@ export default async function PublicPropertyDetailPage({
               </div>
 
               {/* Amenities as square outlined chips with check icon */}
-              {property.amenities && property.amenities.length > 0 && (
+              {showAmenitiesSection && (
                 <div className="bg-card-white border border-line p-6 space-y-4">
                   <span className="text-xs font-bold uppercase tracking-[0.14em] text-brass block">
                     03 &mdash; Sanctioned Amenities
@@ -535,7 +544,10 @@ export default async function PublicPropertyDetailPage({
 
       <PublicFooter
         agencyName={agencyBranding?.agencyName || property.agency?.agencyName}
+        agencySlug={agencySlug || undefined}
+        adminId={targetAdminId}
         settings={agencyBranding?.settings}
+        isCustomDomain={isCustomDomain}
       />
     </div>
   );

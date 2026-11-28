@@ -13,8 +13,9 @@ import {
   Building2,
 } from "lucide-react";
 import { SanitizedPublicProperty } from "@/services/publicPortalService";
-import { formatPrice } from "@/lib/portalUtils";
+import { appendTenantQuery, formatPrice, resolvePortalTenant } from "@/lib/portalUtils";
 import { isPlatformHost } from "@/lib/domains/normalize";
+import { shouldHideResidentialSpecsSection } from "@/lib/propertyFormHelpers";
 import { motion, useReducedMotion } from "motion/react";
 
 interface PropertyCardProps {
@@ -45,11 +46,12 @@ export function PropertyCard({
   }, [isCustomDomain]);
 
   const slugOrId = property.slug || property.id;
-  const activeAgencySlug = agencySlug || property.agency?.agencySlug;
-  const propertyUrl =
-    onCustomDomain || !activeAgencySlug
-      ? `/portal-properties/${slugOrId}`
-      : `/portal-properties/${slugOrId}?agency=${activeAgencySlug}`;
+  const tenant = resolvePortalTenant({
+    isCustomDomain: onCustomDomain,
+    agencySlug: agencySlug || property.agency?.agencySlug,
+    adminId: property.agency?.adminId,
+  });
+  const propertyUrl = appendTenantQuery(`/portal-properties/${slugOrId}`, tenant);
 
   const displayPrice =
     property.transactionType === "Rent" && property.pricing?.monthlyRent
@@ -70,6 +72,10 @@ export function PropertyCard({
   const areaText = property.areaDetails?.carpetArea
     ? `${property.areaDetails.carpetArea} ${property.areaDetails.areaUnit || "Sq. Ft."}`
     : "On Request";
+
+  const hideResidentialSpecs = shouldHideResidentialSpecsSection(
+    property.propertyType,
+  );
 
   return (
     <motion.article
@@ -175,33 +181,54 @@ export function PropertyCard({
             </span>
           </p>
 
-          {/* Spec strip: three equal cells separated by 1px lines (BHK | Bath | Area) */}
-          <div className="mt-3 grid grid-cols-3 border border-line text-center text-xs divide-x divide-line bg-paper/60">
-            <div className="py-2 px-1">
-              <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
-                Bedrooms
-              </span>
-              <span className="font-bold text-ink text-xs mt-0.5 block">
-                {property.residentialSpecs?.bedrooms ? `${property.residentialSpecs.bedrooms} BHK` : "N/A"}
-              </span>
+          {/* Spec strip: 3 cols (BHK | Bath | Area) for residential, or 2 cols (Type | Area) for commercial/land/investment */}
+          {hideResidentialSpecs ? (
+            <div className="mt-3 grid grid-cols-2 border border-line text-center text-xs divide-x divide-line bg-paper/60">
+              <div className="py-2 px-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                  Property Type
+                </span>
+                <span className="font-bold text-ink text-xs mt-0.5 block truncate capitalize">
+                  {(property.propertyType || property.propertyCategory || "Commercial").replace(/_/g, " ")}
+                </span>
+              </div>
+              <div className="py-2 px-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                  Area
+                </span>
+                <span className="font-bold text-ink text-xs mt-0.5 block truncate">
+                  {areaText}
+                </span>
+              </div>
             </div>
-            <div className="py-2 px-1">
-              <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
-                Bath
-              </span>
-              <span className="font-bold text-ink text-xs mt-0.5 block">
-                {property.residentialSpecs?.bathrooms ? `${property.residentialSpecs.bathrooms} Baths` : "1+"}
-              </span>
+          ) : (
+            <div className="mt-3 grid grid-cols-3 border border-line text-center text-xs divide-x divide-line bg-paper/60">
+              <div className="py-2 px-1">
+                <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                  Bedrooms
+                </span>
+                <span className="font-bold text-ink text-xs mt-0.5 block">
+                  {property.residentialSpecs?.bedrooms ? `${property.residentialSpecs.bedrooms} BHK` : "N/A"}
+                </span>
+              </div>
+              <div className="py-2 px-1">
+                <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                  Bath
+                </span>
+                <span className="font-bold text-ink text-xs mt-0.5 block">
+                  {property.residentialSpecs?.bathrooms ? `${property.residentialSpecs.bathrooms} Baths` : "1+"}
+                </span>
+              </div>
+              <div className="py-2 px-1">
+                <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
+                  Area
+                </span>
+                <span className="font-bold text-ink text-xs mt-0.5 block truncate">
+                  {areaText}
+                </span>
+              </div>
             </div>
-            <div className="py-2 px-1">
-              <span className="text-[10px] uppercase tracking-wider text-muted-ink block font-semibold">
-                Area
-              </span>
-              <span className="font-bold text-ink text-xs mt-0.5 block truncate">
-                {areaText}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Admin Agency Contact Details */}
           {(property.agency?.agencyName || property.agency?.phone || property.agency?.email) && (

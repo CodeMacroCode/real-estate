@@ -1,5 +1,5 @@
 import React from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   resolveAdminByHostOrSlug,
@@ -43,6 +43,14 @@ export default async function PortalContactPage({
 
   const agencyBranding = tenantFromQuery || tenantFromHost || null;
 
+  if (
+    !resolvedSearchParams.agency &&
+    resolvedSearchParams.adminId &&
+    agencyBranding?.agencySlug
+  ) {
+    redirect(`/portal-contact?agency=${encodeURIComponent(agencyBranding.agencySlug)}`);
+  }
+
   const targetAdminId =
     agencyBranding?.adminId ||
     resolvedSearchParams.adminId ||
@@ -73,6 +81,8 @@ export default async function PortalContactPage({
     >
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
+        agencySlug={agencyBranding?.agencySlug || resolvedSearchParams.agency}
+        adminId={targetAdminId}
         settings={agencyBranding?.settings}
       />
       <main className="flex-1">
@@ -80,6 +90,8 @@ export default async function PortalContactPage({
       </main>
       <PublicFooter
         agencyName={agencyBranding?.agencyName}
+        agencySlug={agencyBranding?.agencySlug || resolvedSearchParams.agency}
+        adminId={targetAdminId}
         topLocations={topLocations}
         settings={agencyBranding?.settings}
       />

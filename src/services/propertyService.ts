@@ -9,6 +9,7 @@ import { MasterOption } from "@/models/MasterOption";
 export interface SsrPropertyItem {
   _id: string;
   adminId: string;
+  agencySlug?: string;
   propertyId: string;
   title: string;
   propertyCategory: PropertyCategory;
@@ -219,6 +220,7 @@ export async function getSsrProperties({
   const [total, docs] = await Promise.all([
     Property.countDocuments(query),
     Property.find(query)
+      .populate("adminId", "name username agencySlug agencyName")
       .populate("ownerId", "name mobile")
       .populate("projectId", "name")
       .sort({ createdAt: -1 })
@@ -227,9 +229,24 @@ export async function getSsrProperties({
       .lean(),
   ]);
 
-  const properties: SsrPropertyItem[] = docs.map((doc: any) => ({
+  const properties: SsrPropertyItem[] = docs.map((doc: any) => {
+    const adminObj =
+      doc.adminId && typeof doc.adminId === "object" ? doc.adminId : null;
+    const resolvedAdminId = adminObj?._id
+      ? adminObj._id.toString()
+      : String(doc.adminId || "");
+    const resolvedAgencySlug = adminObj
+      ? adminObj.agencySlug ||
+        adminObj.username ||
+        (adminObj.agencyName || adminObj.name || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "")
+      : "";
+
+    return {
     _id: doc._id.toString(),
-    adminId: doc.adminId.toString(),
+    adminId: resolvedAdminId,
+    agencySlug: resolvedAgencySlug || undefined,
     propertyId: doc.propertyId,
     title: doc.title,
     propertyCategory: doc.propertyCategory,
@@ -267,7 +284,8 @@ export async function getSsrProperties({
     bathrooms: doc.residentialSpecs?.bathrooms || 0,
     createdAt: doc.createdAt?.toISOString?.() || new Date().toISOString(),
     updatedAt: doc.updatedAt?.toISOString?.() || new Date().toISOString(),
-  }));
+  };
+  });
 
   return {
     properties,

@@ -1,4 +1,5 @@
 import React from "react";
+import { shouldHideResidentialSpecsSection } from "@/lib/propertyFormHelpers";
 
 interface PropertyOverviewSpecsProps {
   carpetArea?: number;
@@ -29,29 +30,39 @@ export function PropertyOverviewSpecs({
   propertyCategory,
   officeNumber,
 }: PropertyOverviewSpecsProps) {
+  const hideResidentialSpecs = shouldHideResidentialSpecsSection(propertyType);
+
   const specs = [
     {
       label: "Carpet Area",
       value: carpetArea ? `${carpetArea} ${areaUnit}` : null,
     },
-    {
-      label: "Bedrooms",
-      value:
-        bedrooms !== undefined && bedrooms !== null ? `${bedrooms} BHK` : null,
-    },
-    {
-      label: "Bathrooms",
-      value:
-        bathrooms !== undefined && bathrooms !== null
-          ? `${bathrooms} Baths`
-          : null,
-    },
-    {
-      label: "Balconies",
-      value:
-        balconies !== undefined && balconies !== null ? `${balconies}` : null,
-    },
-    { label: "Furnishing", value: furnishing || null },
+    ...(hideResidentialSpecs
+      ? []
+      : [
+          {
+            label: "Bedrooms",
+            value:
+              bedrooms !== undefined && bedrooms !== null
+                ? `${bedrooms} BHK`
+                : null,
+          },
+          {
+            label: "Bathrooms",
+            value:
+              bathrooms !== undefined && bathrooms !== null
+                ? `${bathrooms} Baths`
+                : null,
+          },
+          {
+            label: "Balconies",
+            value:
+              balconies !== undefined && balconies !== null
+                ? `${balconies}`
+                : null,
+          },
+          { label: "Furnishing", value: furnishing || null },
+        ]),
     { label: "Facing", value: facing ? `${facing} Facing` : null },
     {
       label: "Floor Elevation",

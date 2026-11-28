@@ -54,7 +54,7 @@ export default function PublicPortalClient({
 
   const [search, setSearch] = useState(searchParams.search || "");
   const [transactionType, setTransactionType] = useState(
-    searchParams.transactionType || "Sale",
+    searchParams.transactionType || "",
   );
   const [category, setCategory] = useState(searchParams.category || "");
   const [city, setCity] = useState(
@@ -95,7 +95,7 @@ export default function PublicPortalClient({
     if (currentBudget) query.set("maxPrice", currentBudget);
     if (currentSort) query.set("sort", currentSort);
     if (activeAgencySlug) query.set("agency", activeAgencySlug);
-    if (activeAdminId) query.set("adminId", activeAdminId);
+    else if (activeAdminId) query.set("adminId", activeAdminId);
 
     router.push(`/portal-properties?${query.toString()}`);
   };
@@ -179,10 +179,10 @@ export default function PublicPortalClient({
             <p
               className={`text-sm sm:text-base leading-relaxed max-w-xl ${
                 isLightGlass
-                  ? "text-slate-700"
+                  ? "text-slate-800"
                   : heroCoverUrl
-                    ? "text-paper/95 drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]"
-                    : "text-line/80"
+                    ? "text-paper drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]"
+                    : "text-paper opacity-90"
               }`}
             >
               {agencyBranding?.settings?.hero?.subheadline ||
@@ -206,9 +206,10 @@ export default function PublicPortalClient({
       {/* 4. Search panel overlapping the hero bottom (margin-top -72px) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 sm:-mt-20 relative z-20">
         <div className="bg-card-white border-2 border-ink-green shadow-hard-brass p-6 sm:p-7">
-          {/* Tab row on top (Buy / Rent / Lease / Projects; active tab = solid green with white text) */}
+          {/* Tab row on top (All / Buy / Rent / Lease / Projects; active tab = solid green with white text) */}
           <div className="flex items-center gap-1 border-b border-line pb-4 mb-6 overflow-x-auto">
             {[
+              { id: "", label: "All" },
               { id: "Sale", label: "Buy" },
               { id: "Rent", label: "Rent" },
               { id: "Lease", label: "Commercial Lease" },
@@ -218,13 +219,13 @@ export default function PublicPortalClient({
                 tab.id === "Projects" ? false : transactionType === tab.id;
               return (
                 <button
-                  key={tab.id}
+                  key={tab.id || "ALL"}
                   type="button"
                   onClick={() => {
                     if (tab.id === "Projects") {
                       const q = new URLSearchParams();
                       if (activeAgencySlug) q.set("agency", activeAgencySlug);
-                      if (activeAdminId) q.set("adminId", activeAdminId);
+                      else if (activeAdminId) q.set("adminId", activeAdminId);
                       router.push(`/portal-projects?${q.toString()}`);
                     } else {
                       setTransactionType(tab.id);

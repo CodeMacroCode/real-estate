@@ -921,7 +921,15 @@ export function ProjectsClient({
 
                       {p.isPublishedOnWebsite && (
                         <a
-                          href={`/portal-projects/${p.slug || p.projectId.toLowerCase()}${currentUser?.agencySlug ? `?agency=${currentUser.agencySlug}` : ""}`}
+                          href={`/portal-projects/${p.slug || p.projectId.toLowerCase()}${
+                            p.agencySlug || currentUser?.agencySlug || currentUser?.username
+                              ? `?agency=${p.agencySlug || currentUser?.agencySlug || currentUser?.username}`
+                              : p.adminId
+                                ? `?adminId=${p.adminId}`
+                                : currentUser?._id
+                                  ? `?adminId=${currentUser._id}`
+                                  : ""
+                          }`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"

@@ -13,21 +13,47 @@ import {
   Building2,
 } from "lucide-react";
 import { SanitizedPublicProject } from "@/services/publicPortalService";
-import { formatPrice } from "@/lib/portalUtils";
+import { appendTenantQuery, formatPrice, resolvePortalTenant } from "@/lib/portalUtils";
+import { isPlatformHost } from "@/lib/domains/normalize";
 import { motion, useReducedMotion } from "motion/react";
 
 interface ProjectCardProps {
   project: SanitizedPublicProject;
   agencySlug?: string;
+  isCustomDomain?: boolean;
   onEnquireClick?: (project: SanitizedPublicProject) => void;
 }
 
-export function ProjectCard({ project, agencySlug, onEnquireClick }: ProjectCardProps) {
+export function ProjectCard({
+  project,
+  agencySlug,
+  isCustomDomain,
+  onEnquireClick,
+}: ProjectCardProps) {
   const shouldReduceMotion = useReducedMotion();
-  const activeAgencySlug = agencySlug || project.agency?.agencySlug;
-  const projectUrl = activeAgencySlug
-    ? `/portal-projects/${project.slug || project.id}?agency=${activeAgencySlug}`
-    : `/portal-projects/${project.slug || project.id}`;
+  const [onCustomDomain, setOnCustomDomain] = React.useState(
+    Boolean(isCustomDomain),
+  );
+
+  React.useEffect(() => {
+    if (isCustomDomain !== undefined) {
+      setOnCustomDomain(isCustomDomain);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      setOnCustomDomain(!isPlatformHost(window.location.hostname));
+    }
+  }, [isCustomDomain]);
+
+  const tenant = resolvePortalTenant({
+    isCustomDomain: onCustomDomain,
+    agencySlug: agencySlug || project.agency?.agencySlug,
+    adminId: project.agency?.adminId,
+  });
+  const projectUrl = appendTenantQuery(
+    `/portal-projects/${project.slug || project.id}`,
+    tenant,
+  );
 
   const priceDisplay = "Price on Request";
 

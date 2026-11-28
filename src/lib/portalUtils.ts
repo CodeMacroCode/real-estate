@@ -70,3 +70,37 @@ export function appendTenantQuery(
   const q = params.toString();
   return q ? `${pathname}?${q}` : pathname;
 }
+
+/**
+ * Resolves tenant identity for portal navigation links, falling back from
+ * URL query params / explicit agencySlug to adminId (e.g. from settings or record)
+ * so single-property / single-project detail views never lose tenant context.
+ */
+export function resolvePortalTenant(options: {
+  isCustomDomain?: boolean;
+  agencySlug?: string | null;
+  adminId?: string | null;
+  searchAgency?: string | null;
+  searchAdminId?: string | null;
+  settingsAdminId?: unknown;
+}): { agency?: string; adminId?: string } {
+  if (options.isCustomDomain) {
+    return {};
+  }
+
+  const agency =
+    options.agencySlug?.trim() || options.searchAgency?.trim() || undefined;
+  if (agency) {
+    return { agency };
+  }
+
+  const settingsAdminStr =
+    options.settingsAdminId != null ? String(options.settingsAdminId).trim() : "";
+  const adminId =
+    options.adminId?.trim() ||
+    settingsAdminStr ||
+    options.searchAdminId?.trim() ||
+    undefined;
+
+  return adminId ? { adminId } : {};
+}

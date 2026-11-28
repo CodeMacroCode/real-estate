@@ -55,6 +55,21 @@ export interface IWebsiteSettingDocument extends Document {
     copyrightText?: string;
     logoUrl?: string;
   };
+  aboutUs?: {
+    eyebrowText?: string;
+    headline?: string;
+    story?: string;
+    missionTitle?: string;
+    missionDescription?: string;
+    visionTitle?: string;
+    visionDescription?: string;
+    bannerImageUrl?: string;
+    yearsExperience?: string;
+    propertiesSoldCount?: string;
+    happyClientsCount?: string;
+    teamSizeCount?: string;
+    highlights?: Array<{ title: string; description: string }>;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -132,6 +147,26 @@ const WebsiteSettingSchema = new Schema<IWebsiteSettingDocument>(
       aboutText: { type: String, trim: true, default: "" },
       copyrightText: { type: String, trim: true, default: "" },
       logoUrl: { type: String, trim: true, default: "" },
+    },
+    aboutUs: {
+      eyebrowText: { type: String, trim: true, default: "" },
+      headline: { type: String, trim: true, default: "" },
+      story: { type: String, trim: true, default: "" },
+      missionTitle: { type: String, trim: true, default: "" },
+      missionDescription: { type: String, trim: true, default: "" },
+      visionTitle: { type: String, trim: true, default: "" },
+      visionDescription: { type: String, trim: true, default: "" },
+      bannerImageUrl: { type: String, trim: true, default: "" },
+      yearsExperience: { type: String, trim: true, default: "" },
+      propertiesSoldCount: { type: String, trim: true, default: "" },
+      happyClientsCount: { type: String, trim: true, default: "" },
+      teamSizeCount: { type: String, trim: true, default: "" },
+      highlights: [
+        {
+          title: { type: String, trim: true, default: "" },
+          description: { type: String, trim: true, default: "" },
+        },
+      ],
     },
   },
   {

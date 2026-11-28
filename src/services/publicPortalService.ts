@@ -168,6 +168,29 @@ export interface SanitizedPublicProject {
   createdAt: string;
 }
 
+export function resolveUserPublicSlug(admin: any): string {
+  if (!admin || typeof admin !== "object") return "";
+  if (
+    admin.agencySlug &&
+    typeof admin.agencySlug === "string" &&
+    admin.agencySlug.trim()
+  ) {
+    return admin.agencySlug.trim();
+  }
+  if (
+    admin.username &&
+    typeof admin.username === "string" &&
+    admin.username.trim()
+  ) {
+    return admin.username.trim();
+  }
+  const baseName = admin.agencyName || admin.name || "";
+  if (typeof baseName === "string" && baseName.trim()) {
+    return baseName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+  return "";
+}
+
 /**
  * Sanitizes an internal Property document into a safe, public-facing representation.
  * STRICT SECURITY GOVERNANCE:
@@ -286,7 +309,7 @@ export function sanitizePublicProperty(doc: any): SanitizedPublicProperty {
     agency: property.adminId && typeof property.adminId === "object"
       ? {
           adminId: property.adminId._id ? property.adminId._id.toString() : property.adminId.toString(),
-          agencySlug: property.adminId.agencySlug || "",
+          agencySlug: resolveUserPublicSlug(property.adminId),
           agencyName: property.adminId.agencyName || property.adminId.name || "",
           phone: property.adminId.mobile || "",
           email: property.adminId.email || "",
@@ -351,7 +374,7 @@ export function sanitizePublicProject(doc: any): SanitizedPublicProject {
     agency: project.adminId && typeof project.adminId === "object"
       ? {
           adminId: project.adminId._id ? project.adminId._id.toString() : project.adminId.toString(),
-          agencySlug: project.adminId.agencySlug || "",
+          agencySlug: resolveUserPublicSlug(project.adminId),
           agencyName: project.adminId.agencyName || project.adminId.name || "",
           phone: project.adminId.mobile || "",
           email: project.adminId.email || "",
@@ -448,7 +471,7 @@ export async function getPublicProperties(
   const [docs, total] = await Promise.all([
     Property.find(query)
       .populate("projectId", "name developerName reraNumber")
-      .populate("adminId", "name agencySlug agencyName mobile email")
+      .populate("adminId", "name username agencySlug agencyName mobile email")
       .sort(sortOption)
       .skip(skip)
       .limit(limit)
@@ -531,7 +554,7 @@ export async function getPublicPropertyBySlug(
 
   const doc = await Property.findOne(query)
     .populate("projectId", "name developerName reraNumber")
-    .populate("adminId", "name agencySlug agencyName mobile email")
+    .populate("adminId", "name username agencySlug agencyName mobile email")
     .lean();
 
   if (!doc) {
@@ -580,7 +603,7 @@ export async function getPublicProjects(
 
   const [docs, total] = await Promise.all([
     Project.find(query)
-      .populate("adminId", "name agencySlug agencyName mobile email")
+      .populate("adminId", "name username agencySlug agencyName mobile email")
       .sort({ featuredOnWebsite: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -659,7 +682,7 @@ export async function getPublicProjectBySlug(
   }
 
   const doc = await Project.findOne(query)
-    .populate("adminId", "name agencySlug agencyName mobile email")
+    .populate("adminId", "name username agencySlug agencyName mobile email")
     .lean();
 
   if (!doc) {
@@ -709,7 +732,7 @@ export async function resolveAdminByHostOrSlug(
     customDomain: cleanHost,
     status: "active",
   })
-    .select("_id name agencyName agencySlug customDomain")
+    .select("_id name username agencyName agencySlug customDomain")
     .lean();
 
   if (byCustomDomain) {
@@ -718,7 +741,7 @@ export async function resolveAdminByHostOrSlug(
     return {
       adminId,
       agencyName: settings?.branding?.companyName || byCustomDomain.agencyName || byCustomDomain.name,
-      agencySlug: byCustomDomain.agencySlug || "",
+      agencySlug: resolveUserPublicSlug(byCustomDomain),
       customDomain: byCustomDomain.customDomain,
       settings,
     };
@@ -730,10 +753,10 @@ export async function resolveAdminByHostOrSlug(
     const candidateSubdomain = parts[0];
     if (candidateSubdomain && candidateSubdomain !== "www" && candidateSubdomain !== "localhost") {
       const bySubdomain = await User.findOne({
-        agencySlug: candidateSubdomain,
+        $or: [{ agencySlug: candidateSubdomain }, { username: candidateSubdomain }],
         status: "active",
       })
-        .select("_id name agencyName agencySlug customDomain")
+        .select("_id name username agencyName agencySlug customDomain")
         .lean();
 
       if (bySubdomain) {
@@ -742,7 +765,7 @@ export async function resolveAdminByHostOrSlug(
         return {
           adminId,
           agencyName: settings?.branding?.companyName || bySubdomain.agencyName || bySubdomain.name,
-          agencySlug: bySubdomain.agencySlug || candidateSubdomain,
+          agencySlug: resolveUserPublicSlug(bySubdomain) || candidateSubdomain,
           customDomain: bySubdomain.customDomain,
           settings,
         };
@@ -752,7 +775,7 @@ export async function resolveAdminByHostOrSlug(
 
   // 3. Fallback direct match: agencySlug, username, name, email prefix, agencyName, or _id
   const isObjectId = mongoose.Types.ObjectId.isValid(cleanHost);
-  const bySlug = await User.findOne({
+  let bySlug: any = await User.findOne({
     $or: [
       { agencySlug: cleanHost },
       { username: cleanHost },
@@ -766,13 +789,22 @@ export async function resolveAdminByHostOrSlug(
     .select("_id name username email agencyName agencySlug customDomain")
     .lean();
 
+  if (!bySlug && !isObjectId && /^[a-z0-9]+$/.test(cleanHost)) {
+    const activeCandidates = await User.find({ status: "active" })
+      .select("_id name username email agencyName agencySlug customDomain")
+      .lean();
+    bySlug = activeCandidates.find(
+      (u: any) => resolveUserPublicSlug(u).toLowerCase() === cleanHost,
+    );
+  }
+
   if (bySlug) {
     const adminId = bySlug._id.toString();
     const settings = await getWebsiteSettingsByAdminId(adminId);
     return {
       adminId,
       agencyName: settings?.branding?.companyName || bySlug.agencyName || bySlug.name,
-      agencySlug: bySlug.agencySlug || bySlug.username || cleanHost,
+      agencySlug: resolveUserPublicSlug(bySlug),
       customDomain: bySlug.customDomain,
       settings,
     };

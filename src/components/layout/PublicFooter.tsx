@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -17,19 +17,47 @@ import {
   FaYoutube,
   FaXTwitter,
 } from "react-icons/fa6";
-import { appendTenantQuery } from "@/lib/portalUtils";
+import { appendTenantQuery, resolvePortalTenant } from "@/lib/portalUtils";
+import { isPlatformHost } from "@/lib/domains/normalize";
 
 interface PublicFooterProps {
   agencyName?: string;
+  agencySlug?: string;
+  adminId?: string;
   topLocations?: string[];
   settings?: any;
+  isCustomDomain?: boolean;
 }
 
-export function PublicFooter({ agencyName, topLocations = [], settings }: PublicFooterProps) {
+export function PublicFooter({
+  agencyName,
+  agencySlug,
+  adminId: adminIdProp,
+  topLocations = [],
+  settings,
+  isCustomDomain,
+}: PublicFooterProps) {
   const searchParams = useSearchParams();
-  const agency = searchParams.get("agency") || undefined;
-  const adminId = searchParams.get("adminId") || undefined;
-  const tenant = { agency, adminId };
+  const [onCustomDomain, setOnCustomDomain] = useState(Boolean(isCustomDomain));
+
+  useEffect(() => {
+    if (isCustomDomain !== undefined) {
+      setOnCustomDomain(isCustomDomain);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      setOnCustomDomain(!isPlatformHost(window.location.hostname));
+    }
+  }, [isCustomDomain]);
+
+  const tenant = resolvePortalTenant({
+    isCustomDomain: onCustomDomain,
+    agencySlug,
+    adminId: adminIdProp,
+    searchAgency: searchParams.get("agency"),
+    searchAdminId: searchParams.get("adminId"),
+    settingsAdminId: settings?.adminId,
+  });
 
   // Fallback locations only if tenant has no active listings
   const locationsToDisplay =
@@ -169,6 +197,14 @@ export function PublicFooter({ agencyName, topLocations = [], settings }: Public
             <ul className="space-y-1.5 text-[11px] text-paper/90 font-medium">
               <li>
                 <Link
+                  href={appendTenantQuery("/portal-properties", tenant)}
+                  className="hover:text-brass transition-colors"
+                >
+                  Home &amp; All Listings
+                </Link>
+              </li>
+              <li>
+                <Link
                   href={appendTenantQuery(
                     "/portal-properties?transactionType=Sale",
                     tenant,
@@ -206,6 +242,17 @@ export function PublicFooter({ agencyName, topLocations = [], settings }: Public
                   className="hover:text-brass transition-colors"
                 >
                   Commercial Offices &amp; Retail
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={appendTenantQuery(
+                    "/portal-about",
+                    tenant,
+                  )}
+                  className="hover:text-brass transition-colors"
+                >
+                  About Us &amp; Credentials
                 </Link>
               </li>
               <li>

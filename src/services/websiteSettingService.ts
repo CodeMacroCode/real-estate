@@ -88,6 +88,40 @@ export async function getWebsiteSettingsByAdminId(adminId: string) {
         adminUser?.agencyName || adminUser?.name || "Real Estate Agency"
       }. All rights reserved.`,
     },
+    aboutUs: {
+      eyebrowText: "ABOUT OUR AGENCY • VERIFIED ADVISORY",
+      headline: "Trusted Real Estate Guidance Built on Legal Clarity.",
+      story:
+        "We specialize in RERA-verified residential homes, clear-title NA layouts, commercial offices, and strategic investment opportunities. Every property in our portfolio undergoes thorough title and documentation verification before reaching buyers.",
+      missionTitle: "Our Mission",
+      missionDescription:
+        "Deliver transparent, paperwork-first property transactions where buyers and investors make confident decisions backed by verified documentation.",
+      visionTitle: "Our Vision",
+      visionDescription:
+        "Become the region's most trusted real estate advisory desk known for zero hidden charges, verified developers, and lifelong client relationships.",
+      bannerImageUrl: "",
+      yearsExperience: "10+",
+      propertiesSoldCount: "500+",
+      happyClientsCount: "1,200+",
+      teamSizeCount: "25+",
+      highlights: [
+        {
+          title: "100% RERA & Title Vetted",
+          description:
+            "Every project and listing is screened for legal clearances, RERA registration, and clean chain of title.",
+        },
+        {
+          title: "End-to-End Registry Support",
+          description:
+            "Dedicated guidance from site inspection and price negotiation to home loans, stamp duty, and final registration.",
+        },
+        {
+          title: "Direct Owner & Builder Access",
+          description:
+            "Transparent pricing directly from verified owners and Grade-A developers with zero inflated middleman markups.",
+        },
+      ],
+    },
   };
 
   return JSON.parse(JSON.stringify(defaultObj));
@@ -120,6 +154,30 @@ export async function upsertWebsiteSettings(
       : [],
   };
 
+  const existingAbout = (payload.aboutUs || {}) as Partial<
+    NonNullable<IWebsiteSettingDocument["aboutUs"]>
+  >;
+  const normalizedAboutUs = {
+    eyebrowText: existingAbout.eyebrowText ?? "",
+    headline: existingAbout.headline ?? "",
+    story: existingAbout.story ?? "",
+    missionTitle: existingAbout.missionTitle ?? "",
+    missionDescription: existingAbout.missionDescription ?? "",
+    visionTitle: existingAbout.visionTitle ?? "",
+    visionDescription: existingAbout.visionDescription ?? "",
+    bannerImageUrl: existingAbout.bannerImageUrl ?? "",
+    yearsExperience: existingAbout.yearsExperience ?? "",
+    propertiesSoldCount: existingAbout.propertiesSoldCount ?? "",
+    happyClientsCount: existingAbout.happyClientsCount ?? "",
+    teamSizeCount: existingAbout.teamSizeCount ?? "",
+    highlights: Array.isArray(existingAbout.highlights)
+      ? existingAbout.highlights.map((h) => ({
+          title: h?.title ?? "",
+          description: h?.description ?? "",
+        }))
+      : [],
+  };
+
   const updated = await WebsiteSetting.findOneAndUpdate(
     { adminId: new mongoose.Types.ObjectId(adminId) },
     {
@@ -131,6 +189,7 @@ export async function upsertWebsiteSettings(
         theme: payload.theme,
         regulatory: payload.regulatory,
         footer: payload.footer,
+        aboutUs: normalizedAboutUs,
       },
     },
     { new: true, upsert: true, setDefaultsOnInsert: true, strict: false },

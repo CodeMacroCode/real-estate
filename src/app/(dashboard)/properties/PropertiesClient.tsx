@@ -55,6 +55,17 @@ import {
   ExportableProperty,
   exportPropertiesReport,
 } from "@/lib/export/realEstateModuleExports";
+import {
+  DEFAULT_PROPERTY_FORM_DATA,
+  PropertyFloorPlanItem,
+  PropertyFormValues,
+  extractPropertyFormState,
+  getExtraSavedAmenities,
+  isAmenitySelected,
+  resolveMatchingSelectValue,
+  shouldHideResidentialSpecsSection,
+  toggleAmenitySelection,
+} from "@/lib/propertyFormHelpers";
 
 interface PropertiesClientProps {
   initialProperties: SsrPropertyItem[];
@@ -228,14 +239,15 @@ export function PropertiesClient({
   const [isMastersLoading, setIsMastersLoading] = useState(false);
 
   // Function to dynamically refresh all master settings from API in a single unified hit
-  const refreshMasterOptions = async () => {
+  const refreshMasterOptions = async (): Promise<SsrMasterOption[]> => {
     try {
       setIsMastersLoading(true);
-      const res = await fetch("/api/masters");
+      const res = await fetch("/api/masters?limit=1000", { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         if (Array.isArray(json.data) && json.data.length > 0) {
           setLiveMasterOptions(json.data);
+          return json.data;
         }
       }
     } catch (err) {
@@ -243,6 +255,7 @@ export function PropertiesClient({
     } finally {
       setIsMastersLoading(false);
     }
+    return liveMasterOptions;
   };
 
   const ownersFetchedRef = useRef(false);
@@ -306,30 +319,15 @@ export function PropertiesClient({
   };
 
   // Form State
-  const [formData, setFormData] = useState({
-    title: "",
-    propertyCategory: "Residential",
-    propertyType: "apartment",
-    transactionType: "Sale",
-    status: "Available",
-    ownerId: "",
-    city: "Bengaluru",
-    address: "",
-    googleMapsEmbedUrl: "",
-    price: 9500000,
-    monthlyRent: 0,
-    carpetArea: 1250,
-    areaUnit: "Sq. Ft.",
-    bedrooms: 3,
-    bathrooms: 2,
-    furnishing: "Unfurnished",
-    amenities: [] as string[],
-    publishOnWebsite: true,
-  });
+  const [formData, setFormData] = useState<PropertyFormValues>(
+    DEFAULT_PROPERTY_FORM_DATA,
+  );
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(
     null,
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLoadingEditData, setIsLoadingEditData] = useState(false);
+  const activeEditPropertyIdRef = useRef<string | null>(null);
   const [togglingPublishPropertyId, setTogglingPublishPropertyId] = useState<string | null>(null);
 
   // Image Preview Modal State
@@ -341,21 +339,7 @@ export function PropertiesClient({
   } | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [floorPlans, setFloorPlans] = useState<
-    Array<{
-      floorName: string;
-      floorNumber?: number;
-      planImageUrl: string;
-      hotspots?: Array<{
-        id?: string;
-        xPercent: number;
-        yPercent: number;
-        title: string;
-        subtitle?: string;
-        category?: string;
-      }>;
-    }>
-  >([]);
+  const [floorPlans, setFloorPlans] = useState<PropertyFloorPlanItem[]>([]);
   const [isUploadingFloorPlan, setIsUploadingFloorPlan] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -425,6 +409,120 @@ export function PropertiesClient({
   const amenitiesOptions = liveMasterOptions
     .filter((o) => o.category === "amenities" && o.isActive)
     .sort((a, b) => a.displayOrder - b.displayOrder);
+
+  const renderAmenitiesChips = (activeColorClass: string) => {
+    const baseLabels =
+      amenitiesOptions.length > 0
+        ? amenitiesOptions.map((opt) => opt.label)
+        : [
+            "Gym",
+            "Swimming Pool",
+            "Clubhouse",
+            "24/7 Security",
+            "Power Backup",
+            "Covered Parking",
+          ];
+    const extraSaved = getExtraSavedAmenities(formData.amenities, baseLabels);
+    const chipLabels = [...baseLabels, ...extraSaved];
+
+    return chipLabels.map((label) => {
+      const isChecked = isAmenitySelected(formData.amenities, label);
+      return (
+        <button
+          key={label}
+          type="button"
+          onClick={() =>
+            setFormData({
+              ...formData,
+              amenities: toggleAmenitySelection(formData.amenities, label),
+            })
+          }
+          className={`px-2 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
+            isChecked
+              ? activeColorClass
+              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+          }`}
+        >
+          {isChecked ? "✓ " : "+ "}
+          {label}
+        </button>
+      );
+    });
+  };
+
+  const hideResidentialSpecs = shouldHideResidentialSpecsSection(
+    formData.propertyType,
+  );
+
+  const renderResidentialSpecsSection = (accent: "blue" | "indigo") => {
+    const focusRingClass =
+      accent === "indigo" ? "focus:ring-indigo-500" : "focus:ring-blue-500";
+    const activeChipClass =
+      accent === "indigo"
+        ? "bg-indigo-600 text-white border-indigo-600"
+        : "bg-blue-600 text-white border-blue-600";
+
+    return (
+      <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Furnishing (Master Settings)
+          </label>
+          <SearchSelect
+            value={formData.furnishing}
+            onChange={(val) => setFormData({ ...formData, furnishing: val })}
+            placeholder="Search / Select Furnishing..."
+            options={furnishingSelectOptions}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Bedrooms / BHK
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={formData.bedrooms}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                bedrooms: Number(e.target.value),
+              })
+            }
+            className={`w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 ${focusRingClass} bg-white`}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Bathrooms
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={formData.bathrooms}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                bathrooms: Number(e.target.value),
+              })
+            }
+            className={`w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 ${focusRingClass} bg-white`}
+          />
+        </div>
+
+        <div className="col-span-3">
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Property Amenities (Master Settings)
+          </label>
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-white rounded-lg border border-slate-200">
+            {renderAmenitiesChips(activeChipClass)}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -636,12 +734,16 @@ export function PropertiesClient({
             carpetArea: Number(formData.carpetArea),
             areaUnit: formData.areaUnit,
           },
-          residentialSpecs: {
-            bedrooms: Number(formData.bedrooms),
-            bathrooms: Number(formData.bathrooms),
-            furnishing: formData.furnishing,
-          },
-          amenities: formData.amenities,
+          ...(hideResidentialSpecs
+            ? { amenities: [] }
+            : {
+                residentialSpecs: {
+                  bedrooms: Number(formData.bedrooms),
+                  bathrooms: Number(formData.bathrooms),
+                  furnishing: formData.furnishing,
+                },
+                amenities: formData.amenities,
+              }),
           media: {
             featuredImage: uploadedImages[0] || "",
             images: uploadedImages,
@@ -670,38 +772,73 @@ export function PropertiesClient({
     }
   };
 
-  const handleOpenEdit = (p: SsrPropertyItem) => {
+  const handleOpenEdit = async (p: SsrPropertyItem) => {
+    activeEditPropertyIdRef.current = p._id;
     setEditingPropertyId(p._id);
-    const ownerName = p.owner?.name ? `${p.owner.name} (${p.owner?.mobile || ""})` : "";
-    setSelectedOwnerLabel(ownerName);
-    setFormData({
-      title: p.title || "",
-      propertyCategory: p.propertyCategory || "Residential",
-      propertyType: p.propertyType || "apartment",
-      transactionType: p.transactionType || "Sale",
-      status: p.status || "Available",
-      ownerId: p.owner?._id || "",
-      city: p.location?.city || "Bengaluru",
-      address: p.location?.address || "",
-      googleMapsEmbedUrl: p.location?.googleMapsEmbedUrl || "",
-      price: p.pricing?.price || 0,
-      monthlyRent: p.pricing?.monthlyRent || 0,
-      carpetArea: p.areaDetails?.carpetArea || 0,
-      areaUnit: p.areaDetails?.areaUnit || "Sq. Ft.",
-      bedrooms: p.bedrooms || 3,
-      bathrooms: p.bathrooms || 2,
-      furnishing: p.furnishing || "Unfurnished",
-      amenities: Array.isArray(p.amenities) ? p.amenities : [],
-      publishOnWebsite: Boolean(p.publishing?.publishOnWebsite),
-    });
+
+    const initialState = extractPropertyFormState(p, furnishingSelectOptions);
+    setSelectedOwnerLabel(initialState.selectedOwnerLabel);
+    setFormData(initialState.formData);
     setUploadedImages([]);
-    const existingImgs = Array.isArray(p.media?.images) ? p.media.images : [];
-    setExistingImages(existingImgs);
-    setFloorPlans(
-      Array.isArray(p.media?.floorPlanMaps) ? p.media.floorPlanMaps : [],
-    );
-    refreshMasterOptions();
+    setExistingImages(initialState.existingImages);
+    setFloorPlans(initialState.floorPlans);
     setIsEditModalOpen(true);
+
+    setIsLoadingEditData(true);
+    try {
+      const [latestRes, refreshedMasters] = await Promise.all([
+        fetch(`/api/properties/${p._id}`, { cache: "no-store" }),
+        refreshMasterOptions(),
+      ]);
+
+      if (!latestRes.ok) return;
+      const json = await latestRes.json();
+      if (
+        activeEditPropertyIdRef.current !== p._id ||
+        !json?.data
+      ) {
+        return;
+      }
+
+      const activeFurnishingOpts = refreshedMasters
+        .filter((o) => o.category === "furnishing_options" && o.isActive)
+        .map((o) => ({ value: o.label, label: o.label }));
+      const resolvedFurnishingOpts =
+        activeFurnishingOpts.length > 0
+          ? activeFurnishingOpts
+          : furnishingSelectOptions;
+
+      const freshState = extractPropertyFormState(
+        json.data,
+        resolvedFurnishingOpts,
+      );
+      freshState.formData.propertyType = resolveMatchingSelectValue(
+        freshState.formData.propertyType,
+        propertyTypeSelectOptions,
+        freshState.formData.propertyType,
+      );
+      freshState.formData.transactionType = resolveMatchingSelectValue(
+        freshState.formData.transactionType,
+        transactionTypeSelectOptions,
+        freshState.formData.transactionType,
+      );
+      freshState.formData.status = resolveMatchingSelectValue(
+        freshState.formData.status,
+        propertyStatusSelectOptions,
+        freshState.formData.status,
+      );
+
+      setSelectedOwnerLabel(freshState.selectedOwnerLabel);
+      setFormData(freshState.formData);
+      setExistingImages(freshState.existingImages);
+      setFloorPlans(freshState.floorPlans);
+    } catch (err) {
+      console.error("Failed to fetch latest property for edit:", err);
+    } finally {
+      if (activeEditPropertyIdRef.current === p._id) {
+        setIsLoadingEditData(false);
+      }
+    }
   };
 
   const handleUpdateProperty = async (e: React.FormEvent) => {
@@ -740,12 +877,16 @@ export function PropertiesClient({
             carpetArea: Number(formData.carpetArea),
             areaUnit: formData.areaUnit,
           },
-          residentialSpecs: {
-            bedrooms: Number(formData.bedrooms),
-            bathrooms: Number(formData.bathrooms),
-            furnishing: formData.furnishing,
-          },
-          amenities: formData.amenities,
+          ...(hideResidentialSpecs
+            ? { amenities: [] }
+            : {
+                residentialSpecs: {
+                  bedrooms: Number(formData.bedrooms),
+                  bathrooms: Number(formData.bathrooms),
+                  furnishing: formData.furnishing,
+                },
+                amenities: formData.amenities,
+              }),
           media: {
             featuredImage: allImages[0] || "",
             images: allImages,
@@ -761,6 +902,7 @@ export function PropertiesClient({
       if (!res.ok) throw new Error(json.error || "Failed to update property");
 
       toast.success("Property updated successfully");
+      activeEditPropertyIdRef.current = null;
       setIsEditModalOpen(false);
       setEditingPropertyId(null);
       setUploadedImages([]);
@@ -912,7 +1054,13 @@ export function PropertiesClient({
           <button
             type="button"
             onClick={() => {
+              activeEditPropertyIdRef.current = null;
+              setEditingPropertyId(null);
               setSelectedOwnerLabel("");
+              setFormData(DEFAULT_PROPERTY_FORM_DATA);
+              setUploadedImages([]);
+              setExistingImages([]);
+              setFloorPlans([]);
               refreshMasterOptions();
               setIsCreateModalOpen(true);
             }}
@@ -1211,7 +1359,15 @@ export function PropertiesClient({
 
                         {p.publishing?.publishOnWebsite && (
                           <a
-                            href={`/portal-properties/${p.publishing.slug || p.propertyId.toLowerCase()}${currentUser?.agencySlug ? `?agency=${currentUser.agencySlug}` : ""}`}
+                            href={`/portal-properties/${p.publishing.slug || p.propertyId.toLowerCase()}${
+                              p.agencySlug || currentUser?.agencySlug || currentUser?.username
+                                ? `?agency=${p.agencySlug || currentUser?.agencySlug || currentUser?.username}`
+                                : p.adminId
+                                  ? `?adminId=${p.adminId}`
+                                  : currentUser?._id
+                                    ? `?adminId=${currentUser._id}`
+                                    : ""
+                            }`}
                             target="_blank"
                             rel="noreferrer"
                             className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"
@@ -1698,7 +1854,9 @@ export function PropertiesClient({
                   ) : null}
 
                   {/* Amenities Tags */}
-                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                  {!shouldHideResidentialSpecsSection(selectedProperty.propertyType) &&
+                    selectedProperty.amenities &&
+                    selectedProperty.amenities.length > 0 && (
                     <div className="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1.5">
                       <span className="font-bold text-slate-800 text-xs block">
                         Features & Amenities:
@@ -1743,7 +1901,15 @@ export function PropertiesClient({
                     <div className="flex items-center gap-2">
                       {selectedProperty.publishing?.publishOnWebsite && (
                         <a
-                          href={`/portal-properties/${selectedProperty.publishing.seo?.slug || selectedProperty.propertyId.toLowerCase()}${currentUser?.agencySlug ? `?agency=${currentUser.agencySlug}` : ""}`}
+                          href={`/portal-properties/${selectedProperty.publishing.seo?.slug || selectedProperty.propertyId.toLowerCase()}${
+                            currentUser?.agencySlug || currentUser?.username
+                              ? `?agency=${currentUser?.agencySlug || currentUser?.username}`
+                              : selectedProperty.adminId
+                                ? `?adminId=${selectedProperty.adminId}`
+                                : currentUser?._id
+                                  ? `?adminId=${currentUser._id}`
+                                  : ""
+                          }`}
                           target="_blank"
                           rel="noreferrer"
                           className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 flex items-center gap-1 transition"
@@ -2142,129 +2308,7 @@ export function PropertiesClient({
               </div>
 
               {/* Furnishing, Bedrooms, Bathrooms & Amenities from Master Settings */}
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Furnishing (Master Settings)
-                  </label>
-                  <SearchSelect
-                    value={formData.furnishing}
-                    onChange={(val) =>
-                      setFormData({ ...formData, furnishing: val })
-                    }
-                    placeholder="Search / Select Furnishing..."
-                    options={furnishingSelectOptions}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Bedrooms / BHK
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.bedrooms}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        bedrooms: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Bathrooms
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.bathrooms}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        bathrooms: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  />
-                </div>
-
-                <div className="col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Property Amenities (Master Settings)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-white rounded-lg border border-slate-200">
-                    {amenitiesOptions.length > 0
-                      ? amenitiesOptions.map((opt) => {
-                          const isChecked = formData.amenities.includes(
-                            opt.label,
-                          );
-                          return (
-                            <button
-                              key={opt._id}
-                              type="button"
-                              onClick={() => {
-                                const updated = isChecked
-                                  ? formData.amenities.filter(
-                                      (a) => a !== opt.label,
-                                    )
-                                  : [...formData.amenities, opt.label];
-                                setFormData({
-                                  ...formData,
-                                  amenities: updated,
-                                });
-                              }}
-                              className={`px-2 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
-                                isChecked
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                              }`}
-                            >
-                              {isChecked ? "✓ " : "+ "}
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      : [
-                          "Gym",
-                          "Swimming Pool",
-                          "Clubhouse",
-                          "24/7 Security",
-                          "Power Backup",
-                          "Covered Parking",
-                        ].map((am) => {
-                          const isChecked = formData.amenities.includes(am);
-                          return (
-                            <button
-                              key={am}
-                              type="button"
-                              onClick={() => {
-                                const updated = isChecked
-                                  ? formData.amenities.filter((a) => a !== am)
-                                  : [...formData.amenities, am];
-                                setFormData({
-                                  ...formData,
-                                  amenities: updated,
-                                });
-                              }}
-                              className={`px-2 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
-                                isChecked
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                              }`}
-                            >
-                              {isChecked ? "✓ " : "+ "}
-                              {am}
-                            </button>
-                          );
-                        })}
-                  </div>
-                </div>
-              </div>
+              {!hideResidentialSpecs && renderResidentialSpecsSection("blue")}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
@@ -2295,10 +2339,18 @@ export function PropertiesClient({
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <Edit className="size-4 text-indigo-600" />
                 Edit Property Details
+                {(isLoadingEditData || isMastersLoading) && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 ml-1">
+                    <Loader2 className="size-3 animate-spin" />
+                    Syncing latest...
+                  </span>
+                )}
               </h3>
               <button
                 type="button"
                 onClick={() => {
+                  activeEditPropertyIdRef.current = null;
+                  setIsLoadingEditData(false);
                   setIsEditModalOpen(false);
                   setEditingPropertyId(null);
                 }}
@@ -2699,134 +2751,14 @@ export function PropertiesClient({
               </div>
 
               {/* Furnishing, Bedrooms, Bathrooms & Amenities in Edit Modal */}
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Furnishing (Master Settings)
-                  </label>
-                  <SearchSelect
-                    value={formData.furnishing}
-                    onChange={(val) =>
-                      setFormData({ ...formData, furnishing: val })
-                    }
-                    placeholder="Search / Select Furnishing..."
-                    options={furnishingSelectOptions}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Bedrooms / BHK
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.bedrooms}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        bedrooms: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Bathrooms
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.bathrooms}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        bathrooms: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  />
-                </div>
-
-                <div className="col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Property Amenities (Master Settings)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-white rounded-lg border border-slate-200">
-                    {amenitiesOptions.length > 0
-                      ? amenitiesOptions.map((opt) => {
-                          const isChecked = formData.amenities.includes(
-                            opt.label,
-                          );
-                          return (
-                            <button
-                              key={opt._id}
-                              type="button"
-                              onClick={() => {
-                                const updated = isChecked
-                                  ? formData.amenities.filter(
-                                      (a) => a !== opt.label,
-                                    )
-                                  : [...formData.amenities, opt.label];
-                                setFormData({
-                                  ...formData,
-                                  amenities: updated,
-                                });
-                              }}
-                              className={`px-2 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
-                                isChecked
-                                  ? "bg-indigo-600 text-white border-indigo-600"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                              }`}
-                            >
-                              {isChecked ? "✓ " : "+ "}
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      : [
-                          "Gym",
-                          "Swimming Pool",
-                          "Clubhouse",
-                          "24/7 Security",
-                          "Power Backup",
-                          "Covered Parking",
-                        ].map((am) => {
-                          const isChecked = formData.amenities.includes(am);
-                          return (
-                            <button
-                              key={am}
-                              type="button"
-                              onClick={() => {
-                                const updated = isChecked
-                                  ? formData.amenities.filter((a) => a !== am)
-                                  : [...formData.amenities, am];
-                                setFormData({
-                                  ...formData,
-                                  amenities: updated,
-                                });
-                              }}
-                              className={`px-2 py-1 rounded-md text-[11px] font-medium transition cursor-pointer border ${
-                                isChecked
-                                  ? "bg-indigo-600 text-white border-indigo-600"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                              }`}
-                            >
-                              {isChecked ? "✓ " : "+ "}
-                              {am}
-                            </button>
-                          );
-                        })}
-                  </div>
-                </div>
-              </div>
+              {!hideResidentialSpecs && renderResidentialSpecsSection("indigo")}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
+                    activeEditPropertyIdRef.current = null;
+                    setIsLoadingEditData(false);
                     setIsEditModalOpen(false);
                     setEditingPropertyId(null);
                   }}

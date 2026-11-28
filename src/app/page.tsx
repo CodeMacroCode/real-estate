@@ -87,6 +87,8 @@ export default async function HomePage() {
       >
         <PublicHeader
           agencyName={tenant.agencyName}
+          agencySlug={tenant.agencySlug}
+          adminId={tenant.adminId}
           settings={tenant.settings}
           isCustomDomain={true}
         />
@@ -103,8 +105,11 @@ export default async function HomePage() {
         </main>
         <PublicFooter
           agencyName={tenant.agencyName}
+          agencySlug={tenant.agencySlug}
+          adminId={tenant.adminId}
           topLocations={topLocations}
           settings={tenant.settings}
+          isCustomDomain={true}
         />
       </div>
     );

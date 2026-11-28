@@ -18,6 +18,8 @@ import {
   Search,
   MapPin,
   Image as ImageIcon,
+  FileText,
+  Home,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -46,7 +48,14 @@ export function WebmasterModal({
   onSaved,
 }: WebmasterModalProps) {
   const [activeTab, setActiveTab] = useState<
-    "branding" | "hero" | "theme" | "contact" | "social" | "regulatory" | "footer"
+    | "branding"
+    | "hero"
+    | "about"
+    | "theme"
+    | "contact"
+    | "social"
+    | "regulatory"
+    | "footer"
   >("branding");
 
   const [formData, setFormData] = useState<any>(initialSettings || {});
@@ -56,6 +65,7 @@ export function WebmasterModal({
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFooterLogo, setUploadingFooterLogo] = useState(false);
+  const [uploadingAboutBanner, setUploadingAboutBanner] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geoResults, setGeoResults] = useState<any[]>([]);
   const [geoError, setGeoError] = useState("");
@@ -156,7 +166,7 @@ export function WebmasterModal({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "logo" | "footerLogo" | "cover",
+    type: "logo" | "footerLogo" | "cover" | "aboutBanner",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -165,6 +175,7 @@ export function WebmasterModal({
     if (type === "logo") setUploadingLogo(true);
     if (type === "cover") setUploadingCover(true);
     if (type === "footerLogo") setUploadingFooterLogo(true);
+    if (type === "aboutBanner") setUploadingAboutBanner(true);
 
     try {
       const data = new FormData();
@@ -191,6 +202,8 @@ export function WebmasterModal({
         handleChange("footer", "logoUrl", fileUrl);
       } else if (type === "cover") {
         handleChange("hero", "coverImageUrl", fileUrl);
+      } else if (type === "aboutBanner") {
+        handleChange("aboutUs", "bannerImageUrl", fileUrl);
       }
       toast.success("Image uploaded successfully");
     } catch (err: any) {
@@ -202,6 +215,7 @@ export function WebmasterModal({
       if (type === "logo") setUploadingLogo(false);
       if (type === "cover") setUploadingCover(false);
       if (type === "footerLogo") setUploadingFooterLogo(false);
+      if (type === "aboutBanner") setUploadingAboutBanner(false);
     }
   };
 
@@ -295,10 +309,12 @@ export function WebmasterModal({
               href={`/portal-properties?agency=${agencySlug}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-50 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 border border-blue-200 rounded-lg shadow-2xs hover:bg-blue-100 transition"
+              title="Open Website Home Section"
             >
-              <span>Live Portal</span>
-              <ExternalLink className="size-3.5" />
+              <Home className="size-3.5" />
+              <span>Home Section</span>
+              <ExternalLink className="size-3" />
             </a>
             <button
               onClick={onClose}
@@ -333,6 +349,18 @@ export function WebmasterModal({
           >
             <Layout className="size-4" />
             <span>Hero &amp; Banners</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("about")}
+            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
+              activeTab === "about"
+                ? "border-blue-600 text-blue-600 font-bold"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <FileText className="size-4" />
+            <span>About Us</span>
           </button>
 
           <button
@@ -494,7 +522,19 @@ export function WebmasterModal({
           {/* 2. Hero & Banner Tab */}
           {activeTab === "hero" && (
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-900">Hero Section Banners &amp; Titles</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-slate-900">Hero Section Banners &amp; Titles</h3>
+                <a
+                  href={`/portal-properties?agency=${agencySlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition shrink-0"
+                >
+                  <Home className="size-3.5" />
+                  <span>Preview Home Section</span>
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -716,6 +756,246 @@ export function WebmasterModal({
             </div>
           )}
 
+          {/* About Us Tab */}
+          {activeTab === "about" && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    About Us Page Customizer
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Configure your public About Us page story, mission, vision, stats, and agency pillars.
+                  </p>
+                </div>
+                <a
+                  href={`/portal-about?agency=${agencySlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition shrink-0"
+                >
+                  <span>Preview About Page</span>
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Page Eyebrow Label
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.eyebrowText || ""}
+                    onChange={(e) => handleChange("aboutUs", "eyebrowText", e.target.value)}
+                    placeholder="e.g. ABOUT OUR AGENCY • VERIFIED ADVISORY"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    About Page Headline
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.headline || ""}
+                    onChange={(e) => handleChange("aboutUs", "headline", e.target.value)}
+                    placeholder="e.g. Trusted Real Estate Guidance Built on Legal Clarity."
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  About Us Image / Office Photo (Optional)
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition">
+                    <Upload className="size-4 text-blue-600" />
+                    <span>{uploadingAboutBanner ? "Uploading photo..." : "Upload About Photo"}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      disabled={uploadingAboutBanner}
+                      onChange={(e) => handleFileUpload(e, "aboutBanner")}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {formData.aboutUs?.bannerImageUrl && (
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-16 rounded border border-slate-200 overflow-hidden bg-slate-50">
+                        <img
+                          src={formData.aboutUs.bannerImageUrl}
+                          alt="About Photo Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleChange("aboutUs", "bannerImageUrl", "")}
+                        className="text-xs font-semibold text-rose-600 hover:underline"
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Agency Story &amp; Overview
+                </label>
+                <textarea
+                  rows={4}
+                  value={formData.aboutUs?.story || ""}
+                  onChange={(e) => handleChange("aboutUs", "story", e.target.value)}
+                  placeholder="Write about your agency heritage, values, RERA commitment, and expertise..."
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Years Experience
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.yearsExperience || ""}
+                    onChange={(e) => handleChange("aboutUs", "yearsExperience", e.target.value)}
+                    placeholder="10+"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Properties Delivered
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.propertiesSoldCount || ""}
+                    onChange={(e) => handleChange("aboutUs", "propertiesSoldCount", e.target.value)}
+                    placeholder="500+"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Happy Clients
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.happyClientsCount || ""}
+                    onChange={(e) => handleChange("aboutUs", "happyClientsCount", e.target.value)}
+                    placeholder="1,200+"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Specialist Advisors
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.teamSizeCount || ""}
+                    onChange={(e) => handleChange("aboutUs", "teamSizeCount", e.target.value)}
+                    placeholder="25+"
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Mission Card
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.missionTitle || ""}
+                    onChange={(e) => handleChange("aboutUs", "missionTitle", e.target.value)}
+                    placeholder="Our Mission"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                  <textarea
+                    rows={2}
+                    value={formData.aboutUs?.missionDescription || ""}
+                    onChange={(e) => handleChange("aboutUs", "missionDescription", e.target.value)}
+                    placeholder="Deliver transparent, verified property transactions..."
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+
+                <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Vision Card
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.aboutUs?.visionTitle || ""}
+                    onChange={(e) => handleChange("aboutUs", "visionTitle", e.target.value)}
+                    placeholder="Our Vision"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                  <textarea
+                    rows={2}
+                    value={formData.aboutUs?.visionDescription || ""}
+                    onChange={(e) => handleChange("aboutUs", "visionDescription", e.target.value)}
+                    placeholder="Become the region's most trusted real estate advisory..."
+                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="block text-xs font-bold text-slate-800">
+                  Core Highlights / Why Choose Us (3 Pillars)
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {[0, 1, 2].map((idx) => {
+                    const currentHighlights = Array.isArray(formData.aboutUs?.highlights)
+                      ? formData.aboutUs.highlights
+                      : [];
+                    const item = currentHighlights[idx] || { title: "", description: "" };
+                    const updateHighlight = (field: "title" | "description", val: string) => {
+                      const next = [0, 1, 2].map((i) => ({
+                        title: currentHighlights[i]?.title || "",
+                        description: currentHighlights[i]?.description || "",
+                      }));
+                      next[idx][field] = val;
+                      handleChange("aboutUs", "highlights", next);
+                    };
+                    return (
+                      <div
+                        key={idx}
+                        className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5"
+                      >
+                        <input
+                          type="text"
+                          value={item.title}
+                          onChange={(e) => updateHighlight("title", e.target.value)}
+                          placeholder={`Pillar ${idx + 1} Title`}
+                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-semibold"
+                        />
+                        <textarea
+                          rows={2}
+                          value={item.description}
+                          onChange={(e) => updateHighlight("description", e.target.value)}
+                          placeholder={`Pillar ${idx + 1} short description...`}
+                          className="w-full px-2.5 py-1.5 text-[11px] border border-slate-300 rounded-lg bg-white"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 3. Theme Colors Tab */}
           {activeTab === "theme" && (
             <div className="space-y-4">
@@ -857,13 +1137,7 @@ export function WebmasterModal({
                       <span>Buy</span>
                       <span>Rent</span>
                       <span>Projects</span>
-                      <button
-                        type="button"
-                        className="px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider"
-                        style={{ backgroundColor: formData.theme?.primaryColor || "#0e3b2e" }}
-                      >
-                        CRM Portal
-                      </button>
+                     
                     </div>
                   </div>
 

@@ -11,17 +11,21 @@ import {
   Building,
   CheckCircle2,
 } from "lucide-react";
-import { appendTenantQuery } from "@/lib/portalUtils";
+import { appendTenantQuery, resolvePortalTenant } from "@/lib/portalUtils";
 import { isPlatformHost } from "@/lib/domains/normalize";
 
 interface PublicHeaderProps {
   agencyName?: string;
+  agencySlug?: string;
+  adminId?: string;
   settings?: any;
   isCustomDomain?: boolean;
 }
 
 export function PublicHeader({
   agencyName,
+  agencySlug,
+  adminId: adminIdProp,
   settings,
   isCustomDomain,
 }: PublicHeaderProps) {
@@ -38,9 +42,14 @@ export function PublicHeader({
     }
   }, [isCustomDomain]);
 
-  const agency = searchParams.get("agency") || undefined;
-  const adminId = searchParams.get("adminId") || undefined;
-  const tenant = onCustomDomain ? {} : { agency, adminId };
+  const tenant = resolvePortalTenant({
+    isCustomDomain: onCustomDomain,
+    agencySlug,
+    adminId: adminIdProp,
+    searchAgency: searchParams.get("agency"),
+    searchAdminId: searchParams.get("adminId"),
+    settingsAdminId: settings?.adminId,
+  });
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [buyDropdownOpen, setBuyDropdownOpen] = useState(false);
@@ -49,20 +58,19 @@ export function PublicHeader({
   const displayName = settings?.branding?.companyName || agencyName || "Real Estate Agency";
   const displayTagline = settings?.branding?.tagline || "Property Portal • RERA Approved";
   const logoUrl = settings?.branding?.logoUrl;
+  const homeHref = onCustomDomain
+    ? "/"
+    : appendTenantQuery("/portal-properties", tenant);
 
   return (
     <>
       {/* PublicHeader (white, bottom border, sticky) */}
       <header className="sticky top-0 z-40 bg-card-white border-b border-line shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 md:grid md:grid-cols-[1fr_auto_1fr]">
           {/* Logo or Brand */}
           <Link
-            href={
-              onCustomDomain
-                ? "/"
-                : appendTenantQuery("/portal-properties", tenant)
-            }
-            className="flex items-center gap-2.5 shrink-0 group focus-visible:outline-2"
+            href={homeHref}
+            className="flex items-center gap-2.5 min-w-0 md:justify-self-start group focus-visible:outline-2"
           >
             {logoUrl ? (
               <div className="h-10 max-w-[140px] flex items-center">
@@ -87,8 +95,16 @@ export function PublicHeader({
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1 text-sm font-semibold text-ink h-16">
+          {/* Desktop Navigation (centered) */}
+          <nav className="hidden md:flex md:justify-self-center items-center justify-center gap-1 text-sm font-semibold text-ink h-16">
+            {/* Home Link */}
+            <Link
+              href={homeHref}
+              className="px-3.5 h-full flex items-center border-b-2 border-transparent hover:border-brass hover:text-ink-green transition-colors"
+            >
+              Home
+            </Link>
+
             {/* Buy Dropdown */}
             <div
               className="relative h-full flex items-center"
@@ -97,7 +113,7 @@ export function PublicHeader({
             >
               <button
                 type="button"
-                className={`flex items-center gap-1 px-3.5 h-full transition-colors border-b-3 ${
+                className={`flex items-center gap-1 px-3.5 h-full transition-colors border-b-2 ${
                   buyDropdownOpen ? "border-brass text-ink-green" : "border-transparent text-ink hover:text-ink-green hover:border-brass"
                 }`}
                 aria-expanded={buyDropdownOpen}
@@ -146,7 +162,7 @@ export function PublicHeader({
             >
               <button
                 type="button"
-                className={`flex items-center gap-1 px-3.5 h-full transition-colors border-b-3 ${
+                className={`flex items-center gap-1 px-3.5 h-full transition-colors border-b-2 ${
                   rentDropdownOpen ? "border-brass text-ink-green" : "border-transparent text-ink hover:text-ink-green hover:border-brass"
                 }`}
                 aria-expanded={rentDropdownOpen}
@@ -184,30 +200,30 @@ export function PublicHeader({
             {/* Projects Link */}
             <Link
               href={appendTenantQuery("/portal-projects", tenant)}
-              className="px-3.5 h-full flex items-center border-b-3 border-transparent hover:border-brass hover:text-ink-green transition-colors"
+              className="px-3.5 h-full flex items-center border-b-2 border-transparent hover:border-brass hover:text-ink-green transition-colors"
             >
               Projects
+            </Link>
+
+            {/* About Us Link */}
+            <Link
+              href={appendTenantQuery("/portal-about", tenant)}
+              className="px-3.5 h-full flex items-center border-b-2 border-transparent hover:border-brass hover:text-ink-green transition-colors"
+            >
+              About Us
             </Link>
 
             {/* Contact - Points to dedicated page */}
             <Link
               href={appendTenantQuery("/portal-contact", tenant)}
-              className="px-3.5 h-full flex items-center border-b-3 border-transparent hover:border-brass hover:text-ink-green transition-colors"
+              className="px-3.5 h-full flex items-center border-b-2 border-transparent hover:border-brass hover:text-ink-green transition-colors"
             >
               Contact
             </Link>
           </nav>
 
-          {/* Right Action */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center px-4 py-2 bg-ink-green text-paper text-xs font-bold uppercase tracking-wider border border-ink-green hover:bg-deep-green shadow-hard-brass-sm transition-all focus-visible:outline-2"
-            >
-              CRM Portal
-            </Link>
-
-            {/* Mobile Hamburger */}
+          {/* Right Column Balancer (desktop) & Mobile Hamburger */}
+          <div className="flex items-center justify-end gap-3 md:justify-self-end">
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -230,6 +246,13 @@ export function PublicHeader({
               className="md:hidden border-t border-line bg-card-white overflow-hidden"
             >
               <div className="p-4 space-y-3">
+                <Link
+                  href={homeHref}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  Home
+                </Link>
                 <Link
                   href={appendTenantQuery("/portal-properties?transactionType=Sale", tenant)}
                   onClick={() => setMobileMenuOpen(false)}
@@ -258,15 +281,21 @@ export function PublicHeader({
                 >
                   Commercial Spaces
                 </Link>
-                <div className="pt-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block text-center w-full py-2.5 bg-ink-green text-paper text-xs font-bold uppercase tracking-wider"
-                  >
-                    CRM Portal Login
-                  </Link>
-                </div>
+                <Link
+                  href={appendTenantQuery("/portal-about", tenant)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  About Us
+                </Link>
+                <Link
+                  href={appendTenantQuery("/portal-contact", tenant)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-sm font-semibold text-ink border-b border-soft-line"
+                >
+                  Contact
+                </Link>
+               
               </div>
             </motion.div>
           )}
