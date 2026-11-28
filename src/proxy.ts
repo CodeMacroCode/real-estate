@@ -17,6 +17,32 @@ const PUBLIC_PATHS = [
   "/api/files",
 ];
 
+// Protected CRM dashboard route prefixes (src/app/(dashboard)/* and /uploads)
+const PROTECTED_APP_PREFIXES = [
+  "/dashboard",
+  "/properties",
+  "/projects",
+  "/leads",
+  "/appointments",
+  "/bookings",
+  "/client-information",
+  "/client-confirmations",
+  "/owners",
+  "/inquiries",
+  "/website-management",
+  "/domains",
+  "/staff",
+  "/roles",
+  "/users",
+  "/audit-logs",
+  "/custom-forms",
+  "/master-settings",
+  "/lead-social-media",
+  "/content-social-media",
+  "/settings",
+  "/uploads",
+];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -104,6 +130,23 @@ export async function proxy(request: NextRequest) {
         { success: false, error: "Unauthorized" },
         { status: 401 },
       );
+    }
+    const isProtectedAppRoute = PROTECTED_APP_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+    if (!isPlatform && !isProtectedAppRoute) {
+      const forwardedProto = (request.headers.get("x-forwarded-proto") || "")
+        .split(",")[0]
+        .trim();
+      const isLocalHost =
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname.endsWith(".localhost");
+      const protocol = forwardedProto || (isLocalHost ? "http" : "https");
+      const rootUrl = rawHost
+        ? new URL("/", `${protocol}://${rawHost}`)
+        : new URL("/", request.url);
+      return NextResponse.redirect(rootUrl);
     }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
