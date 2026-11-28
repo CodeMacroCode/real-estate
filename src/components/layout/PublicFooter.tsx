@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import {
   Building,
   ShieldCheck,
@@ -37,16 +36,25 @@ export function PublicFooter({
   settings,
   isCustomDomain,
 }: PublicFooterProps) {
-  const searchParams = useSearchParams();
   const [onCustomDomain, setOnCustomDomain] = useState(Boolean(isCustomDomain));
+  const [clientQuery, setClientQuery] = useState<{
+    agency?: string;
+    adminId?: string;
+  }>({});
 
   useEffect(() => {
-    if (isCustomDomain !== undefined) {
-      setOnCustomDomain(isCustomDomain);
-      return;
-    }
     if (typeof window !== "undefined") {
-      setOnCustomDomain(!isPlatformHost(window.location.hostname));
+      if (isCustomDomain === undefined) {
+        setOnCustomDomain(!isPlatformHost(window.location.hostname));
+      } else {
+        setOnCustomDomain(isCustomDomain);
+      }
+      const params = new URLSearchParams(window.location.search);
+      const qAgency = params.get("agency") || undefined;
+      const qAdminId = params.get("adminId") || undefined;
+      if (qAgency || qAdminId) {
+        setClientQuery({ agency: qAgency, adminId: qAdminId });
+      }
     }
   }, [isCustomDomain]);
 
@@ -54,8 +62,8 @@ export function PublicFooter({
     isCustomDomain: onCustomDomain,
     agencySlug,
     adminId: adminIdProp,
-    searchAgency: searchParams.get("agency"),
-    searchAdminId: searchParams.get("adminId"),
+    searchAgency: clientQuery.agency,
+    searchAdminId: clientQuery.adminId,
     settingsAdminId: settings?.adminId,
   });
 
@@ -66,19 +74,13 @@ export function PublicFooter({
       : ["Wardha Road", "Dharampeth", "Besa", "Hingna Road", "Amravati Road"];
 
   const displayName = settings?.branding?.companyName || agencyName || "Real Estate Agency";
-  const aboutText =
-    settings?.footer?.aboutText ||
-    `${displayName} official verified customer property exchange. Curating 100% RERA-registered developments, clean-titled freeholds, and verified residential plots with full documentation scrutiny.`;
-  const badgeText = settings?.regulatory?.badgeText || "MahaRERA Approved Partner";
-  const copyrightText =
-    settings?.footer?.copyrightText ||
-    `© ${new Date().getFullYear()} ${displayName}. All rights reserved.`;
+  const aboutText = settings?.footer?.aboutText?.trim() || "";
+  const badgeText = settings?.regulatory?.badgeText?.trim() || "";
+  const copyrightText = settings?.footer?.copyrightText?.trim() || "";
 
-  const contactAddress =
-    settings?.contact?.address ||
-    "Civil Lines, Wardha Road Junction, Nagpur, Maharashtra 440001";
-  const contactPhone = settings?.contact?.phone || "+91 (0712) 256-8900";
-  const contactEmail = settings?.contact?.email || "contact@propertyportal.in";
+  const contactAddress = settings?.contact?.address?.trim() || "";
+  const contactPhone = settings?.contact?.phone?.trim() || "";
+  const contactEmail = settings?.contact?.email?.trim() || "";
   const socialLinks = settings?.socialLinks || {};
   const footerLogo = settings?.footer?.logoUrl || settings?.branding?.logoUrl;
 
@@ -115,13 +117,17 @@ export function PublicFooter({
                 {displayName}
               </div>
             </div>
-            <p className="text-paper/90 text-[11px] leading-relaxed">
-              {aboutText}
-            </p>
-            <div className="pt-1 flex items-center gap-1.5 text-brass text-[10px] font-semibold tracking-wider uppercase">
-              <ShieldCheck className="size-3.5" strokeWidth={1.5} />
-              <span>{badgeText}</span>
-            </div>
+            {aboutText && (
+              <p className="text-paper/90 text-[11px] leading-relaxed">
+                {aboutText}
+              </p>
+            )}
+            {badgeText && (
+              <div className="pt-1 flex items-center gap-1.5 text-brass text-[10px] font-semibold tracking-wider uppercase">
+                <ShieldCheck className="size-3.5" strokeWidth={1.5} />
+                <span>{badgeText}</span>
+              </div>
+            )}
 
             {/* Social Media Links with Real Icons */}
             {(socialLinks.facebook ||
@@ -297,39 +303,49 @@ export function PublicFooter({
               Registry &amp; Office
             </div>
             <div className="space-y-2 text-[11px] text-paper/90">
-              <div className="flex items-start gap-2">
-                <MapPin
-                  className="size-3.5 text-brass shrink-0 mt-0.5"
-                  strokeWidth={1.5}
-                />
-                <span>{contactAddress}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone
-                  className="size-3.5 text-brass shrink-0"
-                  strokeWidth={1.5}
-                />
-                <span>{contactPhone}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail
-                  className="size-3.5 text-brass shrink-0"
-                  strokeWidth={1.5}
-                />
-                <span>{contactEmail}</span>
-              </div>
+              {contactAddress && (
+                <div className="flex items-start gap-2">
+                  <MapPin
+                    className="size-3.5 text-brass shrink-0 mt-0.5"
+                    strokeWidth={1.5}
+                  />
+                  <span>{contactAddress}</span>
+                </div>
+              )}
+              {contactPhone && (
+                <div className="flex items-center gap-2">
+                  <Phone
+                    className="size-3.5 text-brass shrink-0"
+                    strokeWidth={1.5}
+                  />
+                  <span>{contactPhone}</span>
+                </div>
+              )}
+              {contactEmail && (
+                <div className="flex items-center gap-2">
+                  <Mail
+                    className="size-3.5 text-brass shrink-0"
+                    strokeWidth={1.5}
+                  />
+                  <span>{contactEmail}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Legal, Copyright */}
-        <div className="pt-3 border-t border-ink-green/40 text-[10px] text-paper/70 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>{copyrightText}</span>
-          <span className="inline-flex items-center gap-1.5 text-brass font-medium">
-            <ShieldCheck className="size-3.5 shrink-0 text-brass" strokeWidth={1.5} />
-            <span>{badgeText}</span>
-          </span>
-        </div>
+        {(copyrightText || badgeText) && (
+          <div className="pt-3 border-t border-ink-green/40 text-[10px] text-paper/70 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>{copyrightText}</span>
+            {badgeText && (
+              <span className="inline-flex items-center gap-1.5 text-brass font-medium">
+                <ShieldCheck className="size-3.5 shrink-0 text-brass" strokeWidth={1.5} />
+                <span>{badgeText}</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </footer>
   );

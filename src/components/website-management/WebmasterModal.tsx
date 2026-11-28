@@ -311,7 +311,7 @@ export function WebmasterModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
@@ -347,119 +347,40 @@ export function WebmasterModal({
           </div>
         </div>
 
-        {/* Tab Row */}
-        <div className="flex border-b border-slate-200 bg-white overflow-x-auto text-xs font-medium">
-          <button
-            onClick={() => setActiveTab("branding")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "branding"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Building className="size-4" />
-            <span>Logo &amp; Brand</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("hero")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "hero"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Layout className="size-4" />
-            <span>Hero &amp; Banners</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("about")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "about"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <FileText className="size-4" />
-            <span>About Us</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("theme")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "theme"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Palette className="size-4" />
-            <span>Theme Colors</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("contact")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "contact"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Phone className="size-4" />
-            <span>Contact &amp; Map</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("social")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "social"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Globe className="size-4" />
-            <span>Social Platforms</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("regulatory")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "regulatory"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <ShieldCheck className="size-4" />
-            <span>RERA Badge</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("footer")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "footer"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Layout className="size-4" />
-            <span>Footer Section</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("seo")}
-            className={`px-4 py-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition ${
-              activeTab === "seo"
-                ? "border-blue-600 text-blue-600 font-bold"
-                : "border-transparent text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Search className="size-4" />
-            <span>SEO &amp; Metadata</span>
-          </button>
+        {/* Tab Row (wraps cleanly without horizontal scrollbar clipping) */}
+        <div className="flex flex-wrap items-center gap-1.5 px-6 py-2.5 border-b border-slate-200 bg-white shrink-0 text-xs font-medium">
+          {[
+            { id: "branding", label: "Logo & Brand", Icon: Building },
+            { id: "hero", label: "Hero & Banners", Icon: Layout },
+            { id: "about", label: "About Us", Icon: FileText },
+            { id: "theme", label: "Theme Colors", Icon: Palette },
+            { id: "contact", label: "Contact & Map", Icon: Phone },
+            { id: "social", label: "Social Platforms", Icon: Globe },
+            { id: "regulatory", label: "RERA Badge", Icon: ShieldCheck },
+            { id: "footer", label: "Footer Section", Icon: Layout },
+            { id: "seo", label: "SEO & Metadata", Icon: Search },
+          ].map(({ id, label, Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id as typeof activeTab)}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer border ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700 border-blue-200 font-bold"
+                    : "bg-white text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <Icon className="size-3.5 shrink-0" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-6">
           {errorMsg && (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs flex items-center gap-2">
               <AlertCircle className="size-4 shrink-0" />
@@ -760,21 +681,23 @@ export function WebmasterModal({
                             : "text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.4)]"
                         }`}
                       >
-                        <div
-                          className="text-[9px] font-bold uppercase tracking-widest"
-                          style={{
-                            color: lightGlass
-                              ? "#9a6b1f"
-                              : formData.theme?.accentColor || "#b5822c",
-                          }}
-                        >
-                          {formData.hero?.eyebrowText ||
-                            "OFFICIAL REAL ESTATE GAZETTE"}
-                        </div>
-                        <div className="text-sm sm:text-base font-bold leading-snug line-clamp-2">
-                          {formData.hero?.headline ||
-                            "Find a home with the paperwork already in order."}
-                        </div>
+                        {formData.hero?.eyebrowText?.trim() && (
+                          <div
+                            className="text-[9px] font-bold uppercase tracking-widest"
+                            style={{
+                              color: lightGlass
+                                ? "#9a6b1f"
+                                : formData.theme?.accentColor || "#b5822c",
+                            }}
+                          >
+                            {formData.hero.eyebrowText.trim()}
+                          </div>
+                        )}
+                        {formData.hero?.headline?.trim() && (
+                          <div className="text-sm sm:text-base font-bold leading-snug line-clamp-2">
+                            {formData.hero.headline.trim()}
+                          </div>
+                        )}
                         <div
                           className={`text-[10px] ${
                             lightGlass ? "text-slate-600" : "text-white/80"
@@ -1157,13 +1080,16 @@ export function WebmasterModal({
                         className="size-6 flex items-center justify-center font-bold text-white text-[10px]"
                         style={{ backgroundColor: formData.theme?.primaryColor || "#0e3b2e" }}
                       >
-                        PR
+                        {(formData.branding?.companyName || agencySlug || "A")
+                          .trim()
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </div>
                       <span
                         className="font-serif font-bold text-xs"
                         style={{ color: formData.theme?.primaryColor || "#0e3b2e" }}
                       >
-                        {formData.branding?.companyName || "Agency Demo"}
+                        {formData.branding?.companyName?.trim() || agencySlug}
                       </span>
                     </div>
 
@@ -1183,19 +1109,25 @@ export function WebmasterModal({
                       borderColor: formData.theme?.accentColor || "#b5822c",
                     }}
                   >
-                    <div className="space-y-1.5 max-w-md">
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-wider block"
-                        style={{ color: formData.theme?.accentColor || "#b5822c" }}
-                      >
-                        {formData.hero?.eyebrowText || "OFFICIAL PROPERTY GAZETTE"}
-                      </span>
-                      <h4 className="font-serif text-base font-bold leading-tight">
-                        {formData.hero?.headline || "Find a home with the paperwork already in order."}
-                      </h4>
-                      <p className="text-[11px] opacity-80 line-clamp-2">
-                        {formData.hero?.subheadline || "Direct buyer exchange with verified freehold residences."}
-                      </p>
+                    <div className="space-y-1.5 max-w-md min-h-[2.5rem]">
+                      {formData.hero?.eyebrowText?.trim() && (
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider block"
+                          style={{ color: formData.theme?.accentColor || "#b5822c" }}
+                        >
+                          {formData.hero.eyebrowText.trim()}
+                        </span>
+                      )}
+                      {formData.hero?.headline?.trim() && (
+                        <h4 className="font-serif text-base font-bold leading-tight">
+                          {formData.hero.headline.trim()}
+                        </h4>
+                      )}
+                      {formData.hero?.subheadline?.trim() && (
+                        <p className="text-[11px] opacity-80 line-clamp-2">
+                          {formData.hero.subheadline.trim()}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -1310,19 +1242,28 @@ export function WebmasterModal({
                   >
                     <div className="flex items-center justify-between text-[11px] mb-2 pb-2 border-b border-white/10">
                       <span className="font-serif font-bold">
-                        {formData.branding?.companyName || "Agency Footer"}
+                        {formData.branding?.companyName?.trim() || agencySlug}
                       </span>
-                      <span
-                        className="text-[10px] font-bold tracking-widest uppercase"
-                        style={{ color: formData.theme?.accentColor || "#b5822c" }}
-                      >
-                        Certified Partner
-                      </span>
+                      {formData.regulatory?.badgeText?.trim() && (
+                        <span
+                          className="text-[10px] font-bold tracking-widest uppercase"
+                          style={{ color: formData.theme?.accentColor || "#b5822c" }}
+                        >
+                          {formData.regulatory.badgeText.trim()}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-[10px] opacity-70 flex justify-between">
-                      <span>© {new Date().getFullYear()} {formData.branding?.companyName || "Pandit Realty"}. All rights reserved.</span>
-                      <span style={{ color: formData.theme?.accentColor || "#b5822c" }}>Maharashtra Certified</span>
-                    </div>
+                    {(formData.footer?.copyrightText?.trim() ||
+                      formData.regulatory?.registrationNumber?.trim()) && (
+                      <div className="text-[10px] opacity-70 flex justify-between">
+                        <span>{formData.footer?.copyrightText?.trim() || ""}</span>
+                        {formData.regulatory?.registrationNumber?.trim() && (
+                          <span style={{ color: formData.theme?.accentColor || "#b5822c" }}>
+                            {formData.regulatory.registrationNumber.trim()}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2002,7 +1943,7 @@ export function WebmasterModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
           <div className="text-xs text-slate-500">
             Changes apply in real-time to your agency URL.
           </div>

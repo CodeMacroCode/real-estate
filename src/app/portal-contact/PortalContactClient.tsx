@@ -29,18 +29,15 @@ export function PortalContactClient({
     settings?.branding?.companyName ||
     agencyBranding?.agencyName ||
     "Real Estate Agency";
-  const address =
-    settings?.contact?.address ||
-    "Civil Lines, Wardha Road Junction, Nagpur, Maharashtra 440001";
-  const phone = settings?.contact?.phone || "+91 (0712) 256-8900";
-  const email = settings?.contact?.email || "contact@propertyportal.in";
-  const workingHours =
-    settings?.contact?.workingHours || "Mon - Sat: 9:30 AM - 7:00 PM";
+  const address = settings?.contact?.address?.trim() || "";
+  const phone = settings?.contact?.phone?.trim() || "";
+  const email = settings?.contact?.email?.trim() || "";
+  const workingHours = settings?.contact?.workingHours?.trim() || "";
   const whatsapp = settings?.contact?.whatsappNumber;
   const mapUrl = settings?.contact?.googleMapsEmbedUrl;
   const latitude = settings?.contact?.latitude;
   const longitude = settings?.contact?.longitude;
-  const badgeText = settings?.regulatory?.badgeText || "MahaRERA Approved Partner";
+  const badgeText = settings?.regulatory?.badgeText?.trim() || "";
   const registrationNumber = settings?.regulatory?.registrationNumber;
 
   // Build pinpoint Google Map URL anchored strictly to the office coordinates or address

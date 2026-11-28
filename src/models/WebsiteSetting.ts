@@ -160,7 +160,7 @@ const WebsiteSettingSchema = new Schema<IWebsiteSettingDocument>(
       paperColor: { type: String, trim: true, default: "#f6f2ea" },
     },
     regulatory: {
-      badgeText: { type: String, trim: true, default: "MahaRERA Approved Partner" },
+      badgeText: { type: String, trim: true, default: "" },
       registrationNumber: { type: String, trim: true, default: "" },
       disclaimerText: { type: String, trim: true, default: "" },
     },

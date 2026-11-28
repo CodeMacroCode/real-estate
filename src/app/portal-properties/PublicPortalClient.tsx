@@ -156,49 +156,41 @@ export default function PublicPortalClient({
         )}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl space-y-4">
-            <span
-              className={`text-xs uppercase tracking-[0.14em] font-bold block ${
-                isLightGlass ? "text-amber-800" : "text-brass"
-              }`}
-            >
-              {agencyBranding?.settings?.hero?.eyebrowText ||
-                "Official Real Estate Gazette • Nagpur Central"}
-            </span>
-            <h1
-              className={`font-serif text-3xl sm:text-4xl lg:text-[52px] font-bold leading-[1.15] tracking-tight ${
-                isLightGlass
-                  ? "text-slate-900"
-                  : heroCoverUrl
-                    ? "text-paper drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
-                    : "text-paper"
-              }`}
-            >
-              {agencyBranding?.settings?.hero?.headline ||
-                "Find a home with the paperwork already in order."}
-            </h1>
-            <p
-              className={`text-sm sm:text-base leading-relaxed max-w-xl ${
-                isLightGlass
-                  ? "text-slate-800"
-                  : heroCoverUrl
-                    ? "text-paper drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]"
-                    : "text-paper opacity-90"
-              }`}
-            >
-              {agencyBranding?.settings?.hero?.subheadline ||
-                "Direct buyer exchange featuring RERA-sanctioned apartments, clear-title agricultural & NA layouts, and verified freehold residences across the Vidarbha region."}
-            </p>
-            <div
-              className={`flex flex-wrap items-center gap-6 pt-2 text-xs font-semibold ${
-                isLightGlass ? "text-amber-800" : "text-brass"
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="size-4" strokeWidth={1.5} />
-                {agencyBranding?.settings?.regulatory?.badgeText ||
-                  "MahaRERA Registered Listings"}
+            {heroSettings?.eyebrowText?.trim() && (
+              <span
+                className={`text-xs uppercase tracking-[0.14em] font-bold block ${
+                  isLightGlass ? "text-amber-800" : "text-brass"
+                }`}
+              >
+                {heroSettings.eyebrowText.trim()}
               </span>
-            </div>
+            )}
+            {heroSettings?.headline?.trim() && (
+              <h1
+                className={`font-serif text-3xl sm:text-4xl lg:text-[52px] font-bold leading-[1.15] tracking-tight ${
+                  isLightGlass
+                    ? "text-slate-900"
+                    : heroCoverUrl
+                      ? "text-paper drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                      : "text-paper"
+                }`}
+              >
+                {heroSettings.headline.trim()}
+              </h1>
+            )}
+            {heroSettings?.subheadline?.trim() && (
+              <p
+                className={`text-sm sm:text-base leading-relaxed max-w-xl ${
+                  isLightGlass
+                    ? "text-slate-800"
+                    : heroCoverUrl
+                      ? "text-paper drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]"
+                      : "text-paper opacity-90"
+                }`}
+              >
+                {heroSettings.subheadline.trim()}
+              </p>
+            )}
           </div>
         </div>
       </section>

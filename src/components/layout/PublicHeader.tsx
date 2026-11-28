@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Menu,
@@ -29,16 +28,25 @@ export function PublicHeader({
   settings,
   isCustomDomain,
 }: PublicHeaderProps) {
-  const searchParams = useSearchParams();
   const [onCustomDomain, setOnCustomDomain] = useState(Boolean(isCustomDomain));
+  const [clientQuery, setClientQuery] = useState<{
+    agency?: string;
+    adminId?: string;
+  }>({});
 
   useEffect(() => {
-    if (isCustomDomain !== undefined) {
-      setOnCustomDomain(isCustomDomain);
-      return;
-    }
     if (typeof window !== "undefined") {
-      setOnCustomDomain(!isPlatformHost(window.location.hostname));
+      if (isCustomDomain === undefined) {
+        setOnCustomDomain(!isPlatformHost(window.location.hostname));
+      } else {
+        setOnCustomDomain(isCustomDomain);
+      }
+      const params = new URLSearchParams(window.location.search);
+      const qAgency = params.get("agency") || undefined;
+      const qAdminId = params.get("adminId") || undefined;
+      if (qAgency || qAdminId) {
+        setClientQuery({ agency: qAgency, adminId: qAdminId });
+      }
     }
   }, [isCustomDomain]);
 
@@ -46,8 +54,8 @@ export function PublicHeader({
     isCustomDomain: onCustomDomain,
     agencySlug,
     adminId: adminIdProp,
-    searchAgency: searchParams.get("agency"),
-    searchAdminId: searchParams.get("adminId"),
+    searchAgency: clientQuery.agency,
+    searchAdminId: clientQuery.adminId,
     settingsAdminId: settings?.adminId,
   });
 
@@ -56,7 +64,7 @@ export function PublicHeader({
   const [rentDropdownOpen, setRentDropdownOpen] = useState(false);
 
   const displayName = settings?.branding?.companyName || agencyName || "Real Estate Agency";
-  const displayTagline = settings?.branding?.tagline || "Property Portal • RERA Approved";
+  const displayTagline = settings?.branding?.tagline?.trim() || "";
   const logoUrl = settings?.branding?.logoUrl;
   const homeHref = onCustomDomain
     ? "/"
@@ -89,9 +97,11 @@ export function PublicHeader({
               <span className="font-serif text-xl font-bold tracking-tight text-ink-green block leading-tight">
                 {displayName}
               </span>
-              <div className="text-[9px] uppercase tracking-widest text-muted-ink font-semibold mt-0.5">
-                {displayTagline}
-              </div>
+              {displayTagline && (
+                <div className="text-[9px] uppercase tracking-widest text-muted-ink font-semibold mt-0.5">
+                  {displayTagline}
+                </div>
+              )}
             </div>
           </Link>
 
