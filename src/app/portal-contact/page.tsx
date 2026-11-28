@@ -1,19 +1,30 @@
 import React from "react";
-import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   resolveAdminByHostOrSlug,
   getTopLocationsForTenant,
 } from "@/services/publicPortalService";
+import {
+  buildRealEstateAgentJsonLd,
+  getPortalPageMetadata,
+  serializeJsonLd,
+} from "@/lib/seo/portalMetadata";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 import { PortalContactClient } from "./PortalContactClient";
 
-export const metadata = {
-  title: "Contact & Office Headquarters | Verified Property Exchange",
-  description:
-    "Direct customer support desk, office headquarters coordinates, and verified site visit appointments.",
-};
+export async function generateMetadata({
+  searchParams,
+}: PortalContactPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  return getPortalPageMetadata({
+    pageType: "contact",
+    pathname: "/portal-contact",
+    searchParams: resolvedSearchParams,
+  });
+}
 
 interface PortalContactPageProps {
   searchParams: Promise<{
@@ -57,6 +68,24 @@ export default async function PortalContactPage({
     undefined;
   const topLocations = await getTopLocationsForTenant(targetAdminId);
 
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const proto =
+    (headerList.get("x-forwarded-proto") || "").split(",")[0].trim() ||
+    (rawHost.includes("localhost") || rawHost.startsWith("127.0.0.1")
+      ? "http"
+      : "https");
+  const pageUrl = rawHost ? `${proto}://${rawHost}/portal-contact` : undefined;
+  const jsonLd = buildRealEstateAgentJsonLd({
+    agencyBranding,
+    url: pageUrl,
+  });
+
   return (
     <div
       className="min-h-screen bg-paper text-ink flex flex-col justify-between"
@@ -79,6 +108,10 @@ export default async function PortalContactPage({
         } as React.CSSProperties
       }
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
         agencySlug={agencyBranding?.agencySlug || resolvedSearchParams.agency}

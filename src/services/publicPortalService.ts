@@ -2,7 +2,7 @@ import { connectToDatabase } from "@/lib/mongodb/db";
 import { Property, IPropertyDocument } from "@/models/Property";
 import { Project, IProjectDocument } from "@/models/Project";
 import { ProjectUnit } from "@/models/ProjectUnit";
-import { WebsiteSetting } from "@/models/WebsiteSetting";
+import { WebsiteSetting, IWebsiteSeoSettings } from "@/models/WebsiteSetting";
 import { resolveTenantByHostname } from "@/services/domainService";
 import { normalizeHostname } from "@/lib/domains/normalize";
 import mongoose, { FilterQuery } from "mongoose";
@@ -692,6 +692,16 @@ export async function getPublicProjectBySlug(
   return sanitizePublicProject(doc);
 }
 
+export interface ResolvedAdminTenant {
+  adminId: string;
+  agencyName: string;
+  agencySlug: string;
+  customDomain?: string;
+  hostname?: string;
+  seo?: IWebsiteSeoSettings;
+  settings?: any;
+}
+
 /**
  * Resolves an Admin tenant identity from host header or agency slug.
  * Matches:
@@ -701,13 +711,7 @@ export async function getPublicProjectBySlug(
  */
 export async function resolveAdminByHostOrSlug(
   hostOrSlug: string,
-): Promise<{
-  adminId: string;
-  agencyName: string;
-  agencySlug: string;
-  customDomain?: string;
-  settings?: any;
-} | null> {
+): Promise<ResolvedAdminTenant | null> {
   if (!hostOrSlug) return null;
 
   // 0. Check AgencyDomain records first for custom domains
@@ -719,6 +723,8 @@ export async function resolveAdminByHostOrSlug(
       agencyName: domainTenant.agencyName,
       agencySlug: domainTenant.agencySlug,
       customDomain: domainTenant.hostname,
+      hostname: domainTenant.hostname,
+      seo: domainTenant.settings?.seo,
       settings: domainTenant.settings,
     };
   }
@@ -743,6 +749,8 @@ export async function resolveAdminByHostOrSlug(
       agencyName: settings?.branding?.companyName || byCustomDomain.agencyName || byCustomDomain.name,
       agencySlug: resolveUserPublicSlug(byCustomDomain),
       customDomain: byCustomDomain.customDomain,
+      hostname: byCustomDomain.customDomain || cleanHost,
+      seo: settings?.seo,
       settings,
     };
   }
@@ -767,6 +775,8 @@ export async function resolveAdminByHostOrSlug(
           agencyName: settings?.branding?.companyName || bySubdomain.agencyName || bySubdomain.name,
           agencySlug: resolveUserPublicSlug(bySubdomain) || candidateSubdomain,
           customDomain: bySubdomain.customDomain,
+          hostname: bySubdomain.customDomain || cleanHost,
+          seo: settings?.seo,
           settings,
         };
       }
@@ -806,6 +816,8 @@ export async function resolveAdminByHostOrSlug(
       agencyName: settings?.branding?.companyName || bySlug.agencyName || bySlug.name,
       agencySlug: resolveUserPublicSlug(bySlug),
       customDomain: bySlug.customDomain,
+      hostname: bySlug.customDomain || undefined,
+      seo: settings?.seo,
       settings,
     };
   }

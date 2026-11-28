@@ -1,5 +1,25 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
+export interface IWebsiteSeoPages {
+  propertiesTitle?: string;
+  propertiesDescription?: string;
+  projectsTitle?: string;
+  projectsDescription?: string;
+  contactTitle?: string;
+  contactDescription?: string;
+}
+
+export interface IWebsiteSeoSettings {
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
+  ogImageUrl?: string;
+  faviconUrl?: string;
+  googleSiteVerification?: string;
+  robotsIndex?: boolean;
+  pages?: IWebsiteSeoPages;
+}
+
 export interface IWebsiteSettingDocument extends Document {
   adminId: Types.ObjectId;
   branding: {
@@ -70,6 +90,7 @@ export interface IWebsiteSettingDocument extends Document {
     teamSizeCount?: string;
     highlights?: Array<{ title: string; description: string }>;
   };
+  seo?: IWebsiteSeoSettings;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -168,17 +189,30 @@ const WebsiteSettingSchema = new Schema<IWebsiteSettingDocument>(
         },
       ],
     },
+    seo: {
+      metaTitle: { type: String, trim: true, default: "" },
+      metaDescription: { type: String, trim: true, default: "" },
+      keywords: { type: String, trim: true, default: "" },
+      ogImageUrl: { type: String, trim: true, default: "" },
+      faviconUrl: { type: String, trim: true, default: "" },
+      googleSiteVerification: { type: String, trim: true, default: "" },
+      robotsIndex: { type: Boolean, default: true },
+      pages: {
+        propertiesTitle: { type: String, trim: true, default: "" },
+        propertiesDescription: { type: String, trim: true, default: "" },
+        projectsTitle: { type: String, trim: true, default: "" },
+        projectsDescription: { type: String, trim: true, default: "" },
+        contactTitle: { type: String, trim: true, default: "" },
+        contactDescription: { type: String, trim: true, default: "" },
+      },
+    },
   },
   {
     timestamps: true,
   }
 );
 
-if (
-  process.env.NODE_ENV !== "production" &&
-  mongoose.models &&
-  mongoose.models.WebsiteSetting
-) {
+if (process.env.NODE_ENV !== "production" && mongoose.models?.WebsiteSetting) {
   delete mongoose.models.WebsiteSetting;
 }
 

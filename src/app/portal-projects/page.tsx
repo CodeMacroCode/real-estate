@@ -1,20 +1,31 @@
 import React from "react";
-import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   getPublicProjects,
   resolveAdminByHostOrSlug,
   getTopLocationsForTenant,
 } from "@/services/publicPortalService";
+import {
+  buildRealEstateAgentJsonLd,
+  getPortalPageMetadata,
+  serializeJsonLd,
+} from "@/lib/seo/portalMetadata";
 import { PublicProjectsClient } from "./PublicProjectsClient";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 
-export const metadata = {
-  title: "Approved Real Estate Projects & Townships",
-  description:
-    "Browse verified residential and commercial developments from leading builders.",
-};
+export async function generateMetadata({
+  searchParams,
+}: PublicProjectsPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  return getPortalPageMetadata({
+    pageType: "projects",
+    pathname: "/portal-projects",
+    searchParams: resolvedSearchParams,
+  });
+}
 
 interface PublicProjectsPageProps {
   searchParams: Promise<{
@@ -80,6 +91,24 @@ export default async function PublicProjectsPage({
 
   const topLocations = await getTopLocationsForTenant(targetAdminId);
 
+  const rawHost = (
+    headerList.get("x-forwarded-host") ||
+    headerList.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  const proto =
+    (headerList.get("x-forwarded-proto") || "").split(",")[0].trim() ||
+    (rawHost.includes("localhost") || rawHost.startsWith("127.0.0.1")
+      ? "http"
+      : "https");
+  const pageUrl = rawHost ? `${proto}://${rawHost}/portal-projects` : undefined;
+  const jsonLd = buildRealEstateAgentJsonLd({
+    agencyBranding,
+    url: pageUrl,
+  });
+
   return (
     <div
       className="min-h-screen bg-paper text-ink flex flex-col justify-between"
@@ -100,6 +129,10 @@ export default async function PublicProjectsPage({
         } as React.CSSProperties
       }
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <PublicHeader
         agencyName={agencyBranding?.agencyName}
         agencySlug={agencyBranding?.agencySlug || resolvedSearchParams.agency}

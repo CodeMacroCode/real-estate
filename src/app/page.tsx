@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -25,6 +26,12 @@ import {
   getTopLocationsForTenant,
 } from "@/services/publicPortalService";
 import { isPlatformHost, normalizeHostname } from "@/lib/domains/normalize";
+import {
+  buildPortalMetadata,
+  buildRealEstateAgentJsonLd,
+  resolvePortalTenant,
+  serializeJsonLd,
+} from "@/lib/seo/portalMetadata";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { ProjectCard } from "@/components/project/ProjectCard";
 import { PublicHeader } from "@/components/layout/PublicHeader";
@@ -33,11 +40,25 @@ import PublicPortalClient from "./portal-properties/PublicPortalClient";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Premium Real Estate Portal | Properties, Luxury Flats & New Projects",
-  description:
-    "Discover verified residential apartments, commercial properties, luxury villas, and top builder projects in your city.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { isCustomDomain, origin, agencyBranding } = await resolvePortalTenant();
+  if (!isCustomDomain && !agencyBranding) {
+    return {
+      title:
+        "Premium Real Estate Portal | Properties, Luxury Flats & New Projects",
+      description:
+        "Discover verified residential apartments, commercial properties, luxury villas, and top builder projects in your city.",
+    };
+  }
+
+  return buildPortalMetadata({
+    pageType: "properties",
+    pathname: "/",
+    origin,
+    isCustomDomain,
+    agencyBranding,
+  });
+}
 
 export default async function HomePage() {
   const headerList = await headers();
@@ -65,6 +86,14 @@ export default async function HomePage() {
       getTopLocationsForTenant(tenant.adminId),
     ]);
 
+    const jsonLd = buildRealEstateAgentJsonLd({
+      agencyBranding: {
+        ...tenant,
+        customDomain: tenant.customDomain || normalizedHost,
+      },
+      url: `https://${tenant.customDomain || normalizedHost}/`,
+    });
+
     return (
       <div
         className="min-h-screen bg-paper text-ink flex flex-col justify-between"
@@ -85,6 +114,10 @@ export default async function HomePage() {
           } as React.CSSProperties
         }
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        />
         <PublicHeader
           agencyName={tenant.agencyName}
           agencySlug={tenant.agencySlug}
