@@ -5,6 +5,8 @@ import {
   upsertWebsiteSettings,
 } from "@/services/websiteSettingService";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const authContext = await getAuthenticatedContext(request);
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // SuperAdmin can query any admin's settings; Admin queries requested or their own
     let targetAdminId = authContext.user._id.toString();
-    if (requestedAdminId && (authContext.role.slug === "super-admin" || authContext.role.slug === "admin")) {
+    if (requestedAdminId && (authContext.role.slug === "super_admin" || authContext.role.slug === "admin")) {
       targetAdminId = requestedAdminId;
     }
 

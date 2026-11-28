@@ -11,6 +11,8 @@ import PublicPortalClient from "./PublicPortalClient";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Browse Properties & Real Estate Listings",
   description:

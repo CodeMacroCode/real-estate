@@ -18,6 +18,12 @@ import { PropertyCard } from "@/components/property/PropertyCard";
 import { PropertyInquiryModal } from "@/components/property/PropertyInquiryModal";
 import { InteractiveFloorMapViewer } from "@/components/property/InteractiveFloorMapViewer";
 import { FadeUp } from "@/components/motion";
+import {
+  HERO_WHITE_GLASS_STYLE,
+  getHeroCoverImageOpacity,
+  getHeroCoverRatioOption,
+  isHeroLightGlassMode,
+} from "@/lib/websiteHero";
 
 interface PublicPortalClientProps {
   initialProperties: SanitizedPublicProperty[];
@@ -115,291 +121,83 @@ export default function PublicPortalClient({
     },
   ];
 
+  const heroSettings = agencyBranding?.settings?.hero;
+  const heroCoverUrl = heroSettings?.coverImageUrl?.trim() || "";
+  const heroRatio = getHeroCoverRatioOption(heroSettings?.coverAspectRatio);
+  const heroImageOpacity = getHeroCoverImageOpacity(
+    heroSettings?.coverImageOpacity,
+  );
+  const isLightGlass = Boolean(heroCoverUrl) && isHeroLightGlassMode(heroImageOpacity);
+
   return (
     <div className="min-h-screen bg-paper pb-20">
-      {/* 3. Hero (solid ink-green background) */}
-      <section className="bg-ink-green text-paper pt-12 pb-24 border-b-2 border-brass">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left 7 cols: brass label, Fraunces headline, subtext */}
-            <div className="lg:col-span-7 space-y-4">
-              <span className="text-xs uppercase tracking-[0.14em] font-bold text-brass block">
-                {agencyBranding?.settings?.hero?.eyebrowText ||
-                  "Official Real Estate Gazette • Nagpur Central"}
+      {/* 3. Hero (solid ink-green background or frosted white-glass custom cover banner) */}
+      <section
+        className={`relative w-full overflow-hidden pt-12 pb-24 border-b-2 border-brass ${
+          heroCoverUrl ? "text-slate-900" : "bg-ink-green text-paper"
+        } ${
+          heroCoverUrl && heroRatio.sectionAspectClass
+            ? `${heroRatio.sectionAspectClass} flex items-center min-h-[380px]`
+            : ""
+        }`}
+        style={heroCoverUrl ? HERO_WHITE_GLASS_STYLE : undefined}
+      >
+        {heroCoverUrl && (
+          <img
+            src={heroCoverUrl}
+            alt={
+              agencyBranding?.agencyName
+                ? `${agencyBranding.agencyName} Cover Banner`
+                : "Agency Cover Banner"
+            }
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            style={{ opacity: heroImageOpacity }}
+          />
+        )}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl space-y-4">
+            <span
+              className={`text-xs uppercase tracking-[0.14em] font-bold block ${
+                isLightGlass ? "text-amber-800" : "text-brass"
+              }`}
+            >
+              {agencyBranding?.settings?.hero?.eyebrowText ||
+                "Official Real Estate Gazette • Nagpur Central"}
+            </span>
+            <h1
+              className={`font-serif text-3xl sm:text-4xl lg:text-[52px] font-bold leading-[1.15] tracking-tight ${
+                isLightGlass
+                  ? "text-slate-900"
+                  : heroCoverUrl
+                    ? "text-paper drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]"
+                    : "text-paper"
+              }`}
+            >
+              {agencyBranding?.settings?.hero?.headline ||
+                "Find a home with the paperwork already in order."}
+            </h1>
+            <p
+              className={`text-sm sm:text-base leading-relaxed max-w-xl ${
+                isLightGlass
+                  ? "text-slate-700"
+                  : heroCoverUrl
+                    ? "text-paper/95 drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)]"
+                    : "text-line/80"
+              }`}
+            >
+              {agencyBranding?.settings?.hero?.subheadline ||
+                "Direct buyer exchange featuring RERA-sanctioned apartments, clear-title agricultural & NA layouts, and verified freehold residences across the Vidarbha region."}
+            </p>
+            <div
+              className={`flex flex-wrap items-center gap-6 pt-2 text-xs font-semibold ${
+                isLightGlass ? "text-amber-800" : "text-brass"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="size-4" strokeWidth={1.5} />
+                {agencyBranding?.settings?.regulatory?.badgeText ||
+                  "MahaRERA Registered Listings"}
               </span>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-[52px] font-bold text-paper leading-[1.15] tracking-tight">
-                {agencyBranding?.settings?.hero?.headline ||
-                  "Find a home with the paperwork already in order."}
-              </h1>
-              <p className="text-line/80 text-sm sm:text-base leading-relaxed max-w-xl">
-                {agencyBranding?.settings?.hero?.subheadline ||
-                  "Direct buyer exchange featuring RERA-sanctioned apartments, clear-title agricultural & NA layouts, and verified freehold residences across the Vidarbha region."}
-              </p>
-              <div className="flex flex-wrap items-center gap-6 pt-2 text-xs font-semibold text-brass">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="size-4" strokeWidth={1.5} />
-                  {agencyBranding?.settings?.regulatory?.badgeText ||
-                    "MahaRERA Registered Listings"}
-                </span>
-              </div>
-            </div>
-
-            {/* Right 5 cols: 520x300 flat SVG skyline or Custom Banner inside 2px brass border */}
-            <div className="lg:col-span-5 flex justify-center lg:justify-end">
-              <div
-                className="w-full max-w-[520px] aspect-[520/300] border-2 p-4 relative overflow-hidden shadow-hard-brass"
-                style={{
-                  backgroundColor: "var(--deep-green, #0b2d22)",
-                  borderColor: "var(--brass, #b5822c)",
-                }}
-              >
-                {agencyBranding?.settings?.hero?.bannerType ===
-                  "custom_image" &&
-                agencyBranding?.settings?.hero?.customBannerUrl ? (
-                  <img
-                    src={agencyBranding.settings.hero.customBannerUrl}
-                    alt={agencyBranding?.agencyName || "Agency Banner"}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <svg
-                    viewBox="0 0 520 300"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-full h-full"
-                  >
-                    {/* Sky background */}
-                    <rect width="520" height="300" fill="var(--deep-green, #0b2d22)" />
-
-                    {/* Brass sun circle */}
-                    <circle cx="410" cy="80" r="42" fill="var(--brass, #b5822c)" />
-
-                    {/* Distant skyline */}
-                    <polygon
-                      points="40,300 40,180 80,180 80,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-                    <polygon
-                      points="70,300 70,140 120,140 120,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-                    <polygon
-                      points="110,300 110,165 170,165 170,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-                    <polygon
-                      points="200,300 200,120 250,120 250,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-                    <polygon
-                      points="280,300 280,150 340,150 340,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-                    <polygon
-                      points="360,300 360,110 420,110 420,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-                    <polygon
-                      points="430,300 430,170 490,170 490,300"
-                      fill="var(--deep-green, #14503d)"
-                      opacity="0.8"
-                    />
-
-                    {/* Foreground Buildings */}
-                    <rect
-                      x="20"
-                      y="160"
-                      width="60"
-                      height="140"
-                      fill="var(--ink-green, #0e3b2e)"
-                      stroke="var(--deep-green, #0b2d22)"
-                      strokeWidth="2"
-                    />
-                    <rect
-                      x="70"
-                      y="110"
-                      width="75"
-                      height="190"
-                      fill="var(--ink-green, #0e3b2e)"
-                      stroke="var(--deep-green, #0b2d22)"
-                      strokeWidth="2"
-                    />
-                    <rect
-                      x="155"
-                      y="80"
-                      width="85"
-                      height="220"
-                      fill="var(--ink-green, #0e3b2e)"
-                      stroke="var(--deep-green, #0b2d22)"
-                      strokeWidth="2"
-                    />
-                    <rect
-                      x="250"
-                      y="130"
-                      width="70"
-                      height="170"
-                      fill="var(--ink-green, #0e3b2e)"
-                      stroke="var(--deep-green, #0b2d22)"
-                      strokeWidth="2"
-                    />
-                    <rect
-                      x="330"
-                      y="70"
-                      width="90"
-                      height="230"
-                      fill="var(--ink-green, #0e3b2e)"
-                      stroke="var(--deep-green, #0b2d22)"
-                      strokeWidth="2"
-                    />
-                    <rect
-                      x="430"
-                      y="140"
-                      width="70"
-                      height="160"
-                      fill="var(--ink-green, #0e3b2e)"
-                      stroke="var(--deep-green, #0b2d22)"
-                      strokeWidth="2"
-                    />
-
-                    {/* Lit Windows */}
-                    <rect x="35" y="180" width="8" height="12" fill="var(--brass, #b5822c)" />
-                    <rect x="55" y="180" width="8" height="12" fill="var(--paper, #f6f2ea)" />
-                    <rect x="35" y="210" width="8" height="12" fill="var(--paper, #f6f2ea)" />
-                    <rect
-                      x="85"
-                      y="130"
-                      width="10"
-                      height="16"
-                      fill="var(--brass, #b5822c)"
-                    />
-                    <rect
-                      x="115"
-                      y="130"
-                      width="10"
-                      height="16"
-                      fill="var(--paper, #f6f2ea)"
-                    />
-                    <rect
-                      x="85"
-                      y="170"
-                      width="10"
-                      height="16"
-                      fill="var(--paper, #f6f2ea)"
-                    />
-                    <rect
-                      x="115"
-                      y="170"
-                      width="10"
-                      height="16"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="175"
-                      y="100"
-                      width="12"
-                      height="18"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="205"
-                      y="100"
-                      width="12"
-                      height="18"
-                      fill="#f6f2ea"
-                    />
-                    <rect
-                      x="175"
-                      y="140"
-                      width="12"
-                      height="18"
-                      fill="#f6f2ea"
-                    />
-                    <rect
-                      x="205"
-                      y="140"
-                      width="12"
-                      height="18"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="175"
-                      y="180"
-                      width="12"
-                      height="18"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="270"
-                      y="150"
-                      width="10"
-                      height="14"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="295"
-                      y="150"
-                      width="10"
-                      height="14"
-                      fill="#f6f2ea"
-                    />
-                    <rect
-                      x="350"
-                      y="90"
-                      width="12"
-                      height="18"
-                      fill="#f6f2ea"
-                    />
-                    <rect
-                      x="385"
-                      y="90"
-                      width="12"
-                      height="18"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="350"
-                      y="130"
-                      width="12"
-                      height="18"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="385"
-                      y="130"
-                      width="12"
-                      height="18"
-                      fill="#f6f2ea"
-                    />
-                    <rect
-                      x="450"
-                      y="160"
-                      width="10"
-                      height="14"
-                      fill="#b5822c"
-                    />
-                    <rect
-                      x="475"
-                      y="160"
-                      width="10"
-                      height="14"
-                      fill="#f6f2ea"
-                    />
-
-                    {/* Waterline reflection base */}
-                    <rect x="0" y="292" width="520" height="8" fill="#b5822c" />
-                  </svg>
-                )}
-
-                <div className="absolute top-2 left-2 px-2 py-0.5 bg-ink-green text-brass text-[9px] font-mono uppercase tracking-widest border border-brass">
-                  Property Architectural Survey
-                </div>
-              </div>
             </div>
           </div>
         </div>

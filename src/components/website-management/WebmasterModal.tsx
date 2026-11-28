@@ -17,7 +17,16 @@ import {
   Loader2,
   Search,
   MapPin,
+  Image as ImageIcon,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  HERO_COVER_RATIO_OPTIONS,
+  HERO_WHITE_GLASS_STYLE,
+  getHeroCoverImageOpacity,
+  getHeroCoverRatioOption,
+  isHeroLightGlassMode,
+} from "@/lib/websiteHero";
 
 interface WebmasterModalProps {
   isOpen: boolean;
@@ -45,7 +54,7 @@ export function WebmasterModal({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFooterLogo, setUploadingFooterLogo] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geoResults, setGeoResults] = useState<any[]>([]);
@@ -147,14 +156,14 @@ export function WebmasterModal({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "logo" | "banner" | "footerLogo",
+    type: "logo" | "footerLogo" | "cover",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setErrorMsg("");
     if (type === "logo") setUploadingLogo(true);
-    if (type === "banner") setUploadingBanner(true);
+    if (type === "cover") setUploadingCover(true);
     if (type === "footerLogo") setUploadingFooterLogo(true);
 
     try {
@@ -180,14 +189,18 @@ export function WebmasterModal({
         handleChange("branding", "logoUrl", fileUrl);
       } else if (type === "footerLogo") {
         handleChange("footer", "logoUrl", fileUrl);
-      } else {
-        handleChange("hero", "customBannerUrl", fileUrl);
+      } else if (type === "cover") {
+        handleChange("hero", "coverImageUrl", fileUrl);
       }
+      toast.success("Image uploaded successfully");
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to upload file");
+      const msg = err.message || "Failed to upload file";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
+      e.target.value = "";
       if (type === "logo") setUploadingLogo(false);
-      if (type === "banner") setUploadingBanner(false);
+      if (type === "cover") setUploadingCover(false);
       if (type === "footerLogo") setUploadingFooterLogo(false);
     }
   };
@@ -211,6 +224,7 @@ export function WebmasterModal({
       }
 
       setSaveSuccess(true);
+      toast.success("Website customization saved!");
       if (onSaved) onSaved();
 
       // Automatically close the modal after brief confirmation
@@ -218,7 +232,9 @@ export function WebmasterModal({
         onClose();
       }, 700);
     } catch (err: any) {
-      setErrorMsg(err.message || "An unexpected error occurred");
+      const msg = err.message || "An unexpected error occurred";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -519,98 +535,183 @@ export function WebmasterModal({
                 />
               </div>
 
-              <div className="pt-2 border-t border-slate-100">
-                <label className="block text-xs font-semibold text-slate-700 mb-2">
-                  Hero Right Visual Type
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <label
-                    className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition ${
-                      (formData.hero?.bannerType || "default_svg") === "default_svg"
-                        ? "border-blue-600 bg-blue-50/50"
-                        : "border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="bannerType"
-                      checked={(formData.hero?.bannerType || "default_svg") === "default_svg"}
-                      onChange={() => handleChange("hero", "bannerType", "default_svg")}
-                      className="mt-0.5 text-blue-600"
-                    />
-                    <div>
-                      <div className="text-xs font-bold text-slate-900">Classic Architectural Skyline (SVG)</div>
-                      <div className="text-[11px] text-slate-500">
-                        Crisp, dark green &amp; brass skyline with lit windows and sun disc.
-                      </div>
-                    </div>
-                  </label>
-
-                  <label
-                    className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition ${
-                      formData.hero?.bannerType === "custom_image"
-                        ? "border-blue-600 bg-blue-50/50"
-                        : "border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="bannerType"
-                      checked={formData.hero?.bannerType === "custom_image"}
-                      onChange={() => handleChange("hero", "bannerType", "custom_image")}
-                      className="mt-0.5 text-blue-600"
-                    />
-                    <div>
-                      <div className="text-xs font-bold text-slate-900">Custom Image Banner</div>
-                      <div className="text-[11px] text-slate-500">
-                        Upload or provide a high-res landscape banner image.
-                      </div>
-                    </div>
-                  </label>
-                </div>
-
-                {formData.hero?.bannerType === "custom_image" && (
-                  <div className="mt-3">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Custom Banner Image (Server Upload)
+              <div className="pt-3 border-t border-slate-100 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-900">
+                      Hero Background Cover Banner (Full-Width Green Plate)
                     </label>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                      <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition">
-                        <Upload className="size-4 text-blue-600" />
-                        <span>{uploadingBanner ? "Uploading banner..." : "Upload Banner Image"}</span>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          disabled={uploadingBanner}
-                          onChange={(e) => handleFileUpload(e, "banner")}
-                          className="hidden"
-                        />
-                      </label>
-
-                      {formData.hero?.customBannerUrl && (
-                        <div className="flex items-center gap-2">
-                          <div className="h-10 w-20 border border-slate-200 rounded overflow-hidden bg-slate-50">
-                            <img
-                              src={formData.hero.customBannerUrl}
-                              alt="Banner Preview"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleChange("hero", "customBannerUrl", "")}
-                            className="text-xs text-rose-600 hover:underline font-semibold"
-                          >
-                            Remove Banner
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Recommended aspect: 16:9 or 520x300. Uploaded files are safely stored on the server.
+                    <p className="text-[11px] text-slate-500">
+                      Replaces the solid green hero background behind your headline with a custom cover image &amp; chosen aspect ratio.
                     </p>
                   </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition">
+                      <Upload className="size-4 text-blue-600" />
+                      <span>
+                        {uploadingCover
+                          ? "Uploading cover..."
+                          : formData.hero?.coverImageUrl
+                            ? "Change Cover Banner"
+                            : "Upload Cover Banner"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        disabled={uploadingCover}
+                        onChange={(e) => handleFileUpload(e, "cover")}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {formData.hero?.coverImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => handleChange("hero", "coverImageUrl", "")}
+                        className="px-2.5 py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition"
+                      >
+                        Remove Cover
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cover Banner Aspect Ratio Selector */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {HERO_COVER_RATIO_OPTIONS.map((opt) => {
+                    const selected =
+                      (formData.hero?.coverAspectRatio || "auto") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          handleChange("hero", "coverAspectRatio", opt.value)
+                        }
+                        className={`p-2 rounded-lg border text-left transition cursor-pointer ${
+                          selected
+                            ? "border-blue-600 bg-blue-50 text-blue-900 ring-1 ring-blue-600/20"
+                            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        <div className="text-xs font-bold">{opt.shortLabel}</div>
+                        <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                          {opt.hint}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Image Opacity Control */}
+                {formData.hero?.coverImageUrl && (
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <label className="font-semibold text-slate-700">
+                        Image Opacity (Transparency)
+                      </label>
+                      <span className="text-blue-700 font-bold">
+                        {typeof formData.hero?.coverImageOpacity === "number"
+                          ? formData.hero.coverImageOpacity
+                          : 100}
+                        %
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={
+                        typeof formData.hero?.coverImageOpacity === "number"
+                          ? formData.hero.coverImageOpacity
+                          : 100
+                      }
+                      onChange={(e) =>
+                        handleChange(
+                          "hero",
+                          "coverImageOpacity",
+                          Number(e.target.value),
+                        )
+                      }
+                      className="w-full accent-blue-600 cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>0% Transparent</span>
+                      <span>100% Solid</span>
+                    </div>
+                  </div>
                 )}
+
+                {/* Live Ratio Preview Box */}
+                {(() => {
+                  const activeRatio = getHeroCoverRatioOption(
+                    formData.hero?.coverAspectRatio,
+                  );
+                  const hasCover = Boolean(formData.hero?.coverImageUrl);
+                  const imageOpacity = getHeroCoverImageOpacity(
+                    formData.hero?.coverImageOpacity,
+                  );
+                  const lightGlass = hasCover && isHeroLightGlassMode(imageOpacity);
+                  const plateColor = formData.theme?.primaryColor || "#0e3b2e";
+                  return (
+                    <div
+                      className={`relative w-full overflow-hidden rounded-xl border-2 ${activeRatio.previewAspectClass} flex items-center px-5 py-4 transition-all`}
+                      style={{
+                        ...(hasCover
+                          ? HERO_WHITE_GLASS_STYLE
+                          : { backgroundColor: plateColor }),
+                        borderColor: formData.theme?.accentColor || "#b5822c",
+                      }}
+                    >
+                      {hasCover ? (
+                        <img
+                          src={formData.hero.coverImageUrl}
+                          alt="Hero Cover Preview"
+                          className="absolute inset-0 w-full h-full object-cover object-center transition-opacity"
+                          style={{ opacity: imageOpacity }}
+                        />
+                      ) : (
+                        <div className="absolute right-4 top-3 flex items-center gap-1.5 text-[10px] font-semibold text-white/75 bg-black/20 px-2.5 py-1 rounded-full">
+                          <ImageIcon className="size-3" />
+                          <span>Solid Theme Plate ({activeRatio.label})</span>
+                        </div>
+                      )}
+
+                      <div
+                        className={`relative z-10 max-w-md space-y-1 ${
+                          lightGlass
+                            ? "text-slate-900"
+                            : "text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.4)]"
+                        }`}
+                      >
+                        <div
+                          className="text-[9px] font-bold uppercase tracking-widest"
+                          style={{
+                            color: lightGlass
+                              ? "#9a6b1f"
+                              : formData.theme?.accentColor || "#b5822c",
+                          }}
+                        >
+                          {formData.hero?.eyebrowText ||
+                            "OFFICIAL REAL ESTATE GAZETTE"}
+                        </div>
+                        <div className="text-sm sm:text-base font-bold leading-snug line-clamp-2">
+                          {formData.hero?.headline ||
+                            "Find a home with the paperwork already in order."}
+                        </div>
+                        <div
+                          className={`text-[10px] ${
+                            lightGlass ? "text-slate-600" : "text-white/80"
+                          }`}
+                        >
+                          Ratio: {activeRatio.label}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}

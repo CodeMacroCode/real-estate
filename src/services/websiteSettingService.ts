@@ -41,6 +41,10 @@ export async function getWebsiteSettingsByAdminId(adminId: string) {
         "Direct buyer exchange featuring RERA-sanctioned apartments, clear-title agricultural & NA layouts, and verified freehold residences.",
       bannerType: "default_svg",
       customBannerUrl: "",
+      coverImageUrl: "",
+      coverAspectRatio: "auto",
+      coverImageOpacity: 100,
+      coverOverlayOpacity: 60,
       trustBadges: [
         { label: "RERA Registered Listings" },
         { label: "Zero Phantom Listings" },
@@ -94,12 +98,34 @@ export async function upsertWebsiteSettings(
   payload: Partial<IWebsiteSettingDocument>,
 ) {
   await connectToDatabase();
+  const existingHero = (payload.hero || {}) as Partial<IWebsiteSettingDocument["hero"]>;
+  const normalizedHero = {
+    eyebrowText: existingHero.eyebrowText ?? "",
+    headline: existingHero.headline ?? "",
+    subheadline: existingHero.subheadline ?? "",
+    bannerType: existingHero.bannerType || "default_svg",
+    customBannerUrl: existingHero.customBannerUrl ?? "",
+    coverImageUrl: existingHero.coverImageUrl ?? "",
+    coverAspectRatio: existingHero.coverAspectRatio || "auto",
+    coverImageOpacity:
+      typeof existingHero.coverImageOpacity === "number"
+        ? existingHero.coverImageOpacity
+        : 100,
+    coverOverlayOpacity:
+      typeof existingHero.coverOverlayOpacity === "number"
+        ? existingHero.coverOverlayOpacity
+        : 60,
+    trustBadges: Array.isArray(existingHero.trustBadges)
+      ? existingHero.trustBadges
+      : [],
+  };
+
   const updated = await WebsiteSetting.findOneAndUpdate(
     { adminId: new mongoose.Types.ObjectId(adminId) },
     {
       $set: {
         branding: payload.branding,
-        hero: payload.hero,
+        hero: normalizedHero,
         contact: payload.contact,
         socialLinks: payload.socialLinks,
         theme: payload.theme,
@@ -107,7 +133,7 @@ export async function upsertWebsiteSettings(
         footer: payload.footer,
       },
     },
-    { new: true, upsert: true, setDefaultsOnInsert: true },
+    { new: true, upsert: true, setDefaultsOnInsert: true, strict: false },
   ).lean();
 
   return updated;

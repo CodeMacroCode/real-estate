@@ -13,6 +13,10 @@ export interface IWebsiteSettingDocument extends Document {
     subheadline?: string;
     bannerType: "default_svg" | "custom_image";
     customBannerUrl?: string;
+    coverImageUrl?: string;
+    coverAspectRatio?: "auto" | "21:9" | "16:9" | "16:5" | "3:1";
+    coverImageOpacity?: number;
+    coverOverlayOpacity?: number;
     trustBadges?: Array<{ label: string }>;
   };
   contact: {
@@ -79,6 +83,14 @@ const WebsiteSettingSchema = new Schema<IWebsiteSettingDocument>(
         default: "default_svg",
       },
       customBannerUrl: { type: String, trim: true, default: "" },
+      coverImageUrl: { type: String, trim: true, default: "" },
+      coverAspectRatio: {
+        type: String,
+        enum: ["auto", "21:9", "16:9", "16:5", "3:1"],
+        default: "auto",
+      },
+      coverImageOpacity: { type: Number, min: 0, max: 100, default: 100 },
+      coverOverlayOpacity: { type: Number, min: 0, max: 100, default: 60 },
       trustBadges: [
         {
           label: { type: String, trim: true },
@@ -126,6 +138,14 @@ const WebsiteSettingSchema = new Schema<IWebsiteSettingDocument>(
     timestamps: true,
   }
 );
+
+if (
+  process.env.NODE_ENV !== "production" &&
+  mongoose.models &&
+  mongoose.models.WebsiteSetting
+) {
+  delete mongoose.models.WebsiteSetting;
+}
 
 export const WebsiteSetting: mongoose.Model<IWebsiteSettingDocument> =
   mongoose.models.WebsiteSetting ||

@@ -74,7 +74,10 @@ export function WebsiteManagementClient({
   const handleOpenWebmaster = async (portal: SsrWebsiteManagementPortalItem) => {
     setLoadingAdminId(portal.adminId);
     try {
-      const res = await fetch(`/api/website-management/settings?adminId=${portal.adminId}`);
+      const res = await fetch(
+        `/api/website-management/settings?adminId=${portal.adminId}`,
+        { cache: "no-store" },
+      );
       const json = await res.json();
       if (json.success && json.data) {
         setWebmasterSettings(json.data);
